@@ -28,6 +28,8 @@ void slConfigurationSetDefaults(SLConfiguration * config)
     //config->configPath[0] = 0;
     snprintf(config->configPath, sizeof config->configPath,
         SL_DEFAULT_INPUT_CONFIG);
+    
+    config->brightness = 1.0f;
 }
 
 

@@ -36,10 +36,12 @@
 
 static void slLightOutputStartSpiDevice(void);
 static uint8_t * slLightOutputEmitPanel(uint8_t * pBuf,
-    SLColor const * pLights, size_t panelWidth, size_t panelHeight);
+    SLPanel const * pLights);
 
 
 static int g_slSpiFd = -1;
+
+uint8_t g_slModifiedCieTable[256];
 
 
 // This is a CIE even intensity table for converting linear perceived
@@ -127,6 +129,11 @@ void slLightOutputInitialize(SLConfiguration const * config)
     slVerify(ioctl(g_slSpiFd, SPI_IOC_WR_LSB_FIRST, &lsbFirst) >= 0);
     slVerify(ioctl(g_slSpiFd, SPI_IOC_WR_BITS_PER_WORD, &bitsPerWord) >= 0);
     slVerify(ioctl(g_slSpiFd, SPI_IOC_WR_MAX_SPEED_HZ, &maxSpeedHz) >= 0);
+    
+    for(size_t i = 0; i < LENGTHOF(g_slCieTable); ++i) {
+        g_slModifiedCieTable[i] = (uint8_t)slClampF(
+            ceilf(g_slCieTable[i] * config->brightness), 0.0f, 255.0f);
+    }
 }
 
 
@@ -177,12 +184,9 @@ void slLightOutputShowLights(SLLightData const * lights)
     uint8_t buf[SL_NUM_LIGHTS * 3];
     uint8_t * pB = buf;
 
-    pB = slLightOutputEmitPanel(pB, &lights->left[0][0],
-        SL_PANEL_WIDTH_LEFT, SL_PANEL_HEIGHT_LEFT);
-    pB = slLightOutputEmitPanel(pB, &lights->overhead[0][0],
-        SL_PANEL_WIDTH_OVERHEAD, SL_PANEL_HEIGHT_OVERHEAD);
-    pB = slLightOutputEmitPanel(pB, &lights->right[0][0],
-        SL_PANEL_WIDTH_RIGHT, SL_PANEL_HEIGHT_RIGHT);
+    pB = slLightOutputEmitPanel(pB, &lights->left);
+    pB = slLightOutputEmitPanel(pB, &lights->overhead);
+    pB = slLightOutputEmitPanel(pB, &lights->right);
     
     slAssert(pB == buf + LENGTHOF(buf));
 
@@ -198,43 +202,24 @@ void slLightOutputShowLights(SLLightData const * lights)
 }
 
 
-uint8_t * slLightOutputEmitPanel(uint8_t * pBuf, SLColor const * pLights,
-    size_t panelWidth, size_t panelHeight)
+uint8_t * slLightOutputEmitPanel(uint8_t * pBuf, SLPanel const * pLights)
 {
-    // Our lights are strung top-left to bottom-left or right, weaving back
-    // and forth. This means every second row is backwards. This back-and-
-    // forth is explicitly unrolled in the loop; every loop on i emits two
-    // rows.
-    // An odd-height panel is a special case; the i < (panelHeight - 1)
-    // condition prevents us from overrunning in that case. There's a
-    // conditional following this loop which emits the last lone line, since
-    // this loop always emits full line pairs.
-    for(size_t i = 0; i < (panelHeight - 1); i += 2) {
-        for(size_t j = 0; j < panelWidth; ++j) {
-            *(pBuf++) = g_slCieTable[pLights->b];
-            *(pBuf++) = g_slCieTable[pLights->r];
-            *(pBuf++) = g_slCieTable[pLights->g];
-            ++pLights;
+    SLColor const * pData = pLights->data[0];
+    for(size_t i = 0; i < SL_PANEL_HEIGHT; i += 2) {
+        for(size_t j = 0; j < SL_PANEL_WIDTH; ++j) {
+            *(pBuf++) = g_slModifiedCieTable[pData->b];
+            *(pBuf++) = g_slModifiedCieTable[pData->r];
+            *(pBuf++) = g_slModifiedCieTable[pData->g];
+            ++pData;
         }
-        pLights += panelWidth;
-        for(size_t j = 0; j < panelWidth; ++j) {
-            --pLights;
-            *(pBuf++) = g_slCieTable[pLights->b];
-            *(pBuf++) = g_slCieTable[pLights->r];
-            *(pBuf++) = g_slCieTable[pLights->g];
+        pData += SL_PANEL_WIDTH;
+        for(size_t j = 0; j < SL_PANEL_WIDTH; ++j) {
+            --pData;
+            *(pBuf++) = g_slModifiedCieTable[pData->b];
+            *(pBuf++) = g_slModifiedCieTable[pData->r];
+            *(pBuf++) = g_slModifiedCieTable[pData->g];
         }
-        pLights += panelWidth;
-    }
-    
-    // If our panel is odd-height, we didn't emit the last row in the loop
-    // above: emit it now.
-    if(panelHeight % 2 == 1) {
-        for(size_t j = 0; j < panelWidth; ++j) {
-            *(pBuf++) = g_slCieTable[pLights->b];
-            *(pBuf++) = g_slCieTable[pLights->r];
-            *(pBuf++) = g_slCieTable[pLights->g];
-            ++pLights;
-        }
+        pData += SL_PANEL_WIDTH;
     }
     
     return pBuf;

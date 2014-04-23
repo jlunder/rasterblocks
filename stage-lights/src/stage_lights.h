@@ -27,17 +27,10 @@
 #endif
 #define SL_AUDIO_FRAMES_PER_VIDEO_FRAME ((SL_AUDIO_SAMPLE_RATE / SL_VIDEO_FRAME_RATE)*2)
 
-#define SL_PANEL_WIDTH_LEFT 8
-#define SL_PANEL_HEIGHT_LEFT 8
-#define SL_PANEL_WIDTH_RIGHT 8
-#define SL_PANEL_HEIGHT_RIGHT 8
-#define SL_PANEL_WIDTH_OVERHEAD 8
-#define SL_PANEL_HEIGHT_OVERHEAD 8
+#define SL_PANEL_WIDTH 8
+#define SL_PANEL_HEIGHT 8
 
-#define SL_NUM_LIGHTS \
-    (SL_PANEL_WIDTH_LEFT * SL_PANEL_HEIGHT_LEFT + \
-        SL_PANEL_WIDTH_RIGHT * SL_PANEL_HEIGHT_RIGHT + \
-        SL_PANEL_WIDTH_OVERHEAD * SL_PANEL_HEIGHT_OVERHEAD)
+#define SL_NUM_LIGHTS (SL_PANEL_WIDTH * SL_PANEL_HEIGHT * 3)
 
 #define SL_MAX_CONSECUTIVE_GENTLE_RESTART_NS (10 * 1000000000LLU)
 #define SL_GENTLE_RESTART_DELAY_NS 500000000LLU
@@ -72,12 +65,33 @@ typedef enum {
 } SLAudioInputSource;
 
 
+#ifdef SL_USE_NEON
+typedef uint16x4_t SLColor;
+#else
 typedef struct {
     uint8_t r;
     uint8_t g;
     uint8_t b;
     uint8_t x;
 } SLColor;
+#endif
+
+
+typedef struct {
+    SLColor c[5];
+} SLPalette;
+
+
+typedef int32_t SLCoord;
+
+
+typedef int32_t SLTime;
+
+
+typedef struct {
+    SLTime time;
+    SLTime period;
+} SLTimer;
 
 
 typedef struct {
@@ -103,6 +117,8 @@ typedef struct {
     // output mode?
     // output device path?
     // hot config port/etc.?
+    
+    float brightness;
 } SLConfiguration;
 
 
@@ -121,9 +137,14 @@ typedef struct {
 
 
 typedef struct {
-    SLColor left[SL_PANEL_HEIGHT_LEFT][SL_PANEL_HEIGHT_LEFT];
-    SLColor right[SL_PANEL_HEIGHT_RIGHT][SL_PANEL_HEIGHT_RIGHT];
-    SLColor overhead[SL_PANEL_HEIGHT_OVERHEAD][SL_PANEL_HEIGHT_OVERHEAD];
+    SLColor data[SL_PANEL_HEIGHT][SL_PANEL_WIDTH];
+} SLPanel;    
+
+
+typedef struct {
+    SLPanel left;
+    SLPanel right;
+    SLPanel overhead;
 } SLLightData;
 
 
@@ -144,6 +165,40 @@ void slRequestImmediateRestart(void);
 // Returns true if we are in the middle of a subsystem sl*Initialize() due to
 // a gentle restart; false if this is first-time init.
 bool slIsRestarting(void);
+
+static inline SLTime slTimeFromMs(int32_t ms)
+{
+    return ms;
+}
+
+SLTime slGetTime(void);
+
+static inline SLTime slDiffTime(SLTime x, SLTime y)
+{
+    return x - y;
+}
+
+static inline SLTime slGetTimeSince(SLTime x)
+{
+    return slDiffTime(slGetTime(), x);
+}
+
+void slStartTimer(SLTimer * pTimer, SLTime period);
+
+static inline void slStopTimer(SLTimer * pTimer)
+{
+    slStartTimer(pTimer, 0);
+}
+
+int32_t slGetTimerPeriods(SLTimer * pTimer);
+int32_t slGetTimerPeriodsAndReset(SLTimer * pTimer);
+
+static inline bool slTimerElapsed(SLTimer * pTimer)
+{
+    return !!slGetTimerPeriods(pTimer);
+}
+
+SLTime slGetTimeLeft(SLTimer * pTimer);
 
 // Logging functions; these are for internal consumption only, please use the
 // macros below (slInfo/slWarning/SlError...)
@@ -168,6 +223,19 @@ static inline void slSanitizeDouble(double * pF, double saneValue)
     if(isinf(*pF) || isnan(*pF)) {
         *pF = saneValue;
     }
+}
+
+static inline float slClampF(float f, float fMin, float fMax)
+{
+    // This is structured carefully so that NaN will clamp as fMin.
+    // If you are modifying it, also consider +inf/-inf.
+    if(f >= fMax) {
+        return fMax;
+    }
+    if(f >= fMin) {
+        return f;
+    }
+    return fMin;
 }
 
 

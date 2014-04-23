@@ -99,6 +99,9 @@ ifneq ($(CROSS_BUILD)$(TARGET_BUILD),)
 STAGE_LIGHTS_O_TARGET := $(addprefix build/,$(addsuffix .target.o, $(STAGE_LIGHTS_SRC)))
 STAGE_LIGHTS_D_TARGET := $(addprefix build/,$(addsuffix .target.d, $(STAGE_LIGHTS_SRC)))
 
+src/icons.h: $(wildcard icons/[0-9][0-9]*)
+	python make-icons.py $(wildcard icons/[0-9][0-9]*)
+
 build/%.target.d: src/%.c Makefile
 	@$(MAKEDEPEND_TARGET)
 
@@ -163,4 +166,5 @@ cleanall: clean
 
 clean:
 	@rm -f build/* bin/*
+	@rm -f src/icons.h
 

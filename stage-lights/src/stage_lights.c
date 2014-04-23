@@ -44,6 +44,8 @@ static bool g_slIsRestarting = false;
 static SLLightData g_slLastFrameLightData;
 
 static uint64_t g_slClockNs = 0;
+static uint64_t g_slClockMsNsRemainder = 0;
+static SLTime g_slClockMs = 0;
 
 
 void slProcessSubsystems(bool * pCoslClockNsnfigChanged);
@@ -83,6 +85,79 @@ void slRequestImmediateRestart(void)
 bool slIsRestarting(void)
 {
     return g_slIsRestarting;
+}
+
+
+SLTime slGetTime(void)
+{
+    return g_slClockMs;
+}
+
+
+void slStartTimer(SLTimer * pTimer, SLTime period)
+{
+    pTimer->time = slGetTime();
+    pTimer->period = period;
+    
+    slAssert(period >= 0);
+}
+
+
+int32_t slGetTimerPeriods(SLTimer * pTimer)
+{
+    if(pTimer->period == 0) {
+        return 1;
+    }
+    return slDiffTime(slGetTime(), pTimer->time) / pTimer->period;
+}
+
+
+int32_t slGetTimerPeriodsAndReset(SLTimer * pTimer)
+{
+    SLTime currentTime = slGetTime();
+    SLTime diff = slDiffTime(currentTime, pTimer->time);
+    SLTime period = pTimer->period;
+    SLTime periodCount;
+    
+    if(period == 0) {
+        return 1;
+    }
+    
+    slAssert(diff >= 0);
+    
+    // Division is slow, only do it if the diff is large
+    if(diff > period * 16) {
+        periodCount = diff / period;
+        diff -= period * periodCount;
+    }
+    else {
+        periodCount = 0;
+        while(diff >= period) {
+            ++periodCount;
+            diff -= period;
+        }
+    }
+    
+    slAssert(periodCount == slGetTimerPeriods(pTimer));
+    slAssert(diff < pTimer->period);
+    slAssert(diff >= 0);
+    
+    pTimer->time = currentTime - diff;
+    
+    return periodCount;
+}
+
+
+SLTime slGetTimeLeft(SLTimer * pTimer)
+{
+    SLTime diff = slDiffTime(pTimer->time + pTimer->period, slGetTime());
+    
+    if(diff < 0) {
+        return 0;
+    }
+    else {
+        return diff;
+    }
 }
 
 
@@ -223,9 +298,16 @@ void slProcess(uint64_t nsSinceLastProcess)
 {
     SLSubsystem lastSubsystem = slChangeSubsystem(SLS_MAIN);
     bool configChanged = false;
+    int32_t msSinceLastProcess;
     
     g_slClockNs += nsSinceLastProcess;
-    slInfo("Frame time: %lluns\n", nsSinceLastProcess);
+    msSinceLastProcess = (g_slClockMsNsRemainder + nsSinceLastProcess) /
+        1000000;
+    g_slClockMsNsRemainder = nsSinceLastProcess -
+        msSinceLastProcess * 1000000;
+    g_slClockMs += msSinceLastProcess;
+    
+    slInfo("Frame time: %lluns\n", msSinceLastProcess);
     
     slAssert(lastSubsystem == SLS_MAIN);
     

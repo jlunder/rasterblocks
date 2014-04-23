@@ -72,6 +72,9 @@ void parseJsonObject(SLConfiguration * config,json_object * jobj)
         else if (strcmp(key, "agcStrength") == 0) {
             config->agcStrength = atof(json_object_get_string(val));
         }
+        else if (strcmp(key, "brightness") == 0) {
+            config->brightness = atof(json_object_get_string(val));
+        }
     }
 }
 
