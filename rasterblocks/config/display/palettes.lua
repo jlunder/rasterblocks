@@ -52,6 +52,21 @@ pal_black_purple_fs = rb.palette_from_pwl({
     {rb.color(0.50, 0.00, 1.00, 1), 0},
 })
 
+pal_black_red_hs_add = rb.palette_from_pwl({
+    {rb.color(0.00, 0.00, 0.00, 0), 1},
+    {rb.color(0.50, 0.00, 0.00, 0), 0},
+})
+
+pal_black_green_hs_add = rb.palette_from_pwl({
+    {rb.color(0.00, 0.00, 0.00, 0), 1},
+    {rb.color(0.00, 0.50, 0.00, 0), 0},
+})
+
+pal_black_blue_hs_add = rb.palette_from_pwl({
+    {rb.color(0.00, 0.00, 0.00, 0), 1},
+    {rb.color(0.00, 0.00, 0.50, 0), 0},
+})
+
 pal_green_lavender_hs = rb.palette_from_pwl({
     {rb.color(0.00, 0.00, 0.00, 1), 1},
     {rb.color(0.03, 0.12, 0.03, 1), 1},

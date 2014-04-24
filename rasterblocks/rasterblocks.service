@@ -3,7 +3,7 @@ Description=Rasterblocks
 After=syslog.target basic.target sound.target #rasterblocks-nodeserver.service
 
 [Service]
-ExecStart=/usr/lib/rasterblocks/rasterblocks
+ExecStart=/usr/lib/rasterblocks/rasterblocks -l /usr/lib/rasterblocks/
 Restart=on-abort
 
 [Install]
