@@ -4,3 +4,6 @@ INSTALL_DIR=/usr/lib/rasterblocks
 
 systemctl stop rasterblocks.service
 systemctl disable "$INSTALL_DIR/rasterblocks.service"
+
+rm -f "/var/lib/rasterblocks/config.json"
+rmdir "/var/lib/rasterblocks"

@@ -2,5 +2,7 @@
 
 INSTALL_DIR=/usr/lib/rasterblocks
 
+mkdir -p /var/lib/rasterblocks
+touch /var/lib/rasterblocks/config.json
 systemctl enable "$INSTALL_DIR/rasterblocks.service"
 systemctl start rasterblocks.service
