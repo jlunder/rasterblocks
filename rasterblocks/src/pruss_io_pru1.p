@@ -221,13 +221,20 @@ of800k_bits_loop:
     call    delay
     
 
-    // Aaaaaand output!
+    // Aaaaaand output! Clock bit = 0 still.
     mov     r30.w0, r1.w0
     
-    mov     r0, 38
+    mov     r0, 18
     call    delay
     
-    mov     r30.w0, 0x0040
+    // Set bit 9 = clock bit here. This makes the signal compatible with both
+    // WS2801 and WS2811 LEDs.
+    set     r30.w0, r1.w0.t9
+    
+    mov     r0, 18
+    call    delay
+    
+    mov     r30.w0, 0x0240
     
     // We are shifting the bits out MSB-first, shift left
     lsl     l.bits_0, l.bits_0, 1
@@ -254,13 +261,16 @@ of800k_no_bits_loop:
     jmp     of_check_pause
 
 of_check_pause:
+    // Make clock line idle low
+    mov     r30.w0, 0x0040
+    
     // Check if we are supposed to pause at end-of-frame
     mov     r1, COMMAND_LIGHT_END_FRAME_PAUSE
     and     r0, buf.command, r1
     qbeq    no_pause, r0, 0
     
-    // 200,000 insns = 1ms
-    mov     r0, 100000
+    // 20,000 insns = 100us
+    mov     r0, 10000
     call    delay
     
 no_pause:

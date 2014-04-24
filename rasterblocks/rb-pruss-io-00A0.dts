@@ -48,6 +48,7 @@
 					0x0B8 0x0D  // P8_39: Mode 5 = pr1_pru1_pru_r30, disable pulldown, rx
 					0x0BC 0x0D  // P8_40: Mode 5 = pr1_pru1_pru_r30, disable pulldown, rx
 					0x0E0 0x0D  // P8_27: Mode 5 = pr1_pru1_pru_r30, disable pulldown, rx
+					0x0E4 0x0D  // P8_29: Mode 5 = pr1_pru1_pru_r30, disable pulldown, rx
 					0x1A4 0x0D  // P9_27: Mode 5 = pr1_pru0_pru_r30, disable pulldown, rx
 					>;
 			};
