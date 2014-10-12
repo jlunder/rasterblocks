@@ -23,22 +23,34 @@
 //
 //========================================================================
 
+#ifdef STAGE_LIGHTS_USE_GLES2_HARNESS
+
 #include "gles2_harness.h"
 
+#include <GL/gl.h>
+
+#if defined STAGE_LIGHTS_LINUX
+#include <GL/glfw.h>
+#define GLFW_V2
+#elif defined STAGE_LIGHTS_OSX
 #include <GLFW/glfw3.h>
+#define GLFW_V3
+#endif
 
 #include <time.h>
 
-///MACOS
-#include <errno.h>
-#include <fcntl.h>
+#if defined STAGE_LIGHTS_LINUX
+#elif defined STAGE_LIGHTS_OSX
 #include <mach/mach.h>
 #include <mach/mach_time.h>
+#endif
+
+#include <errno.h>
+#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <termios.h>
 #include <unistd.h>
-///MACOS
 
 #include <assert.h>
 #include <math.h>
@@ -49,6 +61,9 @@
 #include <string.h>
 
 #include "glus.h"
+
+
+#include "stage_lights.h"
 
 
 static GLuint g_program;
@@ -64,20 +79,6 @@ static GLint g_vertexLocation;
 static GLuint g_verticesVBO;
 
 static GLfloat g_aspectRatio;
-
-static float const gles2_harness_delta_v = (float)M_PI;
-static float const gles2_harness_max_v = (float)M_PI / 2.0f;
-
-bool gles2_harness_input_left = false;
-bool gles2_harness_input_right = false;
-bool gles2_harness_input_up = false;
-bool gles2_harness_input_down = false;
-
-float gles2_harness_horizontal_v = 0.f;
-float gles2_harness_horizontal_pos = 0.f;
-float gles2_harness_vertical_v = 0.f;
-float gles2_harness_vertical_pos = 0.f;
-float gles2_harness_dist = 5.f;
 
 #define GLES2_HARNESS_LINE_BUF_EMPTY    1
 #define GLES2_HARNESS_LINE_BUF_FULL     2
@@ -96,6 +97,10 @@ int gles2_harness_serial_fd = -1;
 
 float gles2_harness_fake_input_time = 0.0f;
 
+float gles2_harness_dist = 1.0f;
+float gles2_harness_horizontal_pos = 0.0f;
+float gles2_harness_vertical_pos = 0.0f;
+
 
 bool gles2_harness_init(char const * dev);
 int gles2_harness_serial_set_interface_attribs(int fd, int speed, int parity);
@@ -111,22 +116,36 @@ void gles2_harness_draw_lights(float time);
 void gles2_harness_terminate(void);
 
 
+#ifdef GLFW_V3
 static void error_callback(int error, const char* description)
 {
-    (void)error;
+    UNUSED(error);
     
     fputs(description, stderr);
 }
+#endif
 
 
-static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+static void key_callback(
+#ifdef GLFW_V3
+	GLFWwindow* window,
+#endif
+	int key,
+#ifdef GLFW_V3
+	int scancode, int action,
+#endif
+	int mods)
 {
-    (void)scancode;
-    (void)mods;
+#ifdef GLFW_V3
+	UNUSED(window);
+    UNUSED(scancode);
+#endif
+	UNUSED(key);
+    UNUSED(mods);
     
+/*
     if(action == GLFW_PRESS) {
         switch(key) {
-/*
         case 'Q': ddh_mode = 0; break;
         case 'W': ddh_mode = 1; break;
         case 'E': ddh_mode = 2; break;
@@ -160,12 +179,10 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         case GLFW_KEY_ESCAPE:
             glfwSetWindowShouldClose(window, GL_TRUE);
             break;
-*/
         }
     }
     else if(action == GLFW_RELEASE) {
         switch(key) {
-/*
         case '[': ddh_button_a = false; break;
         case ']': ddh_button_b = false; break;
         
@@ -173,81 +190,132 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         case GLFW_KEY_RIGHT: gles2_harness_input_right = false;
         case GLFW_KEY_UP: gles2_harness_input_up = false;
         case GLFW_KEY_DOWN: gles2_harness_input_down = false;
-*/
         }
     }
+*/
 }
 
 
-void gles2_harness_main(int argc, char * argv[])
+int main(int argc, char * argv[])
 {
+#ifdef GLFW_V3
     GLFWwindow* window;
-    //LINUX
-    //struct timespec startts;
-    //clock_gettime(CLOCK_MONOTONIC, &startts);
-    //LINUX
+#endif
+#ifdef GLFW_V2
+	GLFWvidmode vm;
+#endif
+#ifdef STAGE_LIGHTS_LINUX
+    struct timespec lastts;
     
-    //MACOS
+    clock_gettime(CLOCK_MONOTONIC, &lastts);
+#endif
+#ifdef STAGE_LIGHTS_OSX
     uint64_t lasttime = mach_absolute_time();
     mach_timebase_info_data_t timebase;
+    
     mach_timebase_info(&timebase);
-    //MACOS
+#endif
 
+#ifdef GLFW_V3
     glfwSetErrorCallback(error_callback);
+#endif
 
     if (!glfwInit())
         exit(EXIT_FAILURE);
 
-    window = glfwCreateWindow(640, 480, "Domedecahedron", NULL, NULL);
+#ifdef GLFW_V3
+    window = glfwCreateWindow(640, 480, "Stage Lights", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
+#endif
+#ifdef GLFW_V2
+	glfwGetDesktopMode(&vm);
+	glfwSetWindowTitle("Stage Lights");
+    if (!glfwOpenWindow(640, 480, 0, 0, 0, 0, 32, 0, GLFW_WINDOW))
+    {
+        glfwTerminate();
+        exit(EXIT_FAILURE);
+    }
+#endif
 
+#ifdef GLFW_V3
     glfwMakeContextCurrent(window);
 
     glfwSetKeyCallback(window, key_callback);
+#endif
+#ifdef GLFW_V2
+    //glfwMakeContextCurrent();
+
+    glfwSetKeyCallback(key_callback);
+#endif
     
     gles2_harness_init(argc > 1 ? argv[1] : NULL);
 
+#ifdef GLFW_V3
     while (!glfwWindowShouldClose(window))
+#endif
+#ifdef GLFW_V2
+	while (glfwGetWindowParam(GLFW_OPENED))
+#endif
     {
-        float ratio;
-        int width, height;
-        //LINUX
-        //struct timespec ts;
-        //LINUX
+        int width = 0, height = 0;
+#ifdef STAGE_LIGHTS_LINUX
+        struct timespec ts;
+#endif
+#ifdef STAGE_LIGHTS_OSX
         uint64_t time;
+#endif
         uint64_t time_ns;
 
+#ifdef GLFW_V3
         glfwGetFramebufferSize(window, &width, &height);
-        ratio = width / (float) height;
+#endif
+#ifdef GLFW_V3
+        glfwGetWindowSize(&width, &height);
+#endif
 
         gles2_harness_reshape(width, height);
         
-        //MACOS
+#ifdef STAGE_LIGHTS_LINUX
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        ts.tv_nsec -= lastts.tv_nsec;
+        if(ts.tv_nsec < 0) {
+            ts.tv_nsec += 1000000000;
+            --ts.tv_sec;
+        }
+        assert(ts.tv_nsec >= 0 && ts.tv_nsec < 1000000000);
+        assert(ts.tv_sec >= 0);
+        lastts = ts;
+        time_ns = ts.tv_nsec + ts.tv_sec * 1000000000;
+#endif
+#ifdef STAGE_LIGHTS_OSX
         time = mach_absolute_time();
         time_ns = ((time - lasttime) * timebase.numer) / timebase.denom;
         lasttime = time;
-        /*LINUX
-        clock_gettime(CLOCK_MONOTONIC, &ts);
-        ts.tv_nsec -= startts.tv_nsec;
-        if(ts.tv_nsec < 0) {
-            ts.tv_nsec += 1000000000;
-        }
-        assert(ts.tv_nsec >= 0 && ts.tv_nsec < 1000000000);
-        */
+#endif
         
-        gles2_harness_update((float)time_ns * 1.0e-9f);
+        gles2_harness_update((float)(time_ns / 1.0e9));
 
+#ifdef GLFW_V3
         glfwSwapBuffers(window);
+#endif
+#ifdef GLFW_V2
+        glfwSwapBuffers();
+#endif
         glfwPollEvents();
     }
     
     gles2_harness_terminate();
 
+#ifdef GLFW_V3
     glfwDestroyWindow(window);
+#endif
+#ifdef GLFW_V2
+    glfwCloseWindow();
+#endif
 
     glfwTerminate();
     exit(EXIT_SUCCESS);
@@ -354,7 +422,7 @@ bool gles2_harness_init(char const * dev)
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-    glClearDepth(1.0f);
+    glClearDepthf(1.0f);
     
     GLfloat lightVertices[] = {
         // cube
@@ -419,28 +487,8 @@ bool gles2_harness_init(char const * dev)
         gles2_harness_init_serial(dev);
     }
     
-/*
-    eu_initialize_random(time(NULL));
-    ddh_initialize();
+    slInitialize();
     
-    for(size_t i = 0; i < DDH_TOTAL_VERTICES; ++i) {
-        size_t g = ddh_light_group[i];
-        size_t d = ddh_light_dodecahedron[i];
-        size_t v = ddh_light_vertex[i];
-        assert(ddh_group_dodecahedron_vertex_offsets[g][d][v] == i);
-    }
-    
-    for(size_t g = 0; g < DDH_TOTAL_GROUPS; ++g) {
-        for(size_t d = 0; d < DDH_DODECAHEDRONS_PER_GROUP; ++d) {
-            for(size_t v = 0; v < DDH_VERTICES_PER_DODECAHEDRON; ++v) {
-                size_t i = ddh_group_dodecahedron_vertex_offsets[g][d][v];
-                assert(ddh_light_group[i] == g);
-                assert(ddh_light_dodecahedron[i] == d);
-                assert(ddh_light_vertex[i] == v);
-            }
-        }
-    }
-*/
     return true;
 }
 
@@ -474,7 +522,9 @@ int gles2_harness_serial_set_interface_attribs (int fd, int speed, int parity)
     tty.c_cflag &= ~(PARENB | PARODD);      // shut off parity
     tty.c_cflag |= parity;
     tty.c_cflag &= ~CSTOPB;
+#ifdef STAGE_LIGHTS_OSX
     tty.c_cflag &= ~CRTSCTS;
+#endif
 
     if (tcsetattr (fd, TCSANOW, &tty) != 0) {
         perror("error from tcsetattr");
@@ -635,209 +685,9 @@ void gles2_harness_update(float time)
 {
     int64_t frame_nsec = (int64_t)round(time * 1.0e9);
     
-    gles2_harness_generate_motion_input(time);
+    slProcess(frame_nsec);
     
-//    ddh_process(frame_nsec);
-    
-    gles2_harness_process_lookaround_input(time);
     gles2_harness_draw_lights(time);
-}
-
-
-void gles2_harness_generate_motion_input(float time)
-{
-    if(gles2_harness_serial_fd < 0) {
-        // Make up some fake input
-        float x = 0.0f, y = 0.0f, z = -1.0f;
-        
-        gles2_harness_fake_input_time =
-            fmodf(gles2_harness_fake_input_time + time / 5.0f, 10.0f);
-        if(gles2_harness_fake_input_time < 1.0f) {
-            float t = (gles2_harness_fake_input_time - 0.0f) *
-                M_PI * 2.0f * 5.0f;
-            x = cosf(t);
-            y = sinf(t);
-            //ddh_log("Generating fake input: rotate ccw (%g, %g)\n", x, y);
-        }
-        else if(gles2_harness_fake_input_time < 2.0f) {
-            float t = (gles2_harness_fake_input_time - 1.0f) *
-                M_PI * 2.0f * 5.0f;
-            x = cosf(-t);
-            y = sinf(-t);
-            //ddh_log("Generating fake input: rotate cw (%g, %g)\n", x, y);
-        }
-        else if(gles2_harness_fake_input_time < 3.0f) {
-            float t = (gles2_harness_fake_input_time - 2.0f) * 6.0f;
-            x = floorf(t / 2.0f) - 1.0f;
-            y = fmodf(t, 1.0f) * 2.0f - 1.0f;
-            //ddh_log("Generating fake input: linear forward (%g, %g)\n", x, y);
-        }
-        else if(gles2_harness_fake_input_time < 4.0f) {
-            float t = (gles2_harness_fake_input_time - 3.0f) * 6.0f;
-            x = floorf(t / 2.0f) - 1.0f;
-            y = -(fmodf(t, 1.0f) * 2.0f - 1.0f);
-            //ddh_log("Generating fake input: linear back (%g, %g)\n", x, y);
-        }
-        else if(gles2_harness_fake_input_time < 5.0f) {
-            float t = (gles2_harness_fake_input_time - 4.0f) * 3.0f;
-            z = -(fmodf(t, 2.0f) - 1.0f);
-            //ddh_log("Generating fake input: linear down (%g)\n", z);
-        }
-        else if(gles2_harness_fake_input_time < 6.0f) {
-            z = 1.0f;
-        }
-        else if(gles2_harness_fake_input_time < 7.0f) {
-            float t = (gles2_harness_fake_input_time - 6.0f) * 6.0f;
-            z = fmodf(t, 2.0f) - 1.0f;
-            //ddh_log("Generating fake input: linear up (%g)\n", z);
-        }
-        else if(gles2_harness_fake_input_time < 8.0f) {
-            z = 1.0f;
-        }
-        else {
-            z = 1.0f;
-        }
-        
-/*
-        for(size_t i = 0; i < 4; ++i) {
-            for(size_t j = 0; j < 4; ++j) {
-                float px = j * 2.0f / 3.0f - 1.0f;
-                float py = -(i * 2.0f / 3.0f - 1.0f);
-                float distsq = (px - x * 1.25) * (px - x * 1.25) +
-                    (py - y * 1.25) * (py - y * 1.25);
-                distsq *= 1.5f * 1.5f;
-                if(distsq < 1.0f) {
-                    distsq = 1.0f;
-                }
-                ddh_dais_proximity[i][j] = (int)((1.0f / distsq) *
-                    (z * -150.0f + 650.0f));
-                //ddh_log("%d,%d=%3d; ", i, j, ddh_dais_proximity[i][j]);
-            }
-            //ddh_log("\n");
-        }
-Y*/
-    }
-    else {
-        while(gles2_harness_read_serial() == GLES2_HARNESS_LINE_READY) {
-/*
-            int n;
-            
-            n = sscanf(gles2_harness_line_buf,
-                "dr:%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,",
-                &ddh_dais_proximity[0][0], &ddh_dais_proximity[0][1],
-                &ddh_dais_proximity[0][2], &ddh_dais_proximity[0][3],
-                &ddh_dais_proximity[1][0], &ddh_dais_proximity[1][1],
-                &ddh_dais_proximity[1][2], &ddh_dais_proximity[1][3],
-                &ddh_dais_proximity[2][0], &ddh_dais_proximity[2][1],
-                &ddh_dais_proximity[2][2], &ddh_dais_proximity[2][3],
-                &ddh_dais_proximity[3][0], &ddh_dais_proximity[3][1],
-                &ddh_dais_proximity[3][2], &ddh_dais_proximity[3][3]);
-            // if(n == 16) ddh_log("yay! %d\n", c++);
-*/
-        }
-    }
-}
-
-
-void gles2_harness_process_lookaround_input(float time)
-{
-    float horizontal_a = 0.0f;
-    if(gles2_harness_input_left && !gles2_harness_input_right) {
-        horizontal_a = gles2_harness_delta_v;
-        gles2_harness_horizontal_v += horizontal_a * time;
-    }
-    if(!gles2_harness_input_left && gles2_harness_input_right) {
-        horizontal_a = -gles2_harness_delta_v;
-        gles2_harness_horizontal_v += horizontal_a * time;
-    }
-    if(!gles2_harness_input_left && !gles2_harness_input_right) {
-        float delta_v;
-        
-        if(gles2_harness_horizontal_v > 0) {
-            horizontal_a = -gles2_harness_delta_v;
-        }
-        else {
-            horizontal_a = gles2_harness_delta_v;
-        }
-        
-        delta_v = horizontal_a * time;
-        
-        if(fabsf(delta_v) > fabsf(gles2_harness_horizontal_v)) {
-            horizontal_a = 0.f;
-            gles2_harness_horizontal_v = 0.f;
-        }
-        else {
-            gles2_harness_horizontal_v += delta_v;
-        }
-    }
-    if(gles2_harness_horizontal_v > gles2_harness_max_v) {
-        gles2_harness_horizontal_v = gles2_harness_max_v;
-        horizontal_a = 0.f;
-    }
-    if(gles2_harness_horizontal_v < -gles2_harness_max_v) {
-        gles2_harness_horizontal_v = -gles2_harness_max_v;
-        horizontal_a = 0.f;
-    }
-    
-    float vertical_a = 0.0f;
-    if(gles2_harness_input_up && !gles2_harness_input_down) {
-        vertical_a = gles2_harness_delta_v * gles2_harness_dist * 0.5f;
-        gles2_harness_vertical_v += vertical_a * time;
-    }
-    if(!gles2_harness_input_up && gles2_harness_input_down) {
-        vertical_a = -gles2_harness_delta_v * gles2_harness_dist * 0.5f;
-        gles2_harness_vertical_v += vertical_a * time;
-    }
-    if(!gles2_harness_input_up && !gles2_harness_input_down) {
-        float delta_v;
-        
-        if(gles2_harness_vertical_v > 0) {
-            vertical_a = -gles2_harness_delta_v;
-        }
-        else {
-            vertical_a = gles2_harness_delta_v;
-        }
-        
-        delta_v = vertical_a * time;
-        
-        if(fabsf(delta_v) > fabsf(gles2_harness_vertical_v)) {
-            vertical_a = 0.f;
-            gles2_harness_vertical_v = 0.f;
-        }
-        else {
-            gles2_harness_vertical_v += delta_v;
-        }
-    }
-    if(gles2_harness_vertical_v > gles2_harness_max_v) {
-        gles2_harness_vertical_v = gles2_harness_max_v;
-        vertical_a = 0.f;
-    }
-    if(gles2_harness_vertical_v < -gles2_harness_max_v) {
-        gles2_harness_vertical_v = -gles2_harness_max_v;
-        vertical_a = 0.f;
-    }
-    
-    
-    gles2_harness_horizontal_pos = fmodf(
-        gles2_harness_horizontal_pos +
-        gles2_harness_horizontal_v * time +
-        0.5f * horizontal_a * time * time,
-        (float)M_PI * 2.f);
-    gles2_harness_vertical_pos +=
-        gles2_harness_vertical_v * time +
-        0.5f * vertical_a * time * time;
-    if(gles2_harness_vertical_pos > 2.f) {
-        gles2_harness_vertical_pos = 2.f;
-        if(gles2_harness_vertical_v > 0.f) {
-            gles2_harness_vertical_v = 0.f;
-        }
-    }
-    if(gles2_harness_vertical_pos < -2.f) {
-        gles2_harness_vertical_pos = -2.f;
-        if(gles2_harness_vertical_v < 0.f) {
-            gles2_harness_vertical_v = 0.f;
-        }
-    }
 }
 
 
@@ -874,31 +724,24 @@ void gles2_harness_draw_lights(float time)
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
-/*
-    for(size_t i = 0; i < DDH_TOTAL_VERTICES; ++i) {
-        vertex_t const * vertex = &ddh_vertex_coords[i];
-        
-        if((((i / 120) == 4) && ((i / 20 % 6) == 5)) ||
-                (((i / 120) == 5) && ((i / 20 % 6) == 5))) {
-            continue;
-        }
-        
+    for(size_t i = 0; i < STAGE_LIGHTS_NUM_LIGHTS; ++i) {
+    	float x = ((float)i - (float)(STAGE_LIGHTS_NUM_LIGHTS - 1) / 2.0f) * lightSize * 2;
+    	
         /////////
         glusMatrix4x4Identityf(modelMatrix);
-        glusMatrix4x4Translatef(modelMatrix, vertex->x, vertex->y, vertex->z);
+        glusMatrix4x4Translatef(modelMatrix, x, 0, 0);
         glusMatrix4x4Scalef(modelMatrix, lightSize, lightSize, lightSize);
         glUniformMatrix4fv(g_modelMatrixLocation, 1, GL_FALSE, modelMatrix);
 
         glUniform4f(g_colorLocation,
-            ddh_frame_buffer[i].r * (1.0f / 255.0f),
-            ddh_frame_buffer[i].g * (1.0f / 255.0f),
-            ddh_frame_buffer[i].b * (1.0f / 255.0f),
+            slLights[i].r * (1.0f / 255.0f),
+            slLights[i].g * (1.0f / 255.0f),
+            slLights[i].b * (1.0f / 255.0f),
             0.0f);
 
         glDrawArrays(GL_TRIANGLES, 0, 36);
         ////////
     }
-*/
     
     glDisableVertexAttribArray(g_vertexLocation);
     
@@ -920,12 +763,12 @@ void gles2_harness_terminate(void)
 }
 
 
-void ddh_log(char const * format, ...)
+void utilLogOutput(char const * format, va_list args)
 {
-    va_list args;
-    
-    va_start(args, format);
     vprintf(format, args);
-    va_end(args);
 }
+
+
+#endif // STAGE_LIGHTS_USE_GLES2_HARNESS
+
 

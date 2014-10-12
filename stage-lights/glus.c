@@ -1,4 +1,9 @@
+#ifdef STAGE_LIGHTS_USE_GLES2_HARNESS
+
 #include "glus.h"
+
+
+#define PI 3.1415926535897932384626433832f
 
 
 GLfloat glusVector3Lengthf(const GLfloat vector[3])
@@ -198,11 +203,14 @@ bool glusPerspectivef(GLfloat result[16], const GLfloat fovy, const GLfloat aspe
 {
     GLfloat xmin, xmax, ymin, ymax;
 
-    ymax = zNear * tanf(fovy * ((float)M_PI / 360.0f));
+    ymax = zNear * tanf(fovy * (PI / 360.0f));
     ymin = -ymax;
     xmin = ymin * aspect;
     xmax = ymax * aspect;
 
     return glusFrustumf(result, xmin, xmax, ymin, ymax, zNear, zFar);
 }
+
+
+#endif // STAGE_LIGHTS_USE_GLES2_HARNESS
 

@@ -2,11 +2,18 @@
 #define GLUS_H_INCLUDED
 
 
+#if defined STAGE_LIGHTS_LINUX
+#include <GL/glfw.h>
+#elif defined STAGE_LIGHTS_OSX
 #include <GLFW/glfw3.h>
+#endif
 
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
+
+
+#define UNUSED(x) (void)x
 
 
 extern GLfloat glusVector3Lengthf(const GLfloat vector[3]);
@@ -22,3 +29,4 @@ extern bool glusPerspectivef(GLfloat result[16], const GLfloat fovy, const GLflo
 
 
 #endif
+
