@@ -1,0 +1,16 @@
+Test plan
+
+-sending a reboot command, the application is up and responding to commands within x seconds
+-simulated crash of the system, the application comes back up within x seconds
+-for a given set of mp3/wav files
+  -the application processes the entire file without crashing
+   (if possible, we should try to process audio files faster than realtime in order to do rapid regression testing)
+ -during periods of nonzero volume (or greater than a set threshold), there should be some output to the lights within x ms
+ -manually check that the lights react in an expected way
+   (checking for more complex behaviour should be done manually, for simplicity and so we can change the behaviour at any time)
+
+
+./clips
+	contains sample audio clips for testing specific features
+./tracks
+	contains full songs
