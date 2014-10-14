@@ -27,6 +27,11 @@
 
 #include "gles2_harness.h"
 
+
+#if defined STAGE_LIGHTS_LINUX
+#include <GL/glew.h>
+#endif
+
 #include <GL/gl.h>
 
 #if defined STAGE_LIGHTS_LINUX
@@ -223,6 +228,7 @@ int main(int argc, char * argv[])
     if (!glfwInit())
         exit(EXIT_FAILURE);
 
+
 #ifdef GLFW_V3
     window = glfwCreateWindow(640, 480, "Stage Lights", NULL, NULL);
     if (!window)
@@ -250,6 +256,15 @@ int main(int argc, char * argv[])
     //glfwMakeContextCurrent();
 
     glfwSetKeyCallback(key_callback);
+#endif
+    
+#if defined STAGE_LIGHTS_LINUX
+    GLenum err = glewInit();
+    if (GLEW_OK != err)
+    {
+        fprintf(stderr, "Error %s\n", glewGetErrorString(err));
+        exit(1);
+    }
 #endif
     
     gles2_harness_init(argc > 1 ? argv[1] : NULL);
