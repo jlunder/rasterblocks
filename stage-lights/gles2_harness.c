@@ -288,7 +288,7 @@ int main(int argc, char * argv[])
 #ifdef GLFW_V3
         glfwGetFramebufferSize(window, &width, &height);
 #endif
-#ifdef GLFW_V3
+#ifdef GLFW_V2
         glfwGetWindowSize(&width, &height);
 #endif
 
