@@ -1,0 +1,27 @@
+
+taken from
+https://github.com/zonque/simple-alsa-loop
+
+to get list of audio interfaces:
+
+ cat /proc/asound/cards
+
+ ex.  1 [USB            ]: USB-Audio - Scarlett 2i2 USB
+                      Focusrite Scarlett 2i2 USB at usb-0000:00:14.0-3.2, high speed
+
+
+ device name is hw:USB
+
+
+not added to makefile yet, compile with:
+	gcc loop.c -lasound -o loop
+
+to run:
+	loop [PLAYBACK_DEVICE] [CAPTURE_DEVICE]
+
+	ie.
+	loop hw:USB hw:USB
+
+
+bugs:
+ need to reconnect USB interface each time it runs..
