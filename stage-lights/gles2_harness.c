@@ -28,7 +28,11 @@
 #include "gles2_harness.h"
 
 
+#ifdef STAGE_LIGHTS_USE_GLFW3_GLES2_HARNESS
+#include <GLFW/glfw3.h>
+#else
 #include <GLES2/gl2.h>
+#endif
 
 #include <time.h>
 
@@ -96,9 +100,13 @@ float gles2_harness_vertical_pos = 0.0f;
 
 
 static char const * light_frag =
+#ifdef STAGE_LIGHTS_USE_GLFW3_GLES2_HARNESS
+    "uniform vec4 u_color;\n"
+    "varying vec4 v_texCoord;\n"
+#else
     "uniform lowp vec4 u_color;\n"
-    "\n"
     "varying mediump vec4 v_texCoord;\n"
+#endif
     "\n"
     "void main(void)\n"
     "{\n"
@@ -193,7 +201,13 @@ bool gles2_harness_init(char const * dev)
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+// Funny story, modern OpenGL differs from OpenGL ES (for us) ONLY in that ES
+// only has glClearDepthf() and non-ES only has glClearDepth()..!
+#ifdef STAGE_LIGHTS_USE_GLFW3_GLES2_HARNESS
+    glClearDepth(1.0f);
+#else
     glClearDepthf(1.0f);
+#endif
     
     GLfloat lightVertices[] = {
         // cube
@@ -293,9 +307,6 @@ int gles2_harness_serial_set_interface_attribs (int fd, int speed, int parity)
     tty.c_cflag &= ~(PARENB | PARODD);      // shut off parity
     tty.c_cflag |= parity;
     tty.c_cflag &= ~CSTOPB;
-#ifdef STAGE_LIGHTS_OSX
-    tty.c_cflag &= ~CRTSCTS;
-#endif
 
     if (tcsetattr (fd, TCSANOW, &tty) != 0) {
         perror("error from tcsetattr");
@@ -333,7 +344,7 @@ void gles2_harness_init_serial(char const * dev)
     
     // set speed to 115,200 bps, 8n1 (no parity)
     gles2_harness_serial_set_interface_attribs(gles2_harness_serial_fd,
-        B115200, 0);
+        115200, 0);
     
     // set no blocking
     gles2_harness_serial_set_blocking(gles2_harness_serial_fd, 0);
