@@ -2,5 +2,5 @@ README
 
 compilation on Ubuntu 14.04:
 
-sudo apt-get install libglfw-dev 
-sudo apt-get install libglew-dev
+sudo apt-get install libgles2-mesa-dev
+sudo apt-get install libsdl2-dev
