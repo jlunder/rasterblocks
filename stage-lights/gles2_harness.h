@@ -6,9 +6,7 @@
 #include <stdbool.h>
 
 
-void gles2_harness_main(int argc, char * argv[]);
-
-bool gles2_harness_init(char const * dev);
+bool gles2_harness_init(int argc, char * argv[]);
 int gles2_harness_serial_set_interface_attribs(int fd, int speed, int parity);
 void gles2_harness_serial_set_blocking(int fd, int should_block);
 void gles2_harness_init_serial(char const * dev);

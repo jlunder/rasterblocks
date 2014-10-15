@@ -31,7 +31,7 @@ int main(int argc, char * argv[])
     
     clock_gettime(CLOCK_MONOTONIC, &lastts);
     
-    slInitialize();
+    slInitialize(argc, argv);
 
 	while(true)
     {

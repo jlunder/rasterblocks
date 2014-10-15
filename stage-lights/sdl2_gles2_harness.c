@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
 #ifdef STAGE_LIGHTS_OSX
     mach_timebase_info(&timebase);
 #endif
-    gles2_harness_init(argc > 1 ? argv[1] : NULL);
+    gles2_harness_init(argc, argv);
 
     while (!quit)
     {

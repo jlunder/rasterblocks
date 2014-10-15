@@ -61,7 +61,7 @@
 
 static void error_callback(int error, const char* description)
 {
-    UNUSED(error);
+    GLUS_UNUSED(error);
     
     fputs(description, stderr);
 }
@@ -73,11 +73,11 @@ static void key_callback(
 	int scancode, int action,
 	int mods)
 {
-	UNUSED(window);
-	UNUSED(key);
-    UNUSED(scancode);
-    UNUSED(action);
-    UNUSED(mods);
+	GLUS_UNUSED(window);
+	GLUS_UNUSED(key);
+    GLUS_UNUSED(scancode);
+    GLUS_UNUSED(action);
+    GLUS_UNUSED(mods);
     
 /*
     if(action == GLFW_PRESS) {
@@ -173,7 +173,7 @@ int main(int argc, char * argv[])
     }
 #endif
     
-    gles2_harness_init(argc > 1 ? argv[1] : NULL);
+    gles2_harness_init(argc, argv);
 
     while (!glfwWindowShouldClose(window))
     {
