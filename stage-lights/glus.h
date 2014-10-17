@@ -13,7 +13,7 @@
 #include <math.h>
 
 
-#define UNUSED(x) (void)x
+#define GLUS_UNUSED(x) (void)(x)
 
 
 extern GLfloat glusVector3Lengthf(const GLfloat vector[3]);

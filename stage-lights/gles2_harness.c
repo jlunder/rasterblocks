@@ -63,6 +63,9 @@
 #include "stage_lights.h"
 
 
+SLColor slHarnessLights[SL_NUM_LIGHTS];
+
+
 static GLuint g_program;
 static GLuint g_vertShader;
 static GLuint g_fragShader;
@@ -145,7 +148,7 @@ static void show_info_log(
     free(log);
 }
 
-bool gles2_harness_init(char const * dev)
+bool gles2_harness_init(int argc, char * argv[])
 {
     GLchar const * vert_source = light_vert;
     GLint vert_length = strlen(light_vert);
@@ -268,11 +271,11 @@ bool gles2_harness_init(char const * dev)
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
-    if(dev != NULL) {
-        gles2_harness_init_serial(dev);
-    }
+    //if(dev != NULL) {
+    //    gles2_harness_init_serial(dev);
+    //}
     
-    slInitialize();
+    slInitialize(argc, argv);
     
     return true;
 }
@@ -481,7 +484,7 @@ void gles2_harness_draw_lights(float time)
     
     GLfloat lightSize = 0.02f;
     
-    UNUSED(time);
+    GLUS_UNUSED(time);
     
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
@@ -504,8 +507,8 @@ void gles2_harness_draw_lights(float time)
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
-    for(size_t i = 0; i < STAGE_LIGHTS_NUM_LIGHTS; ++i) {
-    	float x = ((float)i - (float)(STAGE_LIGHTS_NUM_LIGHTS - 1) / 2.0f) * lightSize * 2;
+    for(size_t i = 0; i < SL_NUM_LIGHTS; ++i) {
+    	float x = ((float)i - (float)(SL_NUM_LIGHTS - 1) / 2.0f) * lightSize * 2;
     	
         /////////
         glusMatrix4x4Identityf(modelMatrix);
@@ -514,9 +517,9 @@ void gles2_harness_draw_lights(float time)
         glUniformMatrix4fv(g_modelMatrixLocation, 1, GL_FALSE, modelMatrix);
 
         glUniform4f(g_colorLocation,
-            slLights[i].r * (1.0f / 255.0f),
-            slLights[i].g * (1.0f / 255.0f),
-            slLights[i].b * (1.0f / 255.0f),
+            slHarnessLights[i].r * (1.0f / 255.0f),
+            slHarnessLights[i].g * (1.0f / 255.0f),
+            slHarnessLights[i].b * (1.0f / 255.0f),
             0.0f);
 
         glDrawArrays(GL_TRIANGLES, 0, 36);
