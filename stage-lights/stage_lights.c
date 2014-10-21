@@ -1,137 +1,250 @@
 #include "stage_lights.h"
 
+#include "audio_input.h"
+#include "audio_analysis.h"
+#include "configuration.h"
+#include "light_generation.h"
+
+
+/*
+static char const * const g_slSubsystemNames[SLS_COUNT] = {
+    "MAIN",
+    "CONFIGURATION",
+    "AUDIO_INPUT",
+    "AUDIO_ANALYSIS",
+    "LIGHT_GENERATION",
+    "LIGHT_OUTPUT",
+    "HOT_CONFIGURATION",
+};
+*/
+
+
+static size_t g_slGentleRestartConsecutiveCount = 0;
+
+
+static int g_slSavedArgc = 0;
+static char * * g_slSavedArgv = NULL;
+
+static SLLogLevel g_slSubsystemLogLevels[SLS_COUNT];
+
+static SLConfiguration g_slConfiguration;
+static SLSubsystem g_slCurrentSubsystem = SLS_MAIN;
+
+static bool g_slGentleRestartRequested = false;
+
+static SLLightData g_slLastFrameLightData;
+
+
+void slProcessSubsystems(bool * pConfigChanged);
+void slProcessConfigChanged(void);
+void slProcessGentleRestart(void);
+
+
+SLSubsystem slChangeSubsystem(SLSubsystem subsystem)
+{
+    SLSubsystem lastSubsystem = g_slCurrentSubsystem;
+    
+    slVerify(subsystem >= 0 && subsystem < SLS_COUNT);
+    g_slCurrentSubsystem = subsystem;
+    return lastSubsystem;
+}
+
+
+void slRequestGentleRestart(void)
+{
+    g_slGentleRestartRequested = true;
+}
+
+
+void slRequestImmediateRestart(void)
+{
+    exit(2);
+}
+
+
+void slLog(SLLogLevel level, char const * format, ...)
+{
+    va_list va;
+    
+    slAssert(g_slCurrentSubsystem >= 0 && g_slCurrentSubsystem < SLS_COUNT);
+    if(level < g_slSubsystemLogLevels[g_slCurrentSubsystem]) {
+        return;
+    }
+    
+    va_start(va, format);
+    slLogOutput(format, va);
+    va_end(va);
+}
+
 
 void slInitialize(int argc, char * argv[])
 {
-    UNUSED(argc);
-    UNUSED(argv);
+    SLSubsystem lastSubsystem = slChangeSubsystem(SLS_MAIN);
+    bool reinitFrameData = !g_slGentleRestartRequested;
+    
+    // Init global variables
+    g_slSavedArgc = argc;
+    g_slSavedArgv = argv;
+    
+    g_slGentleRestartRequested = false;
+    
+    for(size_t i = 0; i < SLS_COUNT; ++i) {
+        g_slSubsystemLogLevels[i] = SLLL_WARNING;
+    }
+    
+    slChangeSubsystem(SLS_CONFIGURATION);
+    slConfigurationSetDefaults(&g_slConfiguration);
+    if(reinitFrameData) {
+        for(size_t i = 0; i < SL_NUM_LIGHTS; ++i) {
+            g_slLastFrameLightData.lights[i].r = 0;
+            g_slLastFrameLightData.lights[i].g = 0;
+            g_slLastFrameLightData.lights[i].b = 0;
+            g_slLastFrameLightData.lights[i].x = 0;
+        }
+    }
+    
+    slChangeSubsystem(SLS_CONFIGURATION);
+    slConfigurationLoad(&g_slConfiguration);
+    
+    slChangeSubsystem(SLS_AUDIO_INPUT);
+    slAudioInputInitialize(&g_slConfiguration);
+    
+    slChangeSubsystem(SLS_AUDIO_ANALYSIS);
+    slAudioAnalysisInitialize(&g_slConfiguration);
+    
+    slChangeSubsystem(SLS_LIGHT_GENERATION);
+    slLightGenerationInitialize(&g_slConfiguration);
+    
+    slChangeSubsystem(SLS_LIGHT_OUTPUT);
+    slLightOutputInitialize(&g_slConfiguration);
+    
+    slChangeSubsystem(SLS_HOT_CONFIGURATION);
+    slHotConfigurationInitialize(&g_slConfiguration);
+    
+    slChangeSubsystem(SLS_MAIN);
+    // If something goes wrong during init, reinit'ing won't help -- that
+    // should be a fatal error!
+    slAssert(!g_slGentleRestartRequested);
+    
+    slChangeSubsystem(lastSubsystem);
 }
 
 
 void slShutdown(void)
 {
+    SLSubsystem lastSubsystem = slChangeSubsystem(SLS_MAIN);
+    
+    slAssert(lastSubsystem == SLS_MAIN);
+    
+    slChangeSubsystem(SLS_HOT_CONFIGURATION);
+    slHotConfigurationShutdown();
+    
+    slChangeSubsystem(SLS_LIGHT_OUTPUT);
+    slLightOutputShutdown();
+    
+    slChangeSubsystem(SLS_LIGHT_GENERATION);
+    slLightGenerationShutdown();
+    
+    slChangeSubsystem(SLS_AUDIO_ANALYSIS);
+    slAudioAnalysisShutdown();
+    
+    slChangeSubsystem(SLS_AUDIO_INPUT);
+    slAudioInputShutdown();
+    
+    slChangeSubsystem(lastSubsystem);
 }
 
 
 void slProcess(uint64_t nsSinceLastProcess)
 {
-	UNUSED(nsSinceLastProcess);
-	slLightOutputShowLights(NULL);
-}
-
-
-void slConfigurationSetDefaults(SLConfiguration * config)
-{
-    UNUSED(config);
-}
-
-
-void slConfigurationLoad(SLConfiguration * config)
-{
-    UNUSED(config);
-}
-
-
-void slConfigurationSave(SLConfiguration const * config)
-{
-    UNUSED(config);
-}
-
-
-void slAudioInputInitialize(SLConfiguration const * config)
-{
-    UNUSED(config);
-}
-
-
-void slAudioInputShutdown(void)
-{
-}
-
-
-void slAudioInputBlockingRead(SLRawAudio * audio)
-{
-    UNUSED(audio);
-}
-
-
-void slAudioAnalysisInitialize(SLConfiguration const * config)
-{
-    UNUSED(config);
-}
-
-
-void slAudioAnalysisShutdown(void)
-{
-}
-
-
-void slAudioAnalysisAnalyze(SLRawAudio const * audio,
-    SLAnalyzedAudio * analysis)
-{
-    UNUSED(audio);
-    UNUSED(analysis);
-}
-
-
-void slLightGenerationInitialize(SLConfiguration const * config)
-{
-    UNUSED(config);
-}
-
-
-void slLightGenerationShutdown(void)
-{
-}
-
-
-void slLightGenerationGenerate(SLAnalyzedAudio const * analysis,
-    SLLightData * lights)
-{
-    UNUSED(analysis);
-    UNUSED(lights);
-}
-
-
-void slLightOutputInitialize(SLConfiguration const * config)
-{
-    UNUSED(config);
-}
-
-
-void slLightOutputShutdown(void)
-{
-}
-
-
-void slLightOutputShowLights(SLLightData const * lights)
-{
-    UNUSED(lights);
+    SLSubsystem lastSubsystem = slChangeSubsystem(SLS_MAIN);
+    bool configChanged = false;
     
-	for(size_t i = 0; i < SL_NUM_LIGHTS; ++i) {
-		slHarnessLights[i].r = i * 255 / (SL_NUM_LIGHTS - 1);
-		slHarnessLights[i].g = i * 255 / (SL_NUM_LIGHTS - 1);
-		slHarnessLights[i].b = i * 255 / (SL_NUM_LIGHTS - 1);
-	}
+    UNUSED(nsSinceLastProcess);
+    
+    slAssert(lastSubsystem == SLS_MAIN);
+    
+    slProcessSubsystems(&configChanged);
+    
+    if(!g_slGentleRestartRequested && configChanged) {
+        slProcessConfigChanged();
+    }
+    else if(g_slGentleRestartRequested) {
+        ++g_slGentleRestartConsecutiveCount;
+        slProcessGentleRestart();
+    }
+    else {
+        g_slGentleRestartConsecutiveCount = 0;
+    }
+    
+    slChangeSubsystem(lastSubsystem);
 }
 
 
-void slHotConfigurationInitialize(SLConfiguration const * config)
+void slProcessSubsystems(bool * pConfigChanged)
 {
-    UNUSED(config);
+    SLSubsystem lastSubsystem = slChangeSubsystem(SLS_MAIN);
+    SLRawAudio rawAudio;
+    SLAnalyzedAudio analysis;
+    
+    slChangeSubsystem(SLS_AUDIO_INPUT);
+    slAudioInputBlockingRead(&rawAudio);
+    
+    slChangeSubsystem(SLS_LIGHT_OUTPUT);
+    slLightOutputShowLights(&g_slLastFrameLightData);
+    
+    slChangeSubsystem(SLS_AUDIO_ANALYSIS);
+    slAudioAnalysisAnalyze(&rawAudio, &analysis);
+    
+    slChangeSubsystem(SLS_LIGHT_GENERATION);
+    slLightGenerationGenerate(&analysis, &g_slLastFrameLightData);
+    
+    // Output will happen right after the next audio read, to minimize jitter.
+    slChangeSubsystem(SLS_HOT_CONFIGURATION);
+    slHotConfigurationProcessAndUpdateConfiguration(&g_slConfiguration,
+        pConfigChanged);
+    
+    slChangeSubsystem(lastSubsystem);
 }
 
 
-void slHotConfigurationShutdown(void)
+void slProcessConfigChanged(void)
 {
+    SLSubsystem lastSubsystem = slChangeSubsystem(SLS_MAIN);
+    
+    slConfigurationSave(&g_slConfiguration);
+    
+    slChangeSubsystem(SLS_AUDIO_INPUT);
+    slAudioInputInitialize(&g_slConfiguration);
+    
+    slChangeSubsystem(SLS_AUDIO_ANALYSIS);
+    slAudioAnalysisInitialize(&g_slConfiguration);
+    
+    slChangeSubsystem(SLS_LIGHT_GENERATION);
+    slLightGenerationInitialize(&g_slConfiguration);
+    
+    slChangeSubsystem(SLS_LIGHT_OUTPUT);
+    slLightOutputInitialize(&g_slConfiguration);
+    
+    slChangeSubsystem(SLS_HOT_CONFIGURATION);
+    slHotConfigurationInitialize(&g_slConfiguration);
+    
+    slChangeSubsystem(lastSubsystem);
 }
 
 
-void slHotConfigurationProcessAndUpdateConfiguration(SLConfiguration * config,
-    bool * configurationModified)
+void slProcessGentleRestart(void)
 {
-    UNUSED(config);
-    UNUSED(configurationModified);
+    SLSubsystem lastSubsystem = slChangeSubsystem(SLS_MAIN);
+    
+    slShutdown();
+    if(g_slGentleRestartConsecutiveCount >
+            SL_MAX_CONSECUTIVE_GENTLE_RESTARTS) {
+        slRequestImmediateRestart();
+    }
+    slInitialize(g_slSavedArgc, g_slSavedArgv);
+    
+    slChangeSubsystem(lastSubsystem);
 }
 
 

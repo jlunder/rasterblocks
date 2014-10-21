@@ -63,7 +63,7 @@
 #include "stage_lights.h"
 
 
-SLColor slHarnessLights[SL_NUM_LIGHTS];
+SLColor gles2_harness_lights[SL_NUM_LIGHTS];
 
 
 static GLuint g_program;
@@ -517,9 +517,9 @@ void gles2_harness_draw_lights(float time)
         glUniformMatrix4fv(g_modelMatrixLocation, 1, GL_FALSE, modelMatrix);
 
         glUniform4f(g_colorLocation,
-            slHarnessLights[i].r * (1.0f / 255.0f),
-            slHarnessLights[i].g * (1.0f / 255.0f),
-            slHarnessLights[i].b * (1.0f / 255.0f),
+            gles2_harness_lights[i].r * (1.0f / 255.0f),
+            gles2_harness_lights[i].g * (1.0f / 255.0f),
+            gles2_harness_lights[i].b * (1.0f / 255.0f),
             0.0f);
 
         glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -546,9 +546,30 @@ void gles2_harness_terminate(void)
 }
 
 
-void utilLogOutput(char const * format, va_list args)
+void slLogOutput(char const * format, va_list args)
 {
     vprintf(format, args);
+}
+
+
+void slLightOutputInitialize(SLConfiguration const * config)
+{
+    UNUSED(config);
+}
+
+
+void slLightOutputShutdown(void)
+{
+}
+
+
+void slLightOutputShowLights(SLLightData const * lights)
+{
+    UNUSED(lights);
+    
+	for(size_t i = 0; i < SL_NUM_LIGHTS; ++i) {
+		gles2_harness_lights[i] = lights->lights[i];
+	}
 }
 
 

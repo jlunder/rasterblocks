@@ -55,9 +55,27 @@ int main(int argc, char * argv[])
     exit(EXIT_SUCCESS);
 }
 
-void utilLogOutput(char const * format, va_list args)
+
+void slLogOutput(char const * format, va_list args)
 {
     vprintf(format, args);
+}
+
+
+void slLightOutputInitialize(SLConfiguration const * config)
+{
+    UNUSED(config);
+}
+
+
+void slLightOutputShutdown(void)
+{
+}
+
+
+void slLightOutputShowLights(SLLightData const * lights)
+{
+    UNUSED(lights);
 }
 
 
