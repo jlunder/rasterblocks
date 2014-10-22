@@ -13,8 +13,7 @@ to get list of audio interfaces:
  device name is hw:USB
 
 
-not added to makefile yet, compile with:
-	gcc loop.c -lasound -o loop
+
 
 to run:
 	loop [PLAYBACK_DEVICE] [CAPTURE_DEVICE]
@@ -23,5 +22,7 @@ to run:
 	loop hw:USB hw:USB
 
 
-bugs:
- need to reconnect USB interface each time it runs..
+capture_client, from jack source code examples
+
+jackd -dalsa -dhw:USB
+jack_lsp

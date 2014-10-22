@@ -13,22 +13,22 @@
  *
  */
 
-/*
- * See README
- */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <alsa/asoundlib.h>
+ #include <signal.h>
 
-#define BUFSIZE (1024 * 4)
-
-snd_pcm_t *playback_handle, *capture_handle;
-int buf[BUFSIZE * 2];
-
-static unsigned int rate = 192000;
+// HW params
+// these are the only parameters that work for the focusrite 2i2
+static unsigned int rate = 44100;
 static unsigned int format = SND_PCM_FORMAT_S32_LE;
+static unsigned int channels = 2;
+
+#define BUFFER_SIZE (512)
+int buf[BUFFER_SIZE * 2];
+snd_pcm_t *playback_handle, *capture_handle;
 
 static int open_stream(snd_pcm_t **handle, const char *name, int dir)
 {
@@ -73,7 +73,7 @@ static int open_stream(snd_pcm_t **handle, const char *name, int dir)
 		return err;
 	}
 
-	if ((err = snd_pcm_hw_params_set_channels(*handle, hw_params, 2)) < 0) {
+	if ((err = snd_pcm_hw_params_set_channels(*handle, hw_params, channels)) < 0) {
 		fprintf(stderr, "%s (%s): cannot set channel count(%s)\n",
 			name, dirname, snd_strerror(err));
 		return err;
@@ -97,7 +97,7 @@ static int open_stream(snd_pcm_t **handle, const char *name, int dir)
 			name, dirname, snd_strerror(err));
 		return err;
 	}
-	if ((err = snd_pcm_sw_params_set_avail_min(*handle, sw_params, BUFSIZE)) < 0) {
+	if ((err = snd_pcm_sw_params_set_avail_min(*handle, sw_params, BUFFER_SIZE)) < 0) {
 		fprintf(stderr, "%s (%s): cannot set minimum available count(%s)\n",
 			name, dirname, snd_strerror(err));
 		return err;
@@ -115,9 +115,17 @@ static int open_stream(snd_pcm_t **handle, const char *name, int dir)
 
 	return 0;
 }
+void intHandler(int signal) {
+	fprintf(stdout, "Closing playback/capture devices\n");
+	snd_pcm_close(playback_handle);
+	snd_pcm_close(capture_handle);
+	exit(0);
+}
   
 int main(int argc, char *argv[])
 {
+	signal(SIGINT, intHandler);
+
 	int err;
 
 	if ((err = open_stream(&playback_handle, argv[1], SND_PCM_STREAM_PLAYBACK)) < 0)
@@ -146,20 +154,20 @@ int main(int argc, char *argv[])
 		if ((err = snd_pcm_wait(playback_handle, 1000)) < 0) {
 			fprintf(stderr, "poll failed(%s)\n", strerror(errno));
 			break;
-		}	           
+		}
 
 		avail = snd_pcm_avail_update(capture_handle);
 		if (avail > 0) {
-			if (avail > BUFSIZE)
-				avail = BUFSIZE;
+			if (avail > BUFFER_SIZE)
+				avail = BUFFER_SIZE;
 
 			snd_pcm_readi(capture_handle, buf, avail);
 		}
 
 		avail = snd_pcm_avail_update(playback_handle);
 		if (avail > 0) {
-			if (avail > BUFSIZE)
-				avail = BUFSIZE;
+			if (avail > BUFFER_SIZE)
+				avail = BUFFER_SIZE;
 
 			snd_pcm_writei(playback_handle, buf, avail);
 		}
