@@ -63,8 +63,7 @@ int main (int argc, char** argv)
 		width = fftLen / 2;
 	}
 
-	setupFftw()
-;
+	setupFftw();
 	playWav();
 
 	destroyFftw();
