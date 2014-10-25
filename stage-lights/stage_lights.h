@@ -104,7 +104,11 @@ void slRequestGentleRestart(void);
 // the whole process
 void slRequestImmediateRestart(void);
 
-void slLog(SLLogLevel level, char const * format, ...);
+void slLog(SLLogLevel level, char const * sourceFile, int sourceLine,
+    char const * format, ...);
+bool slLogShouldLog(SLLogLevel level, char const * sourceFile,
+    int sourceLine);
+void slLogOutput(char const * format, ...);
 
 #ifdef NDEBUG
 #define slAssert(assertExpr) do {} while(false)
@@ -112,7 +116,8 @@ void slLog(SLLogLevel level, char const * format, ...);
 #define slAssert(assertExpr) \
     do { \
         if(!(assertExpr)) { \
-            slLog(SLLL_ERROR, "Assert fail (%s:%d): expected %s\n", \
+            slLog(SLLL_ERROR, __FILE__, __LINE__, \
+                "Assert fail (%s:%d): expected %s\n", \
                 __FILE__, __LINE__, #assertExpr); \
             slRequestImmediateRestart(); \
         } \
@@ -122,28 +127,31 @@ void slLog(SLLogLevel level, char const * format, ...);
 #define slVerify(verifyExpr) \
     do { \
         if(!(verifyExpr)) { \
-            slLog(SLLL_ERROR, "Fatal error (%s:%d): expected %s\n", \
-                __FILE__, __LINE__, #verifyExpr); \
+            slLog(SLLL_ERROR, __FILE__, __LINE__, \
+                "Fatal error (%s:%d): expected %s\n", __FILE__, __LINE__, \
+                #verifyExpr); \
             slRequestImmediateRestart(); \
         } \
     } while(false)
 
 #define slFatal(...) \
     do { \
-        slLog(SLLL_ERROR, "Fatal error (%s:%d): ", __FILE__, __LINE__); \
-        slLog(SLLL_ERROR, __VA_ARGS__); \
+        if(slLogShouldLog(SLLL_ERROR, __FILE__, __LINE__)) { \
+            slLog(SLLL_ERROR, __FILE__, __LINE__, "Fatal error: "); \
+            slLogOutput(__VA_ARGS__); \
+        } \
         slRequestImmediateRestart(); \
     } while(false)
 
 #ifdef NDEBUG
 #define slDebugInfo(...) do {} while(false)
 #else
-#define slDebugInfo(...) slLog(SLLL_INFO, __VA_ARGS__)
+#define slDebugInfo(...) slLog(SLLL_INFO, __FILE__, __LINE__, __VA_ARGS__)
 #endif
-
-#define slInfo(...) slLog(SLLL_INFO, __VA_ARGS__)
-#define slWarning(...) slLog(SLLL_WARNING, __VA_ARGS__)
-#define slError(...) slLog(SLLL_ERROR, __VA_ARGS__)
+ 
+#define slInfo(...) slLog(SLLL_INFO, __FILE__, __LINE__, __VA_ARGS__)
+#define slWarning(...) slLog(SLLL_WARNING, __FILE__, __LINE__, __VA_ARGS__)
+#define slError(...) slLog(SLLL_ERROR, __FILE__, __LINE__, __VA_ARGS__)
 
 
 // Framework: coordinates all the other subsystems
@@ -153,7 +161,7 @@ void slProcess(uint64_t nsSinceLastProcess);
 
 
 // Implemented in the harness!
-void slLogOutput(char const * format, va_list va);
+void slLogOutputV(char const * format, va_list va);
 void slLightOutputInitialize(SLConfiguration const * config);
 void slLightOutputShutdown(void);
 void slLightOutputShowLights(SLLightData const * lights);

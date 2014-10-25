@@ -546,7 +546,7 @@ void gles2_harness_terminate(void)
 }
 
 
-void slLogOutput(char const * format, va_list args)
+void slLogOutputV(char const * format, va_list args)
 {
     vprintf(format, args);
 }

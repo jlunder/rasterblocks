@@ -6,7 +6,12 @@
 #include "light_generation.h"
 
 
-/*
+static char const * const g_slLogLevelNames[SLLL_COUNT] = {
+    "INFO",
+    "WARN",
+    "ERR"
+};
+
 static char const * const g_slSubsystemNames[SLS_COUNT] = {
     "MAIN",
     "CONFIGURATION",
@@ -16,7 +21,6 @@ static char const * const g_slSubsystemNames[SLS_COUNT] = {
     "LIGHT_OUTPUT",
     "HOT_CONFIGURATION",
 };
-*/
 
 
 static size_t g_slGentleRestartConsecutiveCount = 0;
@@ -62,17 +66,45 @@ void slRequestImmediateRestart(void)
 }
 
 
-void slLog(SLLogLevel level, char const * format, ...)
+bool slLogShouldLog(SLLogLevel level, char const * sourceFile, int sourceLine)
+{
+    UNUSED(sourceFile);
+    UNUSED(sourceLine);
+    slAssert(g_slCurrentSubsystem >= 0 && g_slCurrentSubsystem < SLS_COUNT);
+    return level >= g_slSubsystemLogLevels[g_slCurrentSubsystem];
+}
+
+
+void slLog(SLLogLevel level, char const * sourceFile, int sourceLine,
+    char const * format, ...)
+{
+    if(slLogShouldLog(level, sourceFile, sourceLine)) {
+        char const * logLevelName = "???";
+        char const * subsystemName = "???";
+        va_list va;
+        
+        if(level >= 0 && level < SLLL_COUNT) {
+            logLevelName = g_slLogLevelNames[level];
+        }
+        if(g_slCurrentSubsystem >= 0 && g_slCurrentSubsystem < SLS_COUNT) {
+            subsystemName = g_slSubsystemNames[g_slCurrentSubsystem];
+        }
+        
+        slLogOutput("%s[%s]:", logLevelName, subsystemName);
+        
+        va_start(va, format);
+        slLogOutputV(format, va);
+        va_end(va);
+    }
+}
+
+
+void slLogOutput(char const * format, ...)
 {
     va_list va;
     
-    slAssert(g_slCurrentSubsystem >= 0 && g_slCurrentSubsystem < SLS_COUNT);
-    if(level < g_slSubsystemLogLevels[g_slCurrentSubsystem]) {
-        return;
-    }
-    
     va_start(va, format);
-    slLogOutput(format, va);
+    slLogOutputV(format, va);
     va_end(va);
 }
 

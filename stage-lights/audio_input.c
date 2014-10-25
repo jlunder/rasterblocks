@@ -22,7 +22,7 @@ void slAudioInputBlockingRead(SLRawAudio * audio)
 {
 	//UNUSED(audio);
 	audio_file_read_looping(audio,testwav,SL_AUDIO_FRAMES_PER_VIDEO_FRAME,2);
-
+	slFatal("BLARMMMMM: %d\n", 34);
 }
 
 

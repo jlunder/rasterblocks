@@ -56,7 +56,7 @@ int main(int argc, char * argv[])
 }
 
 
-void slLogOutput(char const * format, va_list args)
+void slLogOutputV(char const * format, va_list args)
 {
     vprintf(format, args);
 }
