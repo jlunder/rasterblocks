@@ -1,5 +1,6 @@
 .cproject
 .project
+.settings
 *.bbprojectd
 *.o
 *.o.*
