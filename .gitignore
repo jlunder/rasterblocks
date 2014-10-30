@@ -1,4 +1,7 @@
 .cproject
 .project
+*.bbprojectd
 *.o
+*.o.*
 *.d
+*.d.*
