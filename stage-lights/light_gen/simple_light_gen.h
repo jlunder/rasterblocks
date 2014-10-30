@@ -27,7 +27,7 @@ void debug_lights(SLLightData * lights, int num_lights)
 	printf("\n");
 }
 
-void light_gen_bass(SLAnalyzedAudio const * analysis, SLLightData * lights, int num_lights)
+void slLightGenBasicBass(SLAnalyzedAudio const * analysis, SLLightData * lights, int num_lights)
 {
 	//debug_analysis(analysis);
 	set_brightness(&lights->lights[0], get_brightness(&lights->lights[0])/2);

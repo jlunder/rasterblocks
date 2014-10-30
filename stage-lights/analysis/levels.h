@@ -1,7 +1,7 @@
 
 #include <math.h>
 
-void levels_to_bass_analyze(SLRawAudio const * audio, SLAnalyzedAudio * analysis, int num_frames, int channels)
+void slAnalysisBasicLevels(SLRawAudio const * audio, SLAnalyzedAudio * analysis, int num_frames, int channels)
 {
 		float frameSum = 0;
 		float frameRMS = 0;

@@ -7,29 +7,31 @@ static snd_pcm_t *alsaHandle;
 static void open_alsa(SF_INFO sfinfo);
 static void play_audio(float* audioBuffer, unsigned int audioLen);
 
-SNDFILE* audio_file_open(char *file_name) {
-	SNDFILE *inFile = NULL;
+
+SNDFILE* g_snd_file;
+
+SNDFILE* slSndFileOpen(char *file_name) {
 	SF_INFO  sfinfo;
 
-	if ((inFile = sf_open(file_name, SFM_READ, &sfinfo)) == NULL) {
+	if ((g_snd_file = sf_open(file_name, SFM_READ, &sfinfo)) == NULL) {
 		printf("Not able to open input file %s.\n", file_name);
 		return NULL;
 	}
 
 	open_alsa(sfinfo);
-	return inFile;
+	return g_snd_file;
 
 }
 
-void audio_file_close(SNDFILE* file) {
-	sf_close(file);
+void slSndFileClose() {
+	sf_close(g_snd_file);
 }
 
 
-static void audio_file_read_looping(SLRawAudio* audio_buf, SNDFILE* inFile, int num_frames, int channels)
+static void slSndFileReadLooping(SLRawAudio* audio_buf, int num_frames, int channels)
 {
 	float buffer[channels * num_frames];
-	int readCount = sf_readf_float(inFile, buffer, num_frames);
+	int readCount = sf_readf_float(g_snd_file, buffer, num_frames);
 	play_audio(buffer, readCount);
 	for (int frame = 0; frame < num_frames; frame++) {
 		for (int channel = 0; channel < channels; channel++) {
@@ -37,7 +39,7 @@ static void audio_file_read_looping(SLRawAudio* audio_buf, SNDFILE* inFile, int 
 		}
 	}
 	if(readCount==0)
-		sf_seek(inFile,0,SEEK_SET);
+		sf_seek(g_snd_file,0,SEEK_SET);
 
 	//printf("read: %i\n",readCount);
 

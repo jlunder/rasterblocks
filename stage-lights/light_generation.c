@@ -24,7 +24,7 @@ void slLightGenerationGenerate(SLAnalyzedAudio const * analysis,
 		lights->lights[i].b = i * 255 / (SL_NUM_LIGHTS - 1);
 	}*/
 
-    light_gen_bass(analysis,lights,SL_NUM_LIGHTS);
+    slLightGenBasicBass(analysis,lights,SL_NUM_LIGHTS);
 }
 
 

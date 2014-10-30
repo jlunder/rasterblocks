@@ -1,9 +1,8 @@
 #include "audio_input.h"
 
 #include "audio_in/file_in.h"
-#include "audio_in/loop.c"
+#include "audio_in/alsa_in.h"
 
-SNDFILE* testwav;
 
 static const SLAudioInputSource INPUT_SOURCE = SLAIS_ALSA;
 
@@ -13,7 +12,7 @@ void slAudioInputInitialize(SLConfiguration const * config)
 
 	switch(INPUT_SOURCE) {
 	case SLAIS_FILE:
-		testwav = audio_file_open("../test/clips/909Tom X1.wav");
+		slSndFileOpen("../test/clips/909Tom X1.wav");
 		break;
 	case SLAIS_ALSA:
 		slAlsaInit("hw:PCH","hw:PCH",SL_AUDIO_FRAMES_PER_VIDEO_FRAME,2);
@@ -26,7 +25,7 @@ void slAudioInputShutdown(void)
 {
 	switch(INPUT_SOURCE) {
 	case SLAIS_FILE:
-		audio_file_close(testwav);
+		slSndFileClose();
 		break;
 	case SLAIS_ALSA:
 		slAlsaClose();
@@ -39,7 +38,7 @@ void slAudioInputBlockingRead(SLRawAudio * audio)
 {
 	switch(INPUT_SOURCE) {
 	case SLAIS_FILE:
-		audio_file_read_looping(audio,testwav,SL_AUDIO_FRAMES_PER_VIDEO_FRAME,2);
+		slSndFileReadLooping(audio,SL_AUDIO_FRAMES_PER_VIDEO_FRAME,2);
 		break;
 	case SLAIS_ALSA:
 		slAlsaRead();

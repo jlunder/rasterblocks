@@ -56,7 +56,7 @@ void slAudioAnalysisAnalyze(SLRawAudio const * audio, SLAnalyzedAudio * analysis
     //UNUSED(audio);
     //UNUSED(analysis);
 
-	levels_to_bass_analyze(audio,analysis,SL_AUDIO_FRAMES_PER_VIDEO_FRAME,2);
+	slAnalysisBasicLevels(audio,analysis,SL_AUDIO_FRAMES_PER_VIDEO_FRAME,2);
 }
 
 static void sumChannelsIntoFFTIn(SLRawAudio const * audio, int audioLen)
