@@ -6,6 +6,11 @@
 
 static const SLAudioInputSource INPUT_SOURCE = SLAIS_ALSA;
 
+#define USB_AUDIO "hw:USB";
+#define ONBOARD_AUDIO "hw:PCH";
+static const char* CAPTURE_DEVICE = ONBOARD_AUDIO;
+static const char* PLAYBACK_DEVICE = ONBOARD_AUDIO;
+
 void slAudioInputInitialize(SLConfiguration const * config)
 {
 	UNUSED(config);
@@ -15,7 +20,7 @@ void slAudioInputInitialize(SLConfiguration const * config)
 		slSndFileOpen("../test/clips/909Tom X1.wav");
 		break;
 	case SLAIS_ALSA:
-		slAlsaInit("hw:PCH","hw:PCH",SL_AUDIO_FRAMES_PER_VIDEO_FRAME,2);
+		slAlsaInit(CAPTURE_DEVICE,PLAYBACK_DEVICE,SL_AUDIO_FRAMES_PER_VIDEO_FRAME,2,44100);
 		break;
 	}
 }

@@ -6,6 +6,9 @@
 
 snd_pcm_t *playback_handle, *capture_handle;
 
+int mode = SND_PCM_NONBLOCK;
+//int mode = SND_PCM_ASYNC;
+
 static int slOpenStream(snd_pcm_t **handle, const char *name, int dir, unsigned int format,unsigned int channels,unsigned int rate,int buffer_size)
 {
 	snd_pcm_hw_params_t *hw_params;
@@ -13,7 +16,7 @@ static int slOpenStream(snd_pcm_t **handle, const char *name, int dir, unsigned 
 	const char *dirname = (dir == SND_PCM_STREAM_PLAYBACK) ? "PLAYBACK" : "CAPTURE";
 	int err;
 
-	if ((err = snd_pcm_open(handle, name, dir, 0)) < 0) {
+	if ((err = snd_pcm_open(handle, name, dir, mode)) < 0) {
 		slError("%s (%s): cannot open audio device (%s)\n", name, dirname, snd_strerror(err));
 		return err;
 	}
@@ -53,6 +56,14 @@ static int slOpenStream(snd_pcm_t **handle, const char *name, int dir, unsigned 
 				name, dirname, snd_strerror(err));
 		return err;
 	}
+
+	unsigned int buffer_time = 100000;
+	if ((err = snd_pcm_hw_params_set_buffer_time_max(*handle,hw_params,&buffer_time,0)) < 0) {
+		slError("%s (%s): cannot set buffer time(%s)\n",
+						name, dirname, snd_strerror(err));
+				return err;
+	}
+	printf("buffer time: %d\n",buffer_time);
 
 	if ((err = snd_pcm_hw_params(*handle, hw_params)) < 0) {
 		slError("%s (%s): cannot set parameters(%s)\n",
@@ -95,17 +106,17 @@ int* buffer;
 int g_num_frames;
 int g_channels;
 
-int slAlsaInit(char* playback,char* capture,int num_frames,int channels)
+int slAlsaInit(const char* playback,const char* capture,unsigned int num_frames,unsigned int channels,unsigned int rate)
 {
 	g_num_frames = num_frames;
 	g_channels = channels;
 	int err;
-	if ((err = slOpenStream(&playback_handle, playback, SND_PCM_STREAM_PLAYBACK,SND_PCM_FORMAT_S32_LE,channels,44100,num_frames)) < 0) {
+	if ((err = slOpenStream(&playback_handle, playback, SND_PCM_STREAM_PLAYBACK,SND_PCM_FORMAT_S32_LE,channels,rate,num_frames)) < 0) {
 		slFatal("failed to open stream for playback");
 		return err;
 	}
 
-	if ((err = slOpenStream(&capture_handle, capture, SND_PCM_STREAM_CAPTURE,SND_PCM_FORMAT_S32_LE,channels,44100,num_frames)) < 0) {
+	if ((err = slOpenStream(&capture_handle, capture, SND_PCM_STREAM_CAPTURE,SND_PCM_FORMAT_S32_LE,channels,rate,num_frames)) < 0) {
 		slFatal("failed to open stream for capture");
 		return err;
 	}
