@@ -20,7 +20,7 @@ void slAudioInputInitialize(SLConfiguration const * config)
 		slSndFileOpen("../test/clips/909Tom X1.wav");
 		break;
 	case SLAIS_ALSA:
-		slAlsaInit(CAPTURE_DEVICE,PLAYBACK_DEVICE,SL_AUDIO_FRAMES_PER_VIDEO_FRAME*2,2,44100);
+		slAlsaInit(CAPTURE_DEVICE,PLAYBACK_DEVICE,SL_AUDIO_FRAMES_PER_VIDEO_FRAME,SL_AUDIO_CHANNELS,SL_AUDIO_SAMPLE_RATE);
 		break;
 	}
 }
@@ -43,10 +43,10 @@ void slAudioInputBlockingRead(SLRawAudio * audio)
 {
 	switch(INPUT_SOURCE) {
 	case SLAIS_FILE:
-		slSndFileReadLooping(audio,SL_AUDIO_FRAMES_PER_VIDEO_FRAME,2);
+		slSndFileReadLooping(audio,SL_AUDIO_FRAMES_PER_VIDEO_FRAME,SL_AUDIO_CHANNELS);
 		break;
 	case SLAIS_ALSA:
-		slAlsaRead();
+		slAlsaReadAndPlayback(audio);
 		break;
 	}
 	//UNUSED(audio);

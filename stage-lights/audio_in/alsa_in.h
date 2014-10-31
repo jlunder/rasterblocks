@@ -60,8 +60,8 @@ static int slOpenStream(snd_pcm_t **handle, const char *name, int dir, unsigned 
 	unsigned int buffer_time = 100000;
 	if ((err = snd_pcm_hw_params_set_buffer_time_max(*handle,hw_params,&buffer_time,0)) < 0) {
 		slError("%s (%s): cannot set buffer time(%s)\n",
-						name, dirname, snd_strerror(err));
-				return err;
+				name, dirname, snd_strerror(err));
+		return err;
 	}
 	//printf("buffer time: %d\n",buffer_time);
 
@@ -143,23 +143,22 @@ void slAlsaClose() {
 
 	free(buffer);
 }
-void slAlsaPlayback(int num_frames) {
+void slAlsaPlayback() {
 	int avail = snd_pcm_avail_update(playback_handle);
 	if (avail > 0) {
-		if (avail > num_frames)
-			avail = num_frames;
+		if (avail > g_num_frames)
+			avail = g_num_frames;
 
 		snd_pcm_writei(playback_handle, buffer, avail);
 	}
 }
-/*float convert(const int src)
+//http://stackoverflow.com/questions/13126297/c-c-how-to-convert-from-a-signed-32bit-integer-to-a-float-and-back
+float s32ToFloat(const int int_value)
 {
-    int i = src[2] << 24 | src[1] << 16 | src[0] << 8 ;
-    return i / (float)(INT_MAX - 256) ;
-}*/
-//void slAlsaRead(SLRawAudio* audio_buf, int num_frames, int channels) {
+	const float recip = 1.0 / (32768.0*65536.0);
+	return int_value * recip;
+}
 void slAlsaRead() {
-
 	int err;
 	if ((err = snd_pcm_wait(playback_handle, 1000)) < 0) {
 		slError("poll failed(%s)\n", strerror(errno));
@@ -173,12 +172,16 @@ void slAlsaRead() {
 		snd_pcm_readi(capture_handle, buffer, avail);
 	}
 	//printf("available: %d nframes: %d\n",avail,g_num_frames);
+}
+void slAlsaReadAndPlayback(SLRawAudio* audio_buf) {
 
-	slAlsaPlayback(g_num_frames);
-	/*for (int frame = 0; frame < num_frames; frame++) {
-		for (int channel = 0; channel < channels; channel++) {
-			audio_buf->audio[frame][channel] = (float)buffer[frame*channels+channel];
+	slAlsaRead();
+	slAlsaPlayback();
+
+	for (int frame = 0; frame < g_num_frames; frame++) {
+		for (int channel = 0; channel < g_channels; channel++) {
+			audio_buf->audio[frame][channel] = s32ToFloat(buffer[frame*g_channels+channel]);
 		}
 	}
-	printf("frame 1: %d %f\n",buffer[0],audio_buf->audio[0][0]);*/
+	//printf("frame 1: %d %f\n",buffer[0],audio_buf->audio[0][0]);
 }

@@ -1,4 +1,4 @@
-
+#include <stdio.h>
 #include <math.h>
 
 void slAnalysisBasicLevels(SLRawAudio const * audio, SLAnalyzedAudio * analysis, int num_frames, int channels)
@@ -17,4 +17,5 @@ void slAnalysisBasicLevels(SLRawAudio const * audio, SLAnalyzedAudio * analysis,
 		frameRMS = sqrt(frameRMS);
 		
 		analysis->bassEnergy = frameRMS;
+		//printf("rms: %f\n",frameRMS);
 }

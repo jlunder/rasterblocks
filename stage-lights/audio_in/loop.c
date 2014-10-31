@@ -2,9 +2,13 @@
 #include <signal.h>
 #include <sys/time.h>
 
-#define slError(...) printf(__VA_ARGS__);
-#define slFatal(...) printf(__VA_ARGS__);
-#define slInfo(...) printf(__VA_ARGS__);
+// so that alsa_in compiles
+#define slError(...) printf(__VA_ARGS__)
+#define slFatal(...) printf(__VA_ARGS__)
+#define slInfo(...) printf(__VA_ARGS__)
+typedef struct {
+    float audio[1][1];
+} SLRawAudio;
 #include "alsa_in.h"
 
 
@@ -37,6 +41,7 @@ int main(int argc, char *argv[])
 	while (1) {
 		startTimer();
 		slAlsaRead();
+		slAlsaPlayback();
 		endTimer();
 	}
 	slAlsaClose();
