@@ -19,6 +19,11 @@
 #define C0_T -0.3896437283
 #define C1_T 1.0890546979
 
+//store coefficients
+static float cx_b[NZEROS+1], cy_b[NPOLES+1];
+static float cx_m[NZEROS+1], cy_m[NPOLES+1];
+static float cx_t[NZEROS+1], cy_t[NPOLES+1];
+
 //bass
 static float filterBass(float xv[NZEROS+1],float yv[NPOLES+1],float next)
 {
@@ -62,12 +67,8 @@ static float calcRMS(float frameSum, int num_frames)
 	return frameRMS;
 }
 //filter function
-void filter_analyze(SLRawAudio const * audio, SLAnalyzedAudio * analysis, int num_frames, int channels)
+void slAnalsisFilterLevels(SLRawAudio const * audio, SLAnalyzedAudio * analysis, int num_frames, int channels)
 {
-	float cx_b[NZEROS+1], cy_b[NPOLES+1];
-	float cx_m[NZEROS+1], cy_m[NPOLES+1];
-	float cx_t[NZEROS+1], cy_t[NPOLES+1];
-
 	float frameSum_b = 0;
 	float frameSum_m = 0;
 	float frameSum_t = 0;
@@ -89,18 +90,12 @@ void filter_analyze(SLRawAudio const * audio, SLAnalyzedAudio * analysis, int nu
 		frameSum_t += filtered * filtered;
 	}
 
-	//frameRMS = calcRMS(frameSum_b, num_frames);
+	frameRMS = calcRMS(frameSum_b, num_frames);
 	//analysis->bassEnergy = frameRMS;
-	//printf("b: %12.10f", frameRMS);
-	//printf("\n") ;
 
 	frameRMS = calcRMS(frameSum_m, num_frames);
 	analysis->midEnergy = frameRMS;
-	//printf("m: %12.10f", frameRMS);
-	//printf("\n") ;
 
 	frameRMS = calcRMS(frameSum_t, num_frames);
 	analysis->trebleEnergy = frameRMS;
-	//printf("t: %12.10f", frameRMS);
-	//printf("\n") ;
 }
