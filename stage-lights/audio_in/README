@@ -26,3 +26,10 @@ capture_client, from jack source code examples
 
 jackd -dalsa -dhw:USB
 jack_lsp
+
+formats for sound cards:
+
+steelseries dongle: SND_PCM_FORMAT_S16_LE
+- also need to set input channel count to 1 (dir == SND_PCM_STREAM_CAPTURE)
+- output still 2 (dir == SND_PCM_STREAM_PLAYBACK)
+MBox 2: SND_PCM_FORMAT_S24_3BE
