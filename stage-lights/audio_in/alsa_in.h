@@ -63,7 +63,7 @@ static int slOpenStream(snd_pcm_t **handle, const char *name, int dir, unsigned 
 						name, dirname, snd_strerror(err));
 				return err;
 	}
-	printf("buffer time: %d\n",buffer_time);
+	//printf("buffer time: %d\n",buffer_time);
 
 	if ((err = snd_pcm_hw_params(*handle, hw_params)) < 0) {
 		slError("%s (%s): cannot set parameters(%s)\n",
@@ -172,7 +172,7 @@ void slAlsaRead() {
 
 		snd_pcm_readi(capture_handle, buffer, avail);
 	}
-	printf("available: %d nframes: %d\n",avail,g_num_frames);
+	//printf("available: %d nframes: %d\n",avail,g_num_frames);
 
 	slAlsaPlayback(g_num_frames);
 	/*for (int frame = 0; frame < num_frames; frame++) {
