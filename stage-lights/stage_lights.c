@@ -48,7 +48,7 @@ SLSubsystem slChangeSubsystem(SLSubsystem subsystem)
 {
     SLSubsystem lastSubsystem = g_slCurrentSubsystem;
     
-    slVerify(subsystem >= 0 && subsystem < SLS_COUNT);
+    slVerify(subsystem + 1 >= 1 && subsystem < SLS_COUNT);
     g_slCurrentSubsystem = subsystem;
     return lastSubsystem;
 }
@@ -70,7 +70,7 @@ bool slLogShouldLog(SLLogLevel level, char const * sourceFile, int sourceLine)
 {
     UNUSED(sourceFile);
     UNUSED(sourceLine);
-    slAssert(g_slCurrentSubsystem >= 0 && g_slCurrentSubsystem < SLS_COUNT);
+    slAssert(g_slCurrentSubsystem + 1 >= 1 && g_slCurrentSubsystem < SLS_COUNT);
     return level >= g_slSubsystemLogLevels[g_slCurrentSubsystem];
 }
 
@@ -83,10 +83,10 @@ void slLog(SLLogLevel level, char const * sourceFile, int sourceLine,
         char const * subsystemName = "???";
         va_list va;
         
-        if(level >= 0 && level < SLLL_COUNT) {
+        if(level + 1 >= 1 && level < SLLL_COUNT) {
             logLevelName = g_slLogLevelNames[level];
         }
-        if(g_slCurrentSubsystem >= 0 && g_slCurrentSubsystem < SLS_COUNT) {
+        if(g_slCurrentSubsystem + 1 >= 1 && g_slCurrentSubsystem < SLS_COUNT) {
             subsystemName = g_slSubsystemNames[g_slCurrentSubsystem];
         }
         

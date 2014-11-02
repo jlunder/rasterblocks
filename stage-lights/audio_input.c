@@ -49,8 +49,6 @@ void slAudioInputBlockingRead(SLRawAudio * audio)
 		slAlsaReadAndPlayback(audio);
 		break;
 	}
-	//UNUSED(audio);
-	//slFatal("BLARMMMMM: %d\n", 34);
 }
 
 

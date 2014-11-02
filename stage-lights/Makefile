@@ -1,31 +1,20 @@
 ifeq ($(OS),WIN32)
-	CCFLAGS += -D WIN32
-	ifeq ($(PROCESSOR_ARCHITECTURE),AMD64)
-		CCFLAGS += -D AMD64
-	endif
-	ifeq ($(PROCESSOR_ARCHITECTURE),x86)
-		CCFLAGS += -D IA32
-	endif
 else
 	UNAME_S := $(shell uname -s)
+	UNAME_M := $(shell uname -m)
+	
 	ifeq ($(UNAME_S),Linux)
 		OS = LINUX
-		CCFLAGS += -D LINUX
+		ifeq ($(UNAME_M),armv7l)
+			TARGET_BUILD = TRUE
+		else
+			TARGET_BUILD =
+		endif
 	endif
 	ifeq ($(UNAME_S),Darwin)
 		OS = OSX
-		CCFLAGS += -D OSX
 	endif
-	UNAME_P := $(shell uname -p)
-	ifeq ($(UNAME_P),x86_64)
-		CCFLAGS += -D AMD64
-	endif
-	ifneq ($(filter %86,$(UNAME_P)),)
-		CCFLAGS += -D IA32
-	endif
-	ifneq ($(filter arm%,$(UNAME_P)),)
-		CCFLAGS += -D ARM
-	endif
+	
 endif
 
 
@@ -37,9 +26,9 @@ ifeq ($(OS), LINUX)
 	CFLAGS_TARGET=-O2 $(CFLAGS_COMMON)
 	CPPFLAGS_COMMON=--std=gnu99 -fgnu89-inline -D_POSIX_C_SOURCE=200809L -D__USE_MISC
 	CPPFLAGS=$(CPPFLAGS_COMMON) -DSTAGE_LIGHTS_LINUX -DGLUS_ES2 -DSTAGE_LIGHTS_USE_SDL2_GLES2_HARNESS
-	CPPFLAGS_TARGET=$(CPPFLAGS_COMMON) -DSTAGE_LIGHTS_LINUX -DSTAGE_LIGHTS_USE_TARGET_HARNESS
+	CPPFLAGS_TARGET=$(CPPFLAGS_COMMON) -DSTAGE_LIGHTS_LINUX -DSTAGE_LIGHTS_USE_TARGET_HARNESS -Icross-dep/include
 	LDFLAGS=-g -lSDL2 -lm -lGLESv2 -lsndfile -lasound -lfftw3f
-	LDFLAGS_TARGET=-g -lm
+	LDFLAGS_TARGET=-g -lm -Lcross-dep/lib -Wl,-rpath=cross-dep/lib -lsndfile -lasound -lfftw3f
 endif
 ifeq ($(OS), OSX)
 	CC=gcc
@@ -60,6 +49,11 @@ ifeq ($(OS), WIN32)
 	LDFLAGS=
 endif
 
+ifeq ($(TARGET_BUILD),YES)
+	CFLAGS := $(CFLAGS_TARGET)
+	CPPFLAGS := $(CPPFLAGS_TARGET)
+	LDFLAGS := $(LDFLAGS_TARGET)
+endif
 
 MAKEDEPEND=@set -e; rm -f $@; \
 	$(CC) -M $(CPPFLAGS) $< > $@.$$$$; \
