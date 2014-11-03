@@ -25,12 +25,24 @@
 #define SL_MAX_CONSECUTIVE_GENTLE_RESTARTS SL_VIDEO_FRAME_RATE
 
 
-typedef struct {
-	uint8_t r;
-	uint8_t g;
-	uint8_t b;
-	uint8_t x;
-} SLColor;
+typedef enum {
+    SLLL_INFO,
+    SLLL_WARNING,
+    SLLL_ERROR,
+    SLLL_COUNT
+} SLLogLevel;
+
+
+typedef enum {
+    SLS_MAIN,
+    SLS_CONFIGURATION,
+    SLS_AUDIO_INPUT,
+    SLS_AUDIO_ANALYSIS,
+    SLS_LIGHT_GENERATION,
+    SLS_LIGHT_OUTPUT,
+    SLS_HOT_CONFIGURATION,
+    SLS_COUNT
+} SLSubsystem;
 
 
 typedef enum {
@@ -41,6 +53,16 @@ typedef enum {
 
 
 typedef struct {
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
+	uint8_t x;
+} SLColor;
+
+
+typedef struct {
+    SLLogLevel logLevel;
+    
     // Not read/written to config file, obviously. Comes from command line or
     // defaults
     char configPath[PATH_MAX];
@@ -73,26 +95,6 @@ typedef struct {
 typedef struct {
     SLColor lights[SL_NUM_LIGHTS];
 } SLLightData;
-
-
-typedef enum {
-    SLLL_INFO,
-    SLLL_WARNING,
-    SLLL_ERROR,
-    SLLL_COUNT
-} SLLogLevel;
-
-
-typedef enum {
-    SLS_MAIN,
-    SLS_CONFIGURATION,
-    SLS_AUDIO_INPUT,
-    SLS_AUDIO_ANALYSIS,
-    SLS_LIGHT_GENERATION,
-    SLS_LIGHT_OUTPUT,
-    SLS_HOT_CONFIGURATION,
-    SLS_COUNT
-} SLSubsystem;
 
 
 // Tell the main program which subsystem is currently running (in this thread).

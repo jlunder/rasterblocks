@@ -6,6 +6,8 @@
 
 void slConfigurationSetDefaults(SLConfiguration * config)
 {
+    config->logLevel = SLLL_WARNING;
+    
 #ifdef STAGE_LIGHTS_USE_TARGET_HARNESS
     config->audioSource = SLAIS_ALSA;
     snprintf(config->audioSourceParam, sizeof config->audioSourceParam,
@@ -22,6 +24,10 @@ void slConfigurationParseArgv(SLConfiguration * config, int argc,
     char * argv[])
 {
     for(int i = 0; i < argc; ++i) {
+        if(strcmp(argv[i], "-v") == 0) {
+            config->logLevel = SLLL_INFO;
+        }
+        
         if(strcmp(argv[i], "-sa") == 0) {
             if(i + 1 < argc) {
                 ++i;

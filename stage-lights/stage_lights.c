@@ -113,6 +113,7 @@ void slInitialize(int argc, char * argv[])
 {
     SLSubsystem lastSubsystem = slChangeSubsystem(SLS_MAIN);
     bool reinitFrameData = !g_slGentleRestartRequested;
+    SLLogLevel logLevel = SLLL_WARNING;
     
     // Init global variables
     g_slSavedArgc = argc;
@@ -120,8 +121,14 @@ void slInitialize(int argc, char * argv[])
     
     g_slGentleRestartRequested = false;
     
+    for(int i = 0; i < argc; ++i) {
+        if(strcmp(argv[i], "-v") == 0) {
+            logLevel = SLLL_INFO;
+        }
+    }
+    
     for(size_t i = 0; i < SLS_COUNT; ++i) {
-        g_slSubsystemLogLevels[i] = SLLL_WARNING;
+        g_slSubsystemLogLevels[i] = logLevel;
     }
     
     slChangeSubsystem(SLS_CONFIGURATION);
@@ -138,6 +145,10 @@ void slInitialize(int argc, char * argv[])
     
     slChangeSubsystem(SLS_CONFIGURATION);
     slConfigurationLoad(&g_slConfiguration);
+    
+    for(size_t i = 0; i < SLS_COUNT; ++i) {
+        g_slSubsystemLogLevels[i] = g_slConfiguration.logLevel;
+    }
     
     slChangeSubsystem(SLS_AUDIO_INPUT);
     slAudioInputInitialize(&g_slConfiguration);
