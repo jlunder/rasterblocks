@@ -62,7 +62,7 @@ void slRequestGentleRestart(void)
 
 void slRequestImmediateRestart(void)
 {
-    exit(2);
+    abort();
 }
 
 
@@ -126,6 +126,7 @@ void slInitialize(int argc, char * argv[])
     
     slChangeSubsystem(SLS_CONFIGURATION);
     slConfigurationSetDefaults(&g_slConfiguration);
+    slConfigurationParseArgv(&g_slConfiguration, argc, argv);
     if(reinitFrameData) {
         for(size_t i = 0; i < SL_NUM_LIGHTS; ++i) {
             g_slLastFrameLightData.lights[i].r = 0;

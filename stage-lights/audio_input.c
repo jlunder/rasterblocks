@@ -4,51 +4,66 @@
 #include "audio_in/alsa_in.h"
 
 
-static const SLAudioInputSource INPUT_SOURCE = SLAIS_ALSA;
+static SLAudioInputSource g_slAudioSource = SLAIS_INVALID;
 
-#define USB_AUDIO "hw:USB";
-#define ONBOARD_AUDIO "hw:PCH";
-static const char* CAPTURE_DEVICE = USB_AUDIO;
-static const char* PLAYBACK_DEVICE = USB_AUDIO;
 
 void slAudioInputInitialize(SLConfiguration const * config)
 {
-	UNUSED(config);
-
-	switch(INPUT_SOURCE) {
-	case SLAIS_FILE:
-		slSndFileOpen("../test/clips/909Tom X1.wav");
-		break;
-	case SLAIS_ALSA:
-		slAlsaInit(CAPTURE_DEVICE,PLAYBACK_DEVICE,SL_AUDIO_FRAMES_PER_VIDEO_FRAME,SL_AUDIO_CHANNELS,SL_AUDIO_SAMPLE_RATE);
-		break;
-	}
+    // In case of reinit, shut down first
+    slAudioInputShutdown();
+    
+    switch(config->audioSource) {
+    case SLAIS_ALSA:
+        slAlsaInit(config->audioSourceParam,config->audioSourceParam,SL_AUDIO_FRAMES_PER_VIDEO_FRAME,SL_AUDIO_CHANNELS,SL_AUDIO_SAMPLE_RATE);
+        g_slAudioSource = SLAIS_ALSA;
+        break;
+    case SLAIS_FILE:
+        slSndFileOpen((char *)config->audioSourceParam);
+        g_slAudioSource = SLAIS_FILE;
+        break;
+    default:
+    	slFatal("Invalid audio source type %d\n", config->audioSource);
+    	break;
+    }
 }
 
 
 void slAudioInputShutdown(void)
 {
-	switch(INPUT_SOURCE) {
-	case SLAIS_FILE:
-		slSndFileClose();
-		break;
-	case SLAIS_ALSA:
-		slAlsaClose();
-		break;
-	}
+    switch(g_slAudioSource) {
+    case SLAIS_INVALID:
+    	// Do nothing! We have already been shut down properly, or maybe we
+    	// were never init'd.
+    	break;
+    case SLAIS_ALSA:
+        slAlsaClose();
+        break;
+    case SLAIS_FILE:
+        slSndFileClose();
+        break;
+    default:
+    	slFatal("Invalid audio source type %d\n", g_slAudioSource);
+    	break;
+    }
+    
+    g_slAudioSource = SLAIS_INVALID;
 }
 
 
 void slAudioInputBlockingRead(SLRawAudio * audio)
 {
-	switch(INPUT_SOURCE) {
-	case SLAIS_FILE:
-		slSndFileReadLooping(audio,SL_AUDIO_FRAMES_PER_VIDEO_FRAME,SL_AUDIO_CHANNELS);
-		break;
-	case SLAIS_ALSA:
-		slAlsaReadAndPlayback(audio);
-		break;
-	}
+    switch(g_slAudioSource) {
+    case SLAIS_ALSA:
+        slAlsaReadAndPlayback(audio);
+        break;
+    case SLAIS_FILE:
+        slSndFileReadLooping(audio,SL_AUDIO_FRAMES_PER_VIDEO_FRAME,SL_AUDIO_CHANNELS);
+        break;
+    default:
+    	// SLAIS_INVALID is not legal here: we must be init'd
+    	slFatal("Invalid audio source type %d\n", g_slAudioSource);
+    	break;
+    }
 }
 
 

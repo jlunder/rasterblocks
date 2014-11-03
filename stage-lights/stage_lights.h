@@ -7,7 +7,9 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 
 #define UNUSED(x) (void)(x)
@@ -32,6 +34,7 @@ typedef struct {
 
 
 typedef enum {
+    SLAIS_INVALID,
     SLAIS_ALSA,
     SLAIS_FILE,
 } SLAudioInputSource;

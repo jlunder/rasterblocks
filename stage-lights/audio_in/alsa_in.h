@@ -111,12 +111,12 @@ int slAlsaInit(const char* playback,const char* capture,unsigned int num_frames,
 	g_num_frames = num_frames;
 	g_channels = channels;
 	int err;
-	if ((err = slOpenStream(&playback_handle, playback, SND_PCM_STREAM_PLAYBACK,SND_PCM_FORMAT_S32_LE,channels,rate,num_frames)) < 0) {
+	if ((err = slOpenStream(&playback_handle, playback, SND_PCM_STREAM_PLAYBACK,SND_PCM_FORMAT_FLOAT_LE,channels,rate,num_frames)) < 0) {
 		slFatal("failed to open stream for playback");
 		return err;
 	}
 
-	if ((err = slOpenStream(&capture_handle, capture, SND_PCM_STREAM_CAPTURE,SND_PCM_FORMAT_S32_LE,channels,rate,num_frames)) < 0) {
+	if ((err = slOpenStream(&capture_handle, capture, SND_PCM_STREAM_CAPTURE,SND_PCM_FORMAT_FLOAT_LE,channels,rate,num_frames)) < 0) {
 		slFatal("failed to open stream for capture");
 		return err;
 	}

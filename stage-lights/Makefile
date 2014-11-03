@@ -49,7 +49,7 @@ ifeq ($(OS), WIN32)
 	LDFLAGS=
 endif
 
-ifeq ($(TARGET_BUILD),YES)
+ifneq ($(TARGET_BUILD),)
 	CFLAGS := $(CFLAGS_TARGET)
 	CPPFLAGS := $(CPPFLAGS_TARGET)
 	LDFLAGS := $(LDFLAGS_TARGET)
@@ -81,6 +81,7 @@ STAGE_LIGHTS_SRC = $(wildcard *.c)
 -include $(STAGE_LIGHTS_SRC:.c=.target.d)
 
 %.o: %.c Makefile
+	echo $(UNAME_M) $(UNAME_S) $(TARGET_BUILD)
 	@$(MAKEDEPEND)
 	$(CC) -c -g $(CFLAGS) -o $@ $(CPPFLAGS) $<
 

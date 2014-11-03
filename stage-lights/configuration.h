@@ -7,6 +7,8 @@
 
 // Configurations subsystem
 void slConfigurationSetDefaults(SLConfiguration * config);
+void slConfigurationParseArgv(SLConfiguration * config, int argc,
+    char * argv[]);
 void slConfigurationLoad(SLConfiguration * config);
 void slConfigurationSave(SLConfiguration const * config);
 
