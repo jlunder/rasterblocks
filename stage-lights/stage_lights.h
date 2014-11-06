@@ -13,6 +13,7 @@
 
 
 #define UNUSED(x) (void)(x)
+#define LENGTHOF(x) (sizeof (x) / sizeof (*(x)))
 
 
 #define SL_AUDIO_CHANNELS 2
