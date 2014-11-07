@@ -37,14 +37,11 @@ int main(int argc, char * argv[])
 {
     struct timespec lastts;
     
-    UNUSED(argc);
-   	UNUSED(argv);
-    
     clock_gettime(CLOCK_MONOTONIC, &lastts);
     
     slInitialize(argc, argv);
 
-	while(true)
+    while(true)
     {
         struct timespec ts;
         uint64_t time_ns;
@@ -110,12 +107,26 @@ void slLightOutputShowLights(SLLightData const * lights)
 {
     struct spi_ioc_transfer xfer;
     int result;
-    uint8_t buf[SL_NUM_LIGHTS * 3];
+    uint8_t buf[(SL_NUM_LIGHTS_LEFT + SL_NUM_LIGHTS_RIGHT +
+        SL_NUM_LIGHTS_OVERHEAD) * 3];
+    size_t j = 0;
 
-    for(size_t i = 0; i < SL_NUM_LIGHTS; ++i) {
-        buf[i * 3 + 0] = lights->lights[i].b;
-        buf[i * 3 + 1] = lights->lights[i].r;
-        buf[i * 3 + 2] = lights->lights[i].g;
+    for(size_t i = 0; i < SL_NUM_LIGHTS_LEFT; ++i) {
+        buf[j++] = lights->left[SL_NUM_LIGHTS_LEFT - 1 - i].b;
+        buf[j++] = lights->left[SL_NUM_LIGHTS_LEFT - 1 - i].r;
+        buf[j++] = lights->left[SL_NUM_LIGHTS_LEFT - 1 - i].g;
+    }
+    
+    for(size_t i = 0; i < SL_NUM_LIGHTS_RIGHT; ++i) {
+        buf[j++] = lights->right[i].b;
+        buf[j++] = lights->right[i].r;
+        buf[j++] = lights->right[i].g;
+    }
+    
+    for(size_t i = 0; i < SL_NUM_LIGHTS_OVERHEAD; ++i) {
+        buf[j++] = lights->overhead[i].b;
+        buf[j++] = lights->overhead[i].r;
+        buf[j++] = lights->overhead[i].g;
     }
     
     memset(&xfer, 0, sizeof xfer);

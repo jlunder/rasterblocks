@@ -23,7 +23,9 @@
 #define SL_VIDEO_FRAME_RATE 100
 #define SL_AUDIO_FRAMES_PER_VIDEO_FRAME ((SL_AUDIO_SAMPLE_RATE / SL_VIDEO_FRAME_RATE)*2)
 
-#define SL_NUM_LIGHTS 10
+#define SL_NUM_LIGHTS_LEFT 3
+#define SL_NUM_LIGHTS_RIGHT 3
+#define SL_NUM_LIGHTS_OVERHEAD 3
 
 #define SL_MAX_CONSECUTIVE_GENTLE_RESTARTS SL_VIDEO_FRAME_RATE
 
@@ -96,7 +98,9 @@ typedef struct {
 
 
 typedef struct {
-    SLColor lights[SL_NUM_LIGHTS];
+    SLColor left[SL_NUM_LIGHTS_LEFT];
+    SLColor right[SL_NUM_LIGHTS_RIGHT];
+    SLColor overhead[SL_NUM_LIGHTS_OVERHEAD];
 } SLLightData;
 
 

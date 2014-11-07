@@ -63,7 +63,9 @@
 #include "stage_lights.h"
 
 
-SLColor gles2_harness_lights[SL_NUM_LIGHTS];
+SLColor gles2_harness_lights_left[SL_NUM_LIGHTS_LEFT];
+SLColor gles2_harness_lights_right[SL_NUM_LIGHTS_RIGHT];
+SLColor gles2_harness_lights_overhead[SL_NUM_LIGHTS_OVERHEAD];
 
 
 static GLuint g_program;
@@ -507,8 +509,8 @@ void gles2_harness_draw_lights(float time)
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
-    for(size_t i = 0; i < SL_NUM_LIGHTS; ++i) {
-    	float x = ((float)i - (float)(SL_NUM_LIGHTS - 1) / 2.0f) * lightSize * 2;
+    for(size_t i = 0; i < SL_NUM_LIGHTS_LEFT; ++i) {
+    	float x = ((float)i - (float)SL_NUM_LIGHTS_LEFT) * lightSize * 2;
     	
         /////////
         glusMatrix4x4Identityf(modelMatrix);
@@ -517,9 +519,47 @@ void gles2_harness_draw_lights(float time)
         glUniformMatrix4fv(g_modelMatrixLocation, 1, GL_FALSE, modelMatrix);
 
         glUniform4f(g_colorLocation,
-            gles2_harness_lights[i].r * (1.0f / 255.0f),
-            gles2_harness_lights[i].g * (1.0f / 255.0f),
-            gles2_harness_lights[i].b * (1.0f / 255.0f),
+            gles2_harness_lights_left[i].r * (1.0f / 255.0f),
+            gles2_harness_lights_left[i].g * (1.0f / 255.0f),
+            gles2_harness_lights_left[i].b * (1.0f / 255.0f),
+            0.0f);
+
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        ////////
+    }
+    
+    for(size_t i = 0; i < SL_NUM_LIGHTS_RIGHT; ++i) {
+    	float x = ((float)i + 1.0f) * lightSize * 2;
+    	
+        /////////
+        glusMatrix4x4Identityf(modelMatrix);
+        glusMatrix4x4Translatef(modelMatrix, x, 0, 0);
+        glusMatrix4x4Scalef(modelMatrix, lightSize, lightSize, lightSize);
+        glUniformMatrix4fv(g_modelMatrixLocation, 1, GL_FALSE, modelMatrix);
+
+        glUniform4f(g_colorLocation,
+            gles2_harness_lights_right[i].r * (1.0f / 255.0f),
+            gles2_harness_lights_right[i].g * (1.0f / 255.0f),
+            gles2_harness_lights_right[i].b * (1.0f / 255.0f),
+            0.0f);
+
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        ////////
+    }
+    
+    for(size_t i = 0; i < SL_NUM_LIGHTS_OVERHEAD; ++i) {
+    	float x = ((float)i - (float)(SL_NUM_LIGHTS_OVERHEAD - 1) / 2.0f) * lightSize * 2;
+    	
+        /////////
+        glusMatrix4x4Identityf(modelMatrix);
+        glusMatrix4x4Translatef(modelMatrix, x, -lightSize * 4.0f, 0);
+        glusMatrix4x4Scalef(modelMatrix, lightSize, lightSize, lightSize);
+        glUniformMatrix4fv(g_modelMatrixLocation, 1, GL_FALSE, modelMatrix);
+
+        glUniform4f(g_colorLocation,
+            gles2_harness_lights_overhead[i].r * (1.0f / 255.0f),
+            gles2_harness_lights_overhead[i].g * (1.0f / 255.0f),
+            gles2_harness_lights_overhead[i].b * (1.0f / 255.0f),
             0.0f);
 
         glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -565,10 +605,14 @@ void slLightOutputShutdown(void)
 
 void slLightOutputShowLights(SLLightData const * lights)
 {
-    UNUSED(lights);
-    
-	for(size_t i = 0; i < SL_NUM_LIGHTS; ++i) {
-		gles2_harness_lights[i] = lights->lights[i];
+	for(size_t i = 0; i < SL_NUM_LIGHTS_LEFT; ++i) {
+		gles2_harness_lights_left[i] = lights->left[SL_NUM_LIGHTS_LEFT - 1 - i];
+	}
+	for(size_t i = 0; i < SL_NUM_LIGHTS_RIGHT; ++i) {
+		gles2_harness_lights_right[i] = lights->right[i];
+	}
+	for(size_t i = 0; i < SL_NUM_LIGHTS_OVERHEAD; ++i) {
+		gles2_harness_lights_overhead[i] = lights->overhead[i];
 	}
 }
 

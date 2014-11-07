@@ -135,12 +135,7 @@ void slInitialize(int argc, char * argv[])
     slConfigurationSetDefaults(&g_slConfiguration);
     slConfigurationParseArgv(&g_slConfiguration, argc, argv);
     if(reinitFrameData) {
-        for(size_t i = 0; i < SL_NUM_LIGHTS; ++i) {
-            g_slLastFrameLightData.lights[i].r = 0;
-            g_slLastFrameLightData.lights[i].g = 0;
-            g_slLastFrameLightData.lights[i].b = 0;
-            g_slLastFrameLightData.lights[i].x = 0;
-        }
+        memset(&g_slLastFrameLightData, 0, sizeof g_slLastFrameLightData);
     }
     
     slChangeSubsystem(SLS_CONFIGURATION);

@@ -79,9 +79,6 @@ int main(int argc, char *argv[])
     SDL_Event event;
     bool quit = false;
     
-    (void)argc;
-    (void)argv;
- 
     if (SDL_Init(SDL_INIT_VIDEO) < 0) /* Initialize SDL's Video subsystem */
         sdldie("Unable to initialize SDL"); /* Or die on error */
  
