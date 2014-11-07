@@ -4,6 +4,8 @@
 
 #include <limits.h>
 
+#include <math.h>
+
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -159,6 +161,11 @@ void slLogOutput(char const * format, ...);
 #define slInfo(...) slLog(SLLL_INFO, __FILE__, __LINE__, __VA_ARGS__)
 #define slWarning(...) slLog(SLLL_WARNING, __FILE__, __LINE__, __VA_ARGS__)
 #define slError(...) slLog(SLLL_ERROR, __FILE__, __LINE__, __VA_ARGS__)
+
+#define slInfoEnabled() slLogShouldLog(SLLL_INFO, __FILE__, __LINE__)
+#define slInfoWarningEnabled() \
+    slLogShouldLog(SLLL_WARNING, __FILE__, __LINE__)
+#define slInfoErrorEnabled() slLogShouldLog(SLLL_ERROR, __FILE__, __LINE__)
 
 
 // Framework: coordinates all the other subsystems

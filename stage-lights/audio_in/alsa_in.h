@@ -177,7 +177,6 @@ void slAlsaRead() {
         slError("readi failed(%s)\n", snd_strerror(frames_read));
         memset(buffer, 0, g_num_frames * g_channels * sizeof *buffer);
     }
-    //slInfo("available: %d nframes: %d\n",frames_read,g_num_frames);
 }
 
 
@@ -185,5 +184,4 @@ void slAlsaReadAndPlayback(SLRawAudio* audio_buf) {
     slAlsaRead();
     //slAlsaPlayback();
     memcpy(audio_buf->audio, buffer, sizeof audio_buf->audio);
-    slInfo("frame 1: %g %g\n",buffer[0],audio_buf->audio[0][0]);
 }
