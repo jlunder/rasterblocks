@@ -27,7 +27,7 @@
 #include "stage_lights.h"
 
 
-#define SL_TARGET_SPI_DEVICE "/dev/spidev0.0"
+#define SL_TARGET_SPI_DEVICE "/dev/spidev1.0"
 
 
 static int g_slSpiFd = -1;
@@ -108,7 +108,7 @@ void slLightOutputShutdown(void)
 
 void slLightOutputShowLights(SLLightData const * lights)
 {
-    struct spi_ioc_transfer	xfer;
+    struct spi_ioc_transfer xfer;
     int result;
     uint8_t buf[SL_NUM_LIGHTS * 3];
 
