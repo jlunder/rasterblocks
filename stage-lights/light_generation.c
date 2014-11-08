@@ -88,18 +88,18 @@ void slLightGenerationGenerate(SLAnalyzedAudio const * analysis,
     float leftTreble = analysis->trebleEnergy * sqrtf(1.0f - analysis->leftRightBalance);
     float rightTreble = analysis->trebleEnergy * sqrtf(analysis->leftRightBalance);
     float bass = analysis->bassEnergy;
+
+    for(int i = 0; i < SL_NUM_LIGHTS_LEFT; ++i) {
+        lights->left[i] = getPaletteF(g_slColdPalette, leftTreble - i * (2.0f / SL_NUM_LIGHTS_LEFT));
+    }
     
-	for(int i = 0; i < SL_NUM_LIGHTS_LEFT; ++i) {
-		lights->left[i] = getPaletteF(g_slColdPalette, leftTreble * powf(0.7f, i));
-	}
-	
-	for(int i = 0; i < SL_NUM_LIGHTS_RIGHT; ++i) {
-		lights->right[i] = getPaletteF(g_slColdPalette, rightTreble * powf(0.7f, i));
-	}
-	
-	for(int i = 0; i < SL_NUM_LIGHTS_OVERHEAD; ++i) {
-		lights->overhead[i] = getPaletteF(g_slWarmPalette, bass * powf(0.7f, i));
-	}
+    for(int i = 0; i < SL_NUM_LIGHTS_RIGHT; ++i) {
+        lights->right[i] = getPaletteF(g_slColdPalette, rightTreble - i * (2.0f / SL_NUM_LIGHTS_RIGHT));
+    }
+    
+    for(int i = 0; i < SL_NUM_LIGHTS_OVERHEAD; ++i) {
+        lights->overhead[i] = getPaletteF(g_slWarmPalette, bass - i * (2.0f / SL_NUM_LIGHTS_OVERHEAD));
+    }
 }
 
 
