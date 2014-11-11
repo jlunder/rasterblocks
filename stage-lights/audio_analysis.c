@@ -130,9 +130,12 @@ void slAudioAnalysisAnalyze(SLRawAudio const * audio, SLAnalyzedAudio * analysis
     g_slAgcSamples[g_slAgcIndex] = analysis->totalEnergy * 1.414f;
     
     for(size_t i = 0; i < LENGTHOF(g_slAgcSamples); ++i) {
+        agcTarget += g_slAgcSamples[i] * (1.0f / LENGTHOF(g_slAgcSamples));
+        /*
         if(g_slAgcSamples[i] > agcTarget) {
             agcTarget = g_slAgcSamples[i];
         }
+        */
     }
     g_slAgcTrackingValue = g_slAgcTrackingValue * 0.9f + agcTarget * 0.1f;
     
