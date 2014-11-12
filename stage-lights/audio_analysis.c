@@ -8,6 +8,10 @@
 #include "analysis/levels.h"
 
 
+#define SL_AGC_SAMPLE_WINDOW_S 4
+
+static float const SL_AGC_ROOT_2 = 1.41421356237f;
+
 #define NZEROS 4
 #define NPOLES 4
 
@@ -29,15 +33,21 @@ static float const g_slK300Hz[NPOLES] = {
     3.8973859825f,
 };
 
+static bool g_slAudioAnalysisFirstInit = false;
+
 static float g_slXV100Hz[NZEROS + 1];
 static float g_slYV100Hz[NPOLES + 1];
 
 static float g_slXV300Hz[NZEROS + 1];
 static float g_slYV300Hz[NPOLES + 1];
 
-static float g_slAgcSamples[SL_VIDEO_FRAME_RATE * 2];
+static float g_slAgcSamples[SL_VIDEO_FRAME_RATE * SL_AGC_SAMPLE_WINDOW_S];
 static size_t g_slAgcIndex = 0;
 static float g_slAgcTrackingValue = 1.0f;
+
+static float g_slAgcMax = 1e-0f;
+static float g_slAgcMin = 1e-2f;
+static float g_slAgcStrength = 0.5f;
 
 
 static void slAudioAnalysisLowPassFilter(float xv[NZEROS + 1],
@@ -63,6 +73,12 @@ static void slAudioAnalysisLowPassFilter(float xv[NZEROS + 1],
 void slAudioAnalysisInitialize(SLConfiguration const * config)
 {
     UNUSED(config);
+    if(!g_slAudioAnalysisFirstInit) {
+        for(size_t i = 0; i < LENGTHOF(g_slAgcSamples); ++i) {
+            g_slAgcSamples[i] = 1.0f;
+        }
+        g_slAudioAnalysisFirstInit = true;
+    }
 //    fftInitialize();
 }
 
@@ -86,6 +102,7 @@ void slAudioAnalysisAnalyze(SLRawAudio const * audio, SLAnalyzedAudio * analysis
     float rightPower = 0.0f;
     
     float agcTarget = 0.0f;
+    float agcValue = 1.0f;
     
     slAssert(SL_AUDIO_CHANNELS == 2);
     for(size_t i = 0; i < SL_AUDIO_FRAMES_PER_VIDEO_FRAME; ++i) {
@@ -119,7 +136,7 @@ void slAudioAnalysisAnalyze(SLRawAudio const * audio, SLAnalyzedAudio * analysis
     analysis->trebleEnergy = sqrtf(treblePower) * 2.0f;
     
     analysis->totalEnergy = (leftPower + rightPower) * 0.5f;
-    if(analysis->totalEnergy > 0) {
+    if(analysis->totalEnergy > 0.0f) {
         analysis->leftRightBalance = rightPower / (leftPower + rightPower);
     }
     else {
@@ -127,7 +144,7 @@ void slAudioAnalysisAnalyze(SLRawAudio const * audio, SLAnalyzedAudio * analysis
     }
     
     g_slAgcIndex = (g_slAgcIndex + 1) % LENGTHOF(g_slAgcSamples);
-    g_slAgcSamples[g_slAgcIndex] = analysis->totalEnergy * 1.414f;
+    g_slAgcSamples[g_slAgcIndex] = analysis->totalEnergy * SL_AGC_ROOT_2;
     
     for(size_t i = 0; i < LENGTHOF(g_slAgcSamples); ++i) {
         agcTarget += g_slAgcSamples[i] * (1.0f / LENGTHOF(g_slAgcSamples));
@@ -137,13 +154,27 @@ void slAudioAnalysisAnalyze(SLRawAudio const * audio, SLAnalyzedAudio * analysis
         }
         */
     }
-    g_slAgcTrackingValue = g_slAgcTrackingValue * 0.9f + agcTarget * 0.1f;
+    g_slAgcTrackingValue = expf(
+        (logf(g_slAgcMin) + logf(g_slAgcMax)) * 0.5f *
+            (1.0f - g_slAgcStrength) +
+        logf(agcTarget) * g_slAgcStrength);
     
-    analysis->bassEnergy /= g_slAgcTrackingValue;
-    analysis->midEnergy /= g_slAgcTrackingValue;
-    analysis->trebleEnergy /= g_slAgcTrackingValue;
+    if(g_slAgcTrackingValue > g_slAgcMax) {
+        g_slAgcTrackingValue = g_slAgcMax;
+    }
+    if(g_slAgcTrackingValue < g_slAgcMin) {
+        g_slAgcTrackingValue = g_slAgcMin;
+    }
     
-    analysis->totalEnergy /= g_slAgcTrackingValue;
+    slInfo("AGC tracking %.4f from %.4f\n", g_slAgcTrackingValue, agcTarget);
+    
+    agcValue = 1.0f / g_slAgcTrackingValue;
+    
+    analysis->bassEnergy *= agcValue;
+    analysis->midEnergy *= agcValue;
+    analysis->trebleEnergy *= agcValue;
+    
+    analysis->totalEnergy *= agcValue;
 }
 
 

@@ -205,7 +205,7 @@ bool gles2_harness_init(int argc, char * argv[])
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     
-    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 // Funny story, modern OpenGL differs from OpenGL ES (for us) ONLY in that ES
 // only has glClearDepthf() and non-ES only has glClearDepth()..!
 #ifdef STAGE_LIGHTS_USE_GLFW3_GLES2_HARNESS
@@ -478,13 +478,31 @@ void gles2_harness_update(float time)
 }
 
 
+float gles2_harness_red_transform(float red)
+{
+    return powf(red, 1.0f/3.0f);
+}
+
+
+float gles2_harness_green_transform(float green)
+{
+    return powf(green, 1.0f/3.0f);
+}
+
+
+float gles2_harness_blue_transform(float blue)
+{
+    return powf(blue, 1.0f/3.0f);
+}
+
+
 void gles2_harness_draw_lights(float time)
 {
     GLfloat viewMatrix[16];
     GLfloat viewProjectionMatrix[16];
     GLfloat modelMatrix[16];
     
-    GLfloat lightSize = 0.02f;
+    GLfloat lightSize = 0.015f;
     
     GLUS_UNUSED(time);
     
@@ -519,9 +537,9 @@ void gles2_harness_draw_lights(float time)
         glUniformMatrix4fv(g_modelMatrixLocation, 1, GL_FALSE, modelMatrix);
 
         glUniform4f(g_colorLocation,
-            gles2_harness_lights_left[i].r * (1.0f / 255.0f),
-            gles2_harness_lights_left[i].g * (1.0f / 255.0f),
-            gles2_harness_lights_left[i].b * (1.0f / 255.0f),
+            gles2_harness_red_transform(gles2_harness_lights_left[i].r * (1.0f / 255.0f)),
+            gles2_harness_green_transform(gles2_harness_lights_left[i].g * (1.0f / 255.0f)),
+            gles2_harness_blue_transform(gles2_harness_lights_left[i].b * (1.0f / 255.0f)),
             0.0f);
 
         glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -538,9 +556,9 @@ void gles2_harness_draw_lights(float time)
         glUniformMatrix4fv(g_modelMatrixLocation, 1, GL_FALSE, modelMatrix);
 
         glUniform4f(g_colorLocation,
-            gles2_harness_lights_right[i].r * (1.0f / 255.0f),
-            gles2_harness_lights_right[i].g * (1.0f / 255.0f),
-            gles2_harness_lights_right[i].b * (1.0f / 255.0f),
+            gles2_harness_red_transform(gles2_harness_lights_right[i].r * (1.0f / 255.0f)),
+            gles2_harness_green_transform(gles2_harness_lights_right[i].g * (1.0f / 255.0f)),
+            gles2_harness_blue_transform(gles2_harness_lights_right[i].b * (1.0f / 255.0f)),
             0.0f);
 
         glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -557,9 +575,9 @@ void gles2_harness_draw_lights(float time)
         glUniformMatrix4fv(g_modelMatrixLocation, 1, GL_FALSE, modelMatrix);
 
         glUniform4f(g_colorLocation,
-            gles2_harness_lights_overhead[i].r * (1.0f / 255.0f),
-            gles2_harness_lights_overhead[i].g * (1.0f / 255.0f),
-            gles2_harness_lights_overhead[i].b * (1.0f / 255.0f),
+            gles2_harness_red_transform(gles2_harness_lights_overhead[i].r * (1.0f / 255.0f)),
+            gles2_harness_green_transform(gles2_harness_lights_overhead[i].g * (1.0f / 255.0f)),
+            gles2_harness_blue_transform(gles2_harness_lights_overhead[i].b * (1.0f / 255.0f)),
             0.0f);
 
         glDrawArrays(GL_TRIANGLES, 0, 36);

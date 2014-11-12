@@ -81,7 +81,7 @@ void slAudioInputBlockingRead(SLRawAudio * audio)
                 totalPower += s * s;
             }
         }
-        totalPower /= LENGTHOF(audio->audio);
+        totalPower = sqrtf(totalPower / LENGTHOF(audio->audio));
         slInfo("Audio for video frame %llu; peak = %.4f, power = %.4f\n",
             g_slAudioVideoFrameCount, peak, totalPower);
     }
