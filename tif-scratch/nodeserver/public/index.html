@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+	<title>Group 7 Project</title>
+	<link rel='stylesheet' href='/stylesheets/style.css'></link>
+</head>
+
+<body>
+	<div id='content'>
+		<h1>Group 7 Project</h1>
+		<div id='messages'></div>
+		
+		<form id='send-form' >
+			<input id='send-command'/>
+			<input id='send-button' type='submit' value='Send'/>
+			
+			<div id='help'>
+				Commands:
+				<ul>
+					<li>Something: <code>something</code></li>
+				</ul>
+			</div>
+		</form>
+	</div>
+	
+	<script src='/socket.io/socket.io.js' type='text/javascript'></script>
+	<script src='http://code.jquery.com/jquery-1.8.0.min.js' type='text/javascript'></script>
+	<script src='javascripts/lights.js' type='text/javascript'></script>
+	<script src='javascripts/lights_ui.js' type='text/javascript'></script>
+</body>
+</html>

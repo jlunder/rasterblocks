@@ -1,0 +1,9 @@
+{
+	"name": "udp-relay-demo",
+	"version": "0.0.1",
+	"description": "Demo relaying UDP messages from Node.js to a C app.",
+	"dependencies": {
+		"socket.io": "~0.9.6",
+		"mime": "~1.2.7"
+	}
+}
