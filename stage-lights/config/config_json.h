@@ -1,5 +1,6 @@
 #include <json/json.h>
 
+// see http://linuxprograms.wordpress.com/2010/08/19/json_parser_json-c/
 
 SLLogLevel getLogLevel(const char* val) {
 	if(strcmp(val, "SLLL_INFO") == 0) {
@@ -40,7 +41,9 @@ void parseJsonObject(SLConfiguration * config,json_object * jobj) {
 		}
 		else if(strcmp(key, "audioSourceParam") == 0) {
 			strcpy(config->audioSourceParam,s_val);
-			//config->audioSourceParam = s_val;
+		}
+		else if(strcmp(key, "monitorAudio") == 0) {
+			config->monitorAudio = json_object_get_boolean(val);
 		}
 	}
 }

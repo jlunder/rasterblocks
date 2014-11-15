@@ -82,6 +82,7 @@ typedef struct {
     SLAudioInputSource audioSource;
     char audioSourceParam[PATH_MAX];
     
+    bool monitorAudio;
     // analysis tweaks?
     // output mode?
     // output device path?

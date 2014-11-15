@@ -2,10 +2,12 @@
 
 #include "audio_in/file_in.h"
 #include "audio_in/alsa_in.h"
+#include "audio_in/alsa_out.h"
 
 
 static SLAudioInputSource g_slAudioSource = SLAIS_INVALID;
 static uint64_t g_slAudioVideoFrameCount = 0;
+static bool g_monitorAudio = false;
 
 
 void slAudioInputInitialize(SLConfiguration const * config)
@@ -28,6 +30,10 @@ void slAudioInputInitialize(SLConfiguration const * config)
     	slFatal("Invalid audio source type %d\n", config->audioSource);
     	break;
     }
+    if(config->monitorAudio) {
+        g_monitorAudio = true;
+        slAlsaPlaybackInit(SL_AUDIO_FRAMES_PER_VIDEO_FRAME,SL_AUDIO_CHANNELS);
+    }
 }
 
 
@@ -48,6 +54,9 @@ void slAudioInputShutdown(void)
     	slFatal("Invalid audio source type %d\n", g_slAudioSource);
     	break;
     }
+    if(g_monitorAudio) {
+        slAlsaPlaybackClose();
+    }
     
     g_slAudioSource = SLAIS_INVALID;
 }
@@ -57,7 +66,7 @@ void slAudioInputBlockingRead(SLRawAudio * audio)
 {
     switch(g_slAudioSource) {
     case SLAIS_ALSA:
-        slAlsaReadAndPlayback(audio);
+        slAlsaRead(audio);
         break;
     case SLAIS_FILE:
         slSndFileReadLooping(audio, SL_AUDIO_FRAMES_PER_VIDEO_FRAME,
@@ -67,6 +76,11 @@ void slAudioInputBlockingRead(SLRawAudio * audio)
     	// SLAIS_INVALID is not legal here: we must be init'd
     	slFatal("Invalid audio source type %d\n", g_slAudioSource);
     	break;
+    }
+
+    if(g_monitorAudio) {
+        slAlsaPlayback(audio, SL_AUDIO_FRAMES_PER_VIDEO_FRAME, 
+            SL_AUDIO_CHANNELS);
     }
     
     if(slInfoEnabled()) {

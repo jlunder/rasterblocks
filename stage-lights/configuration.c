@@ -64,6 +64,7 @@ void slConfigurationLoad(SLConfiguration * config)
     }
     slWarning("Using Audio Source: %d\n",config->audioSource);
     slWarning("Using Audio Source Param: %s\n",config->audioSourceParam);
+    slWarning("Audio Playback Enabled: %s\n",config->monitorAudio?"true":"false");
 }
 
 

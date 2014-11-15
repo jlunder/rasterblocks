@@ -3,7 +3,7 @@
 	// input
 	"audioSource": 	"SLAIS_ALSA",	//SLAIS_ALSA, SLAIS_FILE
 	"audioSourceParam": "plughw:1,0",
-	"monitorAudio": false
+	"monitorAudio": true
 	// analysis
 	// light gen
 	// output

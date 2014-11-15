@@ -112,20 +112,11 @@ int slAlsaInit(const char* playback,const char* capture,unsigned int num_frames,
     g_channels = channels;
     int err;
     (void)playback;
-    //if ((err = slOpenStream(&playback_handle, playback, SND_PCM_STREAM_PLAYBACK,SND_PCM_FORMAT_FLOAT_LE,channels,rate,num_frames)) < 0) {
-    //    slFatal("failed to open stream for playback");
-    //    return err;
-    //}
 
     if ((err = slOpenStream(&capture_handle, capture, SND_PCM_STREAM_CAPTURE,SND_PCM_FORMAT_FLOAT_LE,channels,rate,num_frames)) < 0) {
         slFatal("failed to open stream for capture");
         return err;
     }
-
-    //if ((err = snd_pcm_prepare(playback_handle)) < 0) {
-    //    slFatal("cannot prepare audio interface for use(%s)\n", snd_strerror(err));
-    //    return err;
-    //}
 
     if ((err = snd_pcm_start(capture_handle)) < 0) {
         slFatal("cannot prepare audio interface for use(%s)\n", snd_strerror(err));
@@ -138,26 +129,13 @@ int slAlsaInit(const char* playback,const char* capture,unsigned int num_frames,
 }
 
 void slAlsaClose() {
-    slInfo("Closing alsa playback/capture devices\n");
-    //snd_pcm_close(playback_handle);
+    slInfo("Closing alsa capture device\n");
     snd_pcm_close(capture_handle);
 
     free(buffer);
 }
-/*
-void slAlsaPlayback() {
-    int avail = snd_pcm_avail_update(playback_handle);
-    if (avail > 0) {
-        if (avail > g_num_frames)
-            avail = g_num_frames;
 
-        snd_pcm_writei(playback_handle, buffer, avail);
-    }
-}
-*/
-
-void slAlsaRead() {
-    //int err;
+void slAlsaRead(SLRawAudio* audio_buf) {
     snd_pcm_sframes_t frames_read;
     
     snd_pcm_wait(capture_handle, 1000);
@@ -177,11 +155,6 @@ void slAlsaRead() {
         slError("readi failed(%s)\n", snd_strerror(frames_read));
         memset(buffer, 0, g_num_frames * g_channels * sizeof *buffer);
     }
-}
 
-
-void slAlsaReadAndPlayback(SLRawAudio* audio_buf) {
-    slAlsaRead();
-    //slAlsaPlayback();
     memcpy(audio_buf->audio, buffer, sizeof audio_buf->audio);
 }
