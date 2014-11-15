@@ -6,3 +6,4 @@
 *.o.*
 *.d
 *.d.*
+test/tracks/*.wav
