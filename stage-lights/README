@@ -4,4 +4,10 @@ compilation on Ubuntu 14.04:
 
 sudo apt-get install libgles2-mesa-dev
 sudo apt-get install libsdl2-dev
-apt-get install libglfw-dev
+sudo apt-get install libglfw-dev
+
+sudo apt-get install libfftw3-dev libfftw3-doc
+
+sudo apt-get install libav-tools
+
+sudo apt-get install libjson0 libjson0-dev

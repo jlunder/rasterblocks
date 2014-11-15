@@ -1,4 +1,5 @@
 #include "configuration.h"
+#include "config/config_json.h"
 
 #define STAGE_LIGHTS_DEFAULT_INPUT_ALSA "plughw:1,0"
 #define STAGE_LIGHTS_DEFAULT_INPUT_FILE "../test/clips/909Tom X1.wav"
@@ -17,6 +18,7 @@ void slConfigurationSetDefaults(SLConfiguration * config)
     snprintf(config->audioSourceParam, sizeof config->audioSourceParam,
         STAGE_LIGHTS_DEFAULT_INPUT_FILE);
 #endif
+    config->configPath[0] = 0;
 }
 
 
@@ -44,13 +46,24 @@ void slConfigurationParseArgv(SLConfiguration * config, int argc,
                     sizeof config->audioSourceParam, "%s", argv[i]);
             }
         }
+        if(strcmp(argv[i], "-sc") == 0) {
+            if(i + 1 < argc) {
+                ++i;
+                snprintf(config->configPath,
+                    sizeof config->configPath, "%s", argv[i]);
+            }
+        }
     }
 }
 
 
 void slConfigurationLoad(SLConfiguration * config)
 {
-    UNUSED(config);
+    if(config->configPath[0]) {
+        slParseJson(config,config->configPath);
+    }
+    slWarning("Using Audio Source: %d\n",config->audioSource);
+    slWarning("Using Audio Source Param: %s\n",config->audioSourceParam);
 }
 
 

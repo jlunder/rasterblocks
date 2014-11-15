@@ -27,7 +27,7 @@ ifeq ($(OS), LINUX)
 	CPPFLAGS_COMMON=--std=gnu99 -fgnu89-inline -D_POSIX_C_SOURCE=200809L -D__USE_MISC
 	CPPFLAGS=$(CPPFLAGS_COMMON) -DSTAGE_LIGHTS_LINUX -DGLUS_ES2 -DSTAGE_LIGHTS_USE_SDL2_GLES2_HARNESS
 	CPPFLAGS_TARGET=$(CPPFLAGS_COMMON) -DSTAGE_LIGHTS_LINUX -DSTAGE_LIGHTS_USE_TARGET_HARNESS -Icross-dep/include
-	LDFLAGS=-g -lSDL2 -lm -lGLESv2 -lsndfile -lasound -lfftw3f
+	LDFLAGS=-g -lSDL2 -lm -lGLESv2 -lsndfile -lasound -lfftw3f -ljson
 	LDFLAGS_TARGET=-g -lm -Lcross-dep/lib -Wl,-rpath=cross-dep/lib -lsndfile -lasound -lfftw3f
 endif
 ifeq ($(OS), OSX)
