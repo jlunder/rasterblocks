@@ -50,7 +50,7 @@ void parseJsonObject(SLConfiguration * config,json_object * jobj) {
 void slParseJson(SLConfiguration * config,char* filename) {
 
 	char * buffer = 0;
-	long length;
+	size_t length;
 	FILE * f = fopen (filename, "rb");
 
 	if (f)
@@ -61,7 +61,10 @@ void slParseJson(SLConfiguration * config,char* filename) {
 		buffer = malloc (length);
 		if (buffer)
 		{
-			fread (buffer, 1, length, f);
+			size_t result = fread (buffer, 1, length, f);
+			if(result!=length) {
+				slError("Error reading %s",filename);
+			}
 		}
 		fclose (f);
 	}
@@ -71,6 +74,6 @@ void slParseJson(SLConfiguration * config,char* filename) {
 		json_object * jobj = json_tokener_parse(buffer);
 		parseJsonObject(config,jobj);
 	} else {
-		slError("Failed to read json file");
+		slError("Failed to read %s",filename);
 	}
 }

@@ -28,7 +28,7 @@ ifeq ($(OS), LINUX)
 	CPPFLAGS=$(CPPFLAGS_COMMON) -DSTAGE_LIGHTS_LINUX -DGLUS_ES2 -DSTAGE_LIGHTS_USE_SDL2_GLES2_HARNESS
 	CPPFLAGS_TARGET=$(CPPFLAGS_COMMON) -DSTAGE_LIGHTS_LINUX -DSTAGE_LIGHTS_USE_TARGET_HARNESS -Icross-dep/include
 	LDFLAGS=-g -lSDL2 -lm -lGLESv2 -lsndfile -lasound -lfftw3f -ljson
-	LDFLAGS_TARGET=-g -lm -Lcross-dep/lib -Wl,-rpath=cross-dep/lib -lsndfile -lasound -lfftw3f
+	LDFLAGS_TARGET=-g -lm -Lcross-dep/lib -Wl,-rpath=cross-dep/lib -lsndfile -lasound -lfftw3f -ljson
 endif
 ifeq ($(OS), OSX)
 	CC=gcc
@@ -100,7 +100,7 @@ stage_lights: $(STAGE_LIGHTS_O)
 	$(CC) -o bin/$@ $^ $(LDFLAGS)
 
 stage_lights.target: $(STAGE_LIGHTS_O_TARGET)
-	$(CC_TARGET) -o $@ $^ $(LDFLAGS_TARGET)
+	$(CC_TARGET) -o bin/$@ $^ $(LDFLAGS_TARGET)
 
 cleanall: clean
 
