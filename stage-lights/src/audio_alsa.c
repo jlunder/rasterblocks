@@ -1,10 +1,15 @@
+#include "audio_alsa.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <alsa/asoundlib.h>
 #include <signal.h>
 
-snd_pcm_t /**playback_handle, */*capture_handle;
+snd_pcm_t *capture_handle;
+
+float* capture_buffer;
+int g_num_frames;
+int g_channels;
 
 int mode = SND_PCM_NONBLOCK;
 //int mode = SND_PCM_ASYNC;
@@ -102,11 +107,7 @@ static int slOpenStream(snd_pcm_t **handle, const char *name, int dir, unsigned 
     return 0;
 }
 
-float* buffer;
-int g_num_frames;
-int g_channels;
-
-int slAlsaInit(const char* playback,const char* capture,unsigned int num_frames,unsigned int channels,unsigned int rate)
+int slAlsaCaptureInit(const char* playback,const char* capture,unsigned int num_frames,unsigned int channels,unsigned int rate)
 {
     g_num_frames = num_frames;
     g_channels = channels;
@@ -123,16 +124,16 @@ int slAlsaInit(const char* playback,const char* capture,unsigned int num_frames,
         return err;
     }
 
-    buffer = malloc(num_frames*channels*sizeof(*buffer));
-    memset(buffer, 0, num_frames*channels*sizeof(*buffer));
+    capture_buffer = malloc(num_frames*channels*sizeof(*capture_buffer));
+    memset(capture_buffer, 0, num_frames*channels*sizeof(*capture_buffer));
     return 0;
 }
 
-void slAlsaClose() {
+void slAlsaCaptureClose() {
     slInfo("Closing alsa capture device\n");
     snd_pcm_close(capture_handle);
 
-    free(buffer);
+    free(capture_buffer);
 }
 
 void slAlsaRead(SLRawAudio* audio_buf) {
@@ -150,11 +151,62 @@ void slAlsaRead(SLRawAudio* audio_buf) {
     default:
         break;
     }
-    frames_read = snd_pcm_readi(capture_handle, buffer, g_num_frames);
+    frames_read = snd_pcm_readi(capture_handle, capture_buffer, g_num_frames);
     if(frames_read < 0) {
         slError("readi failed(%s)\n", snd_strerror(frames_read));
-        memset(buffer, 0, g_num_frames * g_channels * sizeof *buffer);
+        memset(capture_buffer, 0, g_num_frames * g_channels * sizeof *capture_buffer);
     }
 
-    memcpy(audio_buf->audio, buffer, sizeof audio_buf->audio);
+    memcpy(audio_buf->audio, capture_buffer, sizeof audio_buf->audio);
+}
+
+
+// ALSA playback
+
+static snd_pcm_t *playback_handle;
+float* playback_buffer;
+
+void slAlsaPlaybackInit(int num_frames, int channels)
+{
+    int error = 0;
+    error = snd_pcm_open(&playback_handle, "default", SND_PCM_STREAM_PLAYBACK, 0);
+
+    if (error < 0) {
+        slError("Alsa playback open failed\n");
+    }
+
+    error =  snd_pcm_set_params(playback_handle, SND_PCM_FORMAT_FLOAT,
+                           SND_PCM_ACCESS_RW_INTERLEAVED, channels,
+                           SL_AUDIO_SAMPLE_RATE, 1, 500000);
+    if (error < 0) {
+        slError("Alsa playback set params failed\n");
+    }
+
+    playback_buffer = malloc(num_frames*channels*sizeof(*playback_buffer));
+    memset(playback_buffer, 0, num_frames*channels*sizeof(*playback_buffer));
+}
+
+void slAlsaPlaybackClose() {
+    slInfo("Closing alsa playback device\n");
+    snd_pcm_close(playback_handle);
+    free(playback_buffer);
+}
+
+void slAlsaPlayback(SLRawAudio* audio_buf, int num_frames, int channels) {
+
+    for (int frame = 0; frame < num_frames; frame++) {
+        for (int channel = 0; channel < channels; channel++) {
+            playback_buffer[frame*channels+channel] = audio_buf->audio[frame][channel];
+        }
+    }
+
+    snd_pcm_sframes_t frames;
+
+    frames = snd_pcm_writei(playback_handle, playback_buffer, num_frames);
+    if (frames < 0) {
+        frames = snd_pcm_recover(playback_handle, frames, 0);
+    }
+    if (frames < 0) {
+        slError("snd_pcm_writei failed\n");
+    }
 }

@@ -1,8 +1,7 @@
 #include "audio_input.h"
 
-#include "audio_in/file_in.h"
-#include "audio_in/alsa_in.h"
-#include "audio_in/alsa_out.h"
+#include "audio_input_file.h"
+#include "audio_alsa.h"
 
 
 static SLAudioInputSource g_slAudioSource = SLAIS_INVALID;
@@ -17,7 +16,7 @@ void slAudioInputInitialize(SLConfiguration const * config)
     
     switch(config->audioSource) {
     case SLAIS_ALSA:
-        slAlsaInit(config->audioSourceParam, config->audioSourceParam,
+        slAlsaCaptureInit(config->audioSourceParam, config->audioSourceParam,
             SL_AUDIO_FRAMES_PER_VIDEO_FRAME,SL_AUDIO_CHANNELS,
             SL_AUDIO_SAMPLE_RATE);
         g_slAudioSource = SLAIS_ALSA;
@@ -45,7 +44,7 @@ void slAudioInputShutdown(void)
     	// were never init'd.
     	break;
     case SLAIS_ALSA:
-        slAlsaClose();
+        slAlsaCaptureClose();
         break;
     case SLAIS_FILE:
         slSndFileClose();

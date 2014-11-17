@@ -1,3 +1,4 @@
+#include "audio_input_file.h"
 #include <sndfile.h>
 #include <stdio.h>
 
@@ -20,7 +21,7 @@ void slSndFileClose() {
 }
 
 
-static void slSndFileReadLooping(SLRawAudio* audio_buf, int num_frames, int channels)
+void slSndFileReadLooping(SLRawAudio* audio_buf, int num_frames, int channels)
 {
 	float buffer[channels * num_frames];
 	int readCount = sf_readf_float(g_snd_file, buffer, num_frames);

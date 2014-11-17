@@ -1,5 +1,5 @@
 #include "configuration.h"
-#include "config/config_json.h"
+#include "configuration_json.h"
 
 #define STAGE_LIGHTS_DEFAULT_INPUT_ALSA "plughw:1,0"
 #define STAGE_LIGHTS_DEFAULT_INPUT_FILE "../test/clips/909Tom X1.wav"
