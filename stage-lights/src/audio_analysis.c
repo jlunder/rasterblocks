@@ -2,7 +2,6 @@
 #include <stdlib.h> 
 
 #include "audio_analysis.h"
-#include "fft.h"
 #include "filters.h"
 
 //#include "analysis/levels.h"
@@ -15,13 +14,13 @@ static float const SL_AGC_ROOT_2 = 1.41421356237f;
 #define NZEROS 4
 #define NPOLES 4
 
-// 100Hz cutoff
-static float const g_slG100Hz = 5.543300177e+08;
+// 200Hz cutoff (For now)
+static float const g_slG100Hz = 3.523725849e+07;
 static float const g_slK100Hz[NPOLES] = {
-    -0.9663723877f,
-    3.8985449174f,
-    -5.8979669386f,
-    3.9657943801f,
+	-0.9338739884f,
+	3.7993827672f,
+	-5.7970987038,
+	3.9315894710,
 };
 
 // 300Hz cutoff
@@ -79,60 +78,52 @@ void slAudioAnalysisInitialize(SLConfiguration const * config)
         }
         g_slAudioAnalysisFirstInit = true;
     }
-//    fftInitialize();
 }
 
 
 void slAudioAnalysisShutdown(void)
 {
-//	fftDestroy();
+}
+
+static void slAudioAnalysisGatherChannels(SLRawAudio const * audio,
+	float *leftPower, float *rightPower, float* inputBuf)
+{
+	for (size_t i = 0; i < SL_AUDIO_FRAMES_PER_VIDEO_FRAME; ++i) {
+		*leftPower += audio->audio[i][0] * audio->audio[i][0] *
+            (1.0f / SL_AUDIO_FRAMES_PER_VIDEO_FRAME);
+        *rightPower += audio->audio[i][1] * audio->audio[i][1] *
+            (1.0f / SL_AUDIO_FRAMES_PER_VIDEO_FRAME);
+        inputBuf[i] = (audio->audio[i][0] + audio->audio[i][1]) * 0.5;
+	}
+	*leftPower = sqrtf(*leftPower);
+    *rightPower = sqrtf(*rightPower);
 }
 
 
-void slAudioAnalysisAnalyze(SLRawAudio const * audio, SLAnalyzedAudio * analysis)
+static void slAudioAnalysisCalculatePower(
+	float* inputBuf, float* buf100Hz, float* buf300Hz,
+	float *bassPower, float *midPower, float *treblePower)
 {
-    float inputBuf[SL_AUDIO_FRAMES_PER_VIDEO_FRAME];
-    float buf100Hz[SL_AUDIO_FRAMES_PER_VIDEO_FRAME];
-    float buf300Hz[SL_AUDIO_FRAMES_PER_VIDEO_FRAME];
-    float bassPower = 0.0f;
-    float midPower = 0.0f;
-    float treblePower = 0.0f;
-    
-    float leftPower = 0.0f;
-    float rightPower = 0.0f;
-    
-    float agcTarget = 0.0f;
-    float agcValue = 1.0f;
-    
-    slAssert(SL_AUDIO_CHANNELS == 2);
-    for(size_t i = 0; i < SL_AUDIO_FRAMES_PER_VIDEO_FRAME; ++i) {
-        leftPower += audio->audio[i][0] * audio->audio[i][0] *
+	for(size_t i = 0; i < SL_AUDIO_FRAMES_PER_VIDEO_FRAME; ++i) {
+        *bassPower += buf100Hz[i] * buf100Hz[i] *
             (1.0f / SL_AUDIO_FRAMES_PER_VIDEO_FRAME);
-        rightPower += audio->audio[i][1] * audio->audio[i][1] *
-            (1.0f / SL_AUDIO_FRAMES_PER_VIDEO_FRAME);
-        inputBuf[i] = (audio->audio[i][0] + audio->audio[i][1]) * 0.5;
-    }
-    leftPower = sqrtf(leftPower);
-    rightPower = sqrtf(rightPower);
-    
-    slAudioAnalysisLowPassFilter(g_slXV100Hz, g_slYV100Hz, g_slG100Hz,
-        g_slK100Hz, inputBuf, buf100Hz);
-    slAudioAnalysisLowPassFilter(g_slXV300Hz, g_slYV300Hz, g_slG300Hz,
-        g_slK300Hz, inputBuf, buf300Hz);
-    
-    for(size_t i = 0; i < SL_AUDIO_FRAMES_PER_VIDEO_FRAME; ++i) {
-        bassPower += buf300Hz[i] * buf300Hz[i] *
-            (1.0f / SL_AUDIO_FRAMES_PER_VIDEO_FRAME);
-        midPower += (buf300Hz[i] - buf100Hz[i]) *
+
+        *midPower += (buf300Hz[i] - buf100Hz[i]) *
             (buf300Hz[i] - buf100Hz[i]) *
             (1.0f / SL_AUDIO_FRAMES_PER_VIDEO_FRAME);
-        treblePower += (inputBuf[i] - buf300Hz[i]) *
+
+        *treblePower += (inputBuf[i] - buf300Hz[i]) *
             (inputBuf[i] - buf300Hz[i]) *
             (1.0f / SL_AUDIO_FRAMES_PER_VIDEO_FRAME);
     }
-    
-    analysis->bassEnergy = sqrtf(bassPower) * 2.0f;
-    analysis->midEnergy = 0.0f;//1.0f + midPower * 20.0f;
+}
+
+static void slAudioAnalysisCalculateEnergy( SLAnalyzedAudio * analysis,
+	float bassPower, float midPower, float treblePower,
+	float leftPower, float rightPower)
+{
+	analysis->bassEnergy = sqrtf(bassPower) * 2.0f;
+    analysis->midEnergy = sqrtf(midPower) * 2.0f;
     analysis->trebleEnergy = sqrtf(treblePower) * 2.0f;
     
     analysis->totalEnergy = (leftPower + rightPower) * 0.5f;
@@ -142,7 +133,12 @@ void slAudioAnalysisAnalyze(SLRawAudio const * audio, SLAnalyzedAudio * analysis
     else {
         analysis->leftRightBalance = 0.5f;
     }
-    
+}
+
+static void slAudioAnalysisUpdateAgc(SLAnalyzedAudio * analysis)
+{
+	float agcTarget = 0.0f;
+    float agcValue = 1.0f;
     g_slAgcIndex = (g_slAgcIndex + 1) % LENGTHOF(g_slAgcSamples);
     g_slAgcSamples[g_slAgcIndex] = analysis->totalEnergy * SL_AGC_ROOT_2;
     
@@ -175,6 +171,36 @@ void slAudioAnalysisAnalyze(SLRawAudio const * audio, SLAnalyzedAudio * analysis
     analysis->trebleEnergy *= agcValue;
     
     analysis->totalEnergy *= agcValue;
+
+}
+
+
+void slAudioAnalysisAnalyze(SLRawAudio const * audio, SLAnalyzedAudio * analysis)
+{
+    float inputBuf[SL_AUDIO_FRAMES_PER_VIDEO_FRAME];
+    float buf100Hz[SL_AUDIO_FRAMES_PER_VIDEO_FRAME];
+    float buf300Hz[SL_AUDIO_FRAMES_PER_VIDEO_FRAME];
+    float bassPower = 0.0f;
+    float midPower = 0.0f;
+    float treblePower = 0.0f;
+    
+    float leftPower = 0.0f;
+    float rightPower = 0.0f;
+        
+    slAssert(SL_AUDIO_CHANNELS == 2);
+    slAudioAnalysisGatherChannels(audio, &leftPower, &rightPower, inputBuf);
+    
+    slAudioAnalysisLowPassFilter(g_slXV100Hz, g_slYV100Hz, g_slG100Hz,
+        g_slK100Hz, inputBuf, buf100Hz);
+    slAudioAnalysisLowPassFilter(g_slXV300Hz, g_slYV300Hz, g_slG300Hz,
+        g_slK300Hz, inputBuf, buf300Hz);
+
+    slAudioAnalysisCalculatePower(inputBuf, buf100Hz, buf300Hz,
+    	&bassPower, &midPower, &treblePower);
+
+    slAudioAnalysisCalculateEnergy(analysis, bassPower, midPower, treblePower, leftPower, rightPower);
+
+    slAudioAnalysisUpdateAgc(analysis);
 }
 
 

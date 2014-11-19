@@ -3,6 +3,7 @@
 
 #define STAGE_LIGHTS_DEFAULT_INPUT_ALSA "plughw:1,0"
 #define STAGE_LIGHTS_DEFAULT_INPUT_FILE "../test/clips/909Tom X1.wav"
+#define STAGE_LIGHTS_DEFAULT_INPUT_CONFIG "../config/host_config.json"
 
 
 void slConfigurationSetDefaults(SLConfiguration * config)
@@ -19,6 +20,8 @@ void slConfigurationSetDefaults(SLConfiguration * config)
         STAGE_LIGHTS_DEFAULT_INPUT_FILE);
 #endif
     config->configPath[0] = 0;
+    /*snprintf(config->configPath, sizeof config->configPath,
+        STAGE_LIGHTS_DEFAULT_INPUT_CONFIG);*/
 }
 
 
