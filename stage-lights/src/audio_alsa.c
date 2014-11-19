@@ -1,9 +1,12 @@
-#include "audio_alsa.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <sys/types.h>
 #include <alsa/asoundlib.h>
 #include <signal.h>
+
+#include "audio_alsa.h"
 
 snd_pcm_t *capture_handle;
 
