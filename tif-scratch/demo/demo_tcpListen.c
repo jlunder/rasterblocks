@@ -17,7 +17,9 @@ static void dieError(char *errorMessage)
 static void handleMessage(int clntSock){
 	// Buffer to hold packet data:
 	char message[MSG_MAX_LEN];
+	FILE *fp;
 
+	fp = fopen("config.json", "w");
 	int bytesRx = recv(clntSock, message, MSG_MAX_LEN, 0);
 	message[bytesRx] = 0;
 	printf("initial message received: %s \n", message);
@@ -25,15 +27,17 @@ static void handleMessage(int clntSock){
 		dieError("failed to receive initial bytes");
 	}
 	while(bytesRx > 0) {
+		fwrite(message, sizeof(char), bytesRx, fp);
 		/* Send back received data */
-        if (send(clntSock, message, bytesRx, 0) != bytesRx) {
-        	dieError("Failed to send bytes to client");
-        }
-        /* Check for more data */
-        if ((bytesRx = recv(clntSock, message, MSG_MAX_LEN, 0)) < 0) {
-            dieError("Failed to receive additional bytes from client");
-        }
+		if (send(clntSock, message, bytesRx, 0) != bytesRx) {
+			dieError("Failed to send bytes to client");
+		}
+		/* Check for more data */
+		if ((bytesRx = recv(clntSock, message, MSG_MAX_LEN, 0)) < 0) {
+		    dieError("Failed to receive additional bytes from client");
+		}
 	}
+	fclose(fp);
 	close(clntSock);
 }
 

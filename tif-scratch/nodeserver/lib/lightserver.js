@@ -23,7 +23,7 @@ function handleCommand(socket) {
 	socket.on('command', function(data) {
 		console.log('received command: ' + data);
 		
-		// Info for connecting to the local process via UDP
+		// Info for connecting to the local process via TCP
 		var PORT = 22110;
 		var HOST = '127.0.0.1';
 		var buffer = new Buffer(data);

@@ -65,7 +65,7 @@ function sendFile(response, filePath, fileContents) {
 /*
  * Create the Userver to listen for the websocket
  */
-var udpServer = require('./lib/lightserver');
-udpServer.listen(server);
+var tcpServer = require('./lib/lightserver');
+tcpServer.listen(server);
 
 

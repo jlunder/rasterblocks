@@ -10,16 +10,23 @@
 		<h1>Group 7 Project</h1>
 		<div id='messages'></div>
 		
-		<form id='send-form' >
-			<input id='send-command'/>
-			<input id='send-button' type='submit' value='Send'/>
-			
-			<div id='help'>
-				Commands:
-				<ul>
-					<li>Something: <code>something</code></li>
-				</ul>
-			</div>
+		<form id='config-form'>
+		   	<div id="config">
+		   		<p>Log Level</p>
+		    	<select id="logLevel" name="logLevel">
+		        	<option value = "SLLL_INFO">INFO</option>
+		        	<option value = "SLLL_WARNING">WARNING</option>
+		        	<option value = "SLLL_ERROR">ERROR</option>
+		        </select>
+		    </div>
+		    <div>
+		    	<p>Audio Input Type</p>
+		 		<select id="audioSource" name="audioSource">
+		 			<option value = "SLAIS_ALSA">Audio In</option>
+		        	<option value = "SLAIS_FILE">Audio File</option>
+		 		</select>
+		 	</div>
+		 	<button id="select-submit" type="button">Submit</button>
 		</form>
 	</div>
 	
