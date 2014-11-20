@@ -3,7 +3,9 @@
 	// input
 	"audioSource": 	"SLAIS_FILE",	//SLAIS_INVALID, SLAIS_ALSA, SLAIS_FILE
 	"audioSourceParam": "../test/clips/909Tom X1.wav",
-	"monitorAudio": true
+	"monitorAudio": true,
+	"lowCutoff": 200,
+	"hiCutoff": 300,
 	// analysis
 	// light gen
 	// output

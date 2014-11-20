@@ -20,8 +20,8 @@ void slConfigurationSetDefaults(SLConfiguration * config)
         STAGE_LIGHTS_DEFAULT_INPUT_FILE);
 #endif
     config->configPath[0] = 0;
-    /*snprintf(config->configPath, sizeof config->configPath,
-        STAGE_LIGHTS_DEFAULT_INPUT_CONFIG);*/
+    //snprintf(config->configPath, sizeof config->configPath,
+    //    STAGE_LIGHTS_DEFAULT_INPUT_CONFIG);
 }
 
 

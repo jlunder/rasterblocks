@@ -46,6 +46,12 @@ void parseJsonObject(SLConfiguration * config,json_object * jobj) {
 		else if(strcmp(key, "monitorAudio") == 0) {
 			config->monitorAudio = json_object_get_boolean(val);
 		}
+		else if (strcmp(key, "lowCutoff") == 0) {
+			config->lowCutoff = (float) json_object_get_int(val);
+		}
+		else if (strcmp(key, "hiCutoff") == 0) {
+			config->hiCutoff = (float) json_object_get_int(val);
+		}
 	}
 }
 void slParseJson(SLConfiguration * config,char* filename) {

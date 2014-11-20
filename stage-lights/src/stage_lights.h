@@ -83,6 +83,9 @@ typedef struct {
     char audioSourceParam[PATH_MAX];
     
     bool monitorAudio;
+
+    float lowCutoff;
+    float hiCutoff;
     // analysis tweaks?
     // output mode?
     // output device path?
