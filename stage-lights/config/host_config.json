@@ -6,6 +6,9 @@
 	"monitorAudio": true,
 	"lowCutoff": 200,
 	"hiCutoff": 300,
+	//"agcMax": 1,
+	//"agcMin": 0.001,
+	//"agcStrength": 0.5,
 	// analysis
 	// light gen
 	// output

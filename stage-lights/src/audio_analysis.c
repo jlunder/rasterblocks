@@ -33,11 +33,11 @@ static float g_slKHI[NPOLES] = {
 
 static bool g_slAudioAnalysisFirstInit = false;
 
-static float g_slXV100Hz[NZEROS + 1];
-static float g_slYV100Hz[NPOLES + 1];
+static float g_slXVLOW[NZEROS + 1];
+static float g_slYVLOW[NPOLES + 1];
 
-static float g_slXV300Hz[NZEROS + 1];
-static float g_slYV300Hz[NPOLES + 1];
+static float g_slXVHI[NZEROS + 1];
+static float g_slYVHI[NPOLES + 1];
 
 static float g_slAgcSamples[SL_VIDEO_FRAME_RATE * SL_AGC_SAMPLE_WINDOW_S];
 static size_t g_slAgcIndex = 0;
@@ -64,6 +64,32 @@ static void slAudioAnalysisLowPassFilter(float xv[NZEROS + 1],
             (k[0] * yv[0]) + (k[1] * yv[1]) +
             (k[2] * yv[2]) + (k[3] * yv[3]);
         outputBuf[i] = yv[4];
+        /*
+        //if (isinf(yv[4])) {
+        if (i == 768) {
+			printf("xv0 %f\n", xv[0]);
+			printf("xv1 %f\n", xv[1]);
+			printf("xv2 %f\n", xv[2]);
+			printf("xv3 %f\n", xv[3]);
+			printf("xv4 %f\n", xv[4]);
+
+			printf("yv0 %f\n", yv[0]);
+			printf("yv1 %f\n", yv[1]);
+			printf("yv2 %f\n", yv[2]);
+			printf("yv3 %f\n", yv[3]);
+			printf("yv4 %f\n", yv[4]);
+
+			printf("k0 %f\n", k[0]);
+			printf("k1 %f\n", k[1]);
+			printf("k2 %f\n", k[2]);
+			printf("k3 %f\n", k[3]);
+			printf("%f\n", outputBuf[i]);
+			printf("%f\n", inputBuf[i]);
+			printf("%f\n", g);
+			printf("%d\n", (int)i);
+			exit(1);
+        }
+        */
     }
 }
 
@@ -179,6 +205,16 @@ void slAudioAnalysisInitialize(SLConfiguration const * config)
 		slAudioAnalysisCalculateCoefficients(config->lowCutoff, &g_slGLOW, g_slKLOW);
 		slAudioAnalysisCalculateCoefficients(config->hiCutoff, &g_slGHI, g_slKHI);
     }
+    if (config->agcMax) {
+		g_slAgcMax = config->agcMax;
+    }
+    if (config->agcMin) {
+		g_slAgcMin = config->agcMin;
+    }
+    if (config->agcStrength) {
+		g_slAgcStrength = config->agcStrength;
+    }
+
     if(!g_slAudioAnalysisFirstInit) {
         for(size_t i = 0; i < LENGTHOF(g_slAgcSamples); ++i) {
             g_slAgcSamples[i] = 1.0f;
@@ -297,9 +333,9 @@ void slAudioAnalysisAnalyze(SLRawAudio const * audio, SLAnalyzedAudio * analysis
     slAssert(SL_AUDIO_CHANNELS == 2);
     slAudioAnalysisGatherChannels(audio, &leftPower, &rightPower, inputBuf);
     
-    slAudioAnalysisLowPassFilter(g_slXV100Hz, g_slYV100Hz, g_slGLOW,
+    slAudioAnalysisLowPassFilter(g_slXVLOW, g_slYVLOW, g_slGLOW,
         g_slKLOW, inputBuf, bufLOW);
-    slAudioAnalysisLowPassFilter(g_slXV300Hz, g_slYV300Hz, g_slGHI,
+    slAudioAnalysisLowPassFilter(g_slXVHI, g_slYVHI, g_slGHI,
         g_slKHI, inputBuf, bufHI);
 
     slAudioAnalysisCalculatePower(inputBuf, bufLOW, bufHI,

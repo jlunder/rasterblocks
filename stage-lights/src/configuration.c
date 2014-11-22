@@ -19,9 +19,9 @@ void slConfigurationSetDefaults(SLConfiguration * config)
     snprintf(config->audioSourceParam, sizeof config->audioSourceParam,
         STAGE_LIGHTS_DEFAULT_INPUT_FILE);
 #endif
-    config->configPath[0] = 0;
-    //snprintf(config->configPath, sizeof config->configPath,
-    //    STAGE_LIGHTS_DEFAULT_INPUT_CONFIG);
+    //config->configPath[0] = 0;
+    snprintf(config->configPath, sizeof config->configPath,
+        STAGE_LIGHTS_DEFAULT_INPUT_CONFIG);
 }
 
 

@@ -86,6 +86,10 @@ typedef struct {
 
     float lowCutoff;
     float hiCutoff;
+
+    float agcMax;
+    float agcMin;
+    float agcStrength;
     // analysis tweaks?
     // output mode?
     // output device path?

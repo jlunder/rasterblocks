@@ -47,10 +47,19 @@ void parseJsonObject(SLConfiguration * config,json_object * jobj) {
 			config->monitorAudio = json_object_get_boolean(val);
 		}
 		else if (strcmp(key, "lowCutoff") == 0) {
-			config->lowCutoff = (float) json_object_get_int(val);
+			config->lowCutoff = atof(json_object_get_string(val));
 		}
 		else if (strcmp(key, "hiCutoff") == 0) {
-			config->hiCutoff = (float) json_object_get_int(val);
+			config->hiCutoff = atof(json_object_get_string(val));
+		}
+		else if (strcmp(key, "agcMax") == 0) {
+			config->agcMax = atof(json_object_get_string(val));
+		}
+		else if (strcmp(key, "agcMin") == 0) {
+			config->agcMin = atof(json_object_get_string(val));
+		}
+		else if (strcmp(key, "agcStrength") == 0) {
+			config->agcStrength = atof(json_object_get_string(val));
 		}
 	}
 }
