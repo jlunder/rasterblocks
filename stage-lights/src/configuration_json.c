@@ -1,5 +1,5 @@
 #include "configuration_json.h"
-#include <json/json.h>
+#include <json-c/json.h>
 
 // see http://linuxprograms.wordpress.com/2010/08/19/json_parser_json-c/
 

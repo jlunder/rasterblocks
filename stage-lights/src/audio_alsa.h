@@ -3,9 +3,9 @@
 
 #include "stage_lights.h"
 
-int slAlsaCaptureInit(const char* playback,const char* capture,unsigned int num_frames,unsigned int channels,unsigned int rate);
+bool slAlsaCaptureInit(const char* captureDev);
 void slAlsaCaptureClose();
-void slAlsaRead(SLRawAudio* audio_buf);
+void slAlsaRead(SLRawAudio* audio);
 
 
 void slAlsaPlaybackInit(int num_frames, int channels);

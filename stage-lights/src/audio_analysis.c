@@ -53,9 +53,33 @@ static void slAudioAnalysisLowPassFilter(float xv[NZEROS + 1],
     float const inputBuf[SL_AUDIO_FRAMES_PER_VIDEO_FRAME],
     float outputBuf[SL_AUDIO_FRAMES_PER_VIDEO_FRAME])
 {
+    bool warningThrottle = false;
+    
+    // It's possible, for certain filter configurations, for xv or yv to
+    // acquire NaN or +/-inf values. This is really problematic -- better that
+    // the analysis be a little wrong than become infected with NaN! So
+    // sanitize xv, yv before beginning work, and they won't persist for more
+    // than one frame at least.
+    for(size_t i = 0; i < NZEROS + 1; ++i) {
+        slSanitizeFloat(&xv[i], 0.0f);
+    }
+    for(size_t i = 0; i < NPOLES + 1; ++i) {
+        slSanitizeFloat(&xv[i], 0.0f);
+    }
+    
     for(size_t i = 0; i < SL_AUDIO_FRAMES_PER_VIDEO_FRAME; ++i) {
+        float in = inputBuf[i] / g;
+        
+        if(!warningThrottle) {
+            if(isnan(in) || isinf(in)) {
+                slWarning("Bogus values in input!\n");
+                warningThrottle = true;
+            }
+        }
+        slSanitizeFloat(&in, 0.0f);
+        
         xv[0] = xv[1]; xv[1] = xv[2]; xv[2] = xv[3]; xv[3] = xv[4]; 
-        xv[4] = inputBuf[i] / g;
+        xv[4] = in;
         yv[0] = yv[1]; yv[1] = yv[2]; yv[2] = yv[3]; yv[3] = yv[4]; 
         yv[4] =
             (xv[0] + xv[4]) +
@@ -64,32 +88,6 @@ static void slAudioAnalysisLowPassFilter(float xv[NZEROS + 1],
             (k[0] * yv[0]) + (k[1] * yv[1]) +
             (k[2] * yv[2]) + (k[3] * yv[3]);
         outputBuf[i] = yv[4];
-        /*
-        //if (isinf(yv[4])) {
-        if (i == 768) {
-			printf("xv0 %f\n", xv[0]);
-			printf("xv1 %f\n", xv[1]);
-			printf("xv2 %f\n", xv[2]);
-			printf("xv3 %f\n", xv[3]);
-			printf("xv4 %f\n", xv[4]);
-
-			printf("yv0 %f\n", yv[0]);
-			printf("yv1 %f\n", yv[1]);
-			printf("yv2 %f\n", yv[2]);
-			printf("yv3 %f\n", yv[3]);
-			printf("yv4 %f\n", yv[4]);
-
-			printf("k0 %f\n", k[0]);
-			printf("k1 %f\n", k[1]);
-			printf("k2 %f\n", k[2]);
-			printf("k3 %f\n", k[3]);
-			printf("%f\n", outputBuf[i]);
-			printf("%f\n", inputBuf[i]);
-			printf("%f\n", g);
-			printf("%d\n", (int)i);
-			exit(1);
-        }
-        */
     }
 }
 
@@ -286,6 +284,7 @@ static void slAudioAnalysisUpdateAgc(SLAnalyzedAudio * analysis)
     g_slAgcSamples[g_slAgcIndex] = analysis->totalEnergy * SL_AGC_ROOT_2;
     
     for(size_t i = 0; i < LENGTHOF(g_slAgcSamples); ++i) {
+        slSanitizeFloat(&g_slAgcSamples[i], 1.0f);
         agcTarget += g_slAgcSamples[i] * (1.0f / LENGTHOF(g_slAgcSamples));
         /*
         if(g_slAgcSamples[i] > agcTarget) {
@@ -297,6 +296,7 @@ static void slAudioAnalysisUpdateAgc(SLAnalyzedAudio * analysis)
         (logf(g_slAgcMin) + logf(g_slAgcMax)) * 0.5f *
             (1.0f - g_slAgcStrength) +
         logf(agcTarget) * g_slAgcStrength);
+    slSanitizeFloat(&g_slAgcTrackingValue, g_slAgcMax);
     
     if(g_slAgcTrackingValue > g_slAgcMax) {
         g_slAgcTrackingValue = g_slAgcMax;

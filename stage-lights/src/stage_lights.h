@@ -31,7 +31,8 @@
 #define SL_NUM_LIGHTS_RIGHT 32
 #define SL_NUM_LIGHTS_OVERHEAD 66
 
-#define SL_MAX_CONSECUTIVE_GENTLE_RESTARTS SL_VIDEO_FRAME_RATE
+#define SL_MAX_CONSECUTIVE_GENTLE_RESTART_NS (10 * 1000000000LLU)
+#define SL_GENTLE_RESTART_DELAY_NS 500000000LLU
 
 #define SL_E (2.71828182845905f)
 
@@ -125,17 +126,35 @@ SLSubsystem slChangeSubsystem(SLSubsystem subsystem);
 
 // In some exceptional cases we may need to reinitialize some subsystems
 void slRequestGentleRestart(void);
+void slRequestDelayedGentleRestart(void);
 
 // If we've encountered an error condition that indicates an insane program
 // state, use immediate restart to prevent any further execution and restart
 // the whole process
 void slRequestImmediateRestart(void);
 
+// Returns true if we are in the middle of a subsystem sl*Initialize() due to
+// a gentle restart; false if this is first-time init.
+bool slIsRestarting(void);
+
+// Logging functions; these are for internal consumption only, please use the
+// macros below (slInfo/slWarning/SlError...)
 void slLog(SLLogLevel level, char const * sourceFile, int sourceLine,
     char const * format, ...);
 bool slLogShouldLog(SLLogLevel level, char const * sourceFile,
     int sourceLine);
 void slLogOutput(char const * format, ...);
+
+// Reset stray NaN/+inf/-inf values; for algorithms that preserve state frame
+// to frame it's easy to become "infected" with these values. This function
+// can be used to strategically scrub them
+static inline void slSanitizeFloat(float * pF, float saneValue)
+{
+    if(isinf(*pF) || isnan(*pF)) {
+        *pF = saneValue;
+    }
+}
+
 
 #ifdef NDEBUG
 #define slAssert(assertExpr) do {} while(false)

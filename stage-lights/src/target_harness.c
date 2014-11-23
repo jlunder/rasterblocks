@@ -81,15 +81,10 @@ int main(int argc, char * argv[])
         uint64_t time_ns;
 
         clock_gettime(CLOCK_MONOTONIC, &ts);
-        ts.tv_nsec -= lastts.tv_nsec;
-        if(ts.tv_nsec < 0) {
-            ts.tv_nsec += 1000000000;
-            --ts.tv_sec;
-        }
-        assert(ts.tv_nsec >= 0 && ts.tv_nsec < 1000000000);
-        assert(ts.tv_sec >= 0);
+        time_ns = (uint64_t)(ts.tv_nsec - lastts.tv_nsec) +
+            (uint64_t)(ts.tv_sec - lastts.tv_sec) * 1000000000LLU;
+        slAssert(time_ns < 0x8000000000000000LLU);
         lastts = ts;
-        time_ns = ts.tv_nsec + ts.tv_sec * 1000000000;
         
         slProcess(time_ns);
     }

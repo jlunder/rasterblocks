@@ -1,16 +1,6 @@
 #include "light_generation.h"
 
 
-/*
-static SLColor g_slVuPalette[5] = {
-    {  0, 255,   0, 0},
-    {  0, 255,   0, 0},
-    {  0, 255,   0, 0},
-    {  0, 255,   0, 0},
-    {255,   0,   0, 0},
-};
-*/
-
 static SLColor g_slWarmPalette[5] = {
     {  0,   0,   0, 0},
     {127,   0,   0, 0},
@@ -59,26 +49,6 @@ void slLightGenerationInitialize(SLConfiguration const * config)
 
 void slLightGenerationShutdown(void)
 {
-}
-
-
-static inline void setBrightness(SLColor * c, float b)
-{
-    if(b >= 1.0f) {
-        b = 0.999f;
-    }
-    else if(b < 0.0f) {
-        b = 0.0f;
-    }
-    
-    c->r = (uint8_t)(b * 255 + 0.5f);
-    c->g = c->r;
-    c->b = c->r;
-}
-
-static inline float getBrightness(SLColor const * c)
-{
-    return ((int)c->r + (int)c->g + (int)c->b) / (255.0f * 3);
 }
 
 

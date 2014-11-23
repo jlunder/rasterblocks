@@ -16,9 +16,7 @@ void slAudioInputInitialize(SLConfiguration const * config)
     
     switch(config->audioSource) {
     case SLAIS_ALSA:
-        slAlsaCaptureInit(config->audioSourceParam, config->audioSourceParam,
-            SL_AUDIO_FRAMES_PER_VIDEO_FRAME,SL_AUDIO_CHANNELS,
-            SL_AUDIO_SAMPLE_RATE);
+        slAlsaCaptureInit(config->audioSourceParam);
         g_slAudioSource = SLAIS_ALSA;
         break;
     case SLAIS_FILE:
@@ -29,6 +27,7 @@ void slAudioInputInitialize(SLConfiguration const * config)
     	slFatal("Invalid audio source type %d\n", config->audioSource);
     	break;
     }
+    
     if(config->monitorAudio) {
         g_monitorAudio = true;
         slAlsaPlaybackInit(SL_AUDIO_FRAMES_PER_VIDEO_FRAME,SL_AUDIO_CHANNELS);

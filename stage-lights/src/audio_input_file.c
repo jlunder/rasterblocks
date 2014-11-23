@@ -24,14 +24,19 @@ void slSndFileClose() {
 void slSndFileReadLooping(SLRawAudio* audio_buf, int num_frames, int channels)
 {
 	float buffer[channels * num_frames];
-	int readCount = sf_readf_float(g_snd_file, buffer, num_frames);
+	int readCount;
+
+    memset(audio_buf->audio, 0, sizeof audio_buf->audio);	
+	readCount = sf_readf_float(g_snd_file, buffer, num_frames);
+	if(readCount < num_frames && readCount >= 0) {
+		sf_seek(g_snd_file,0,SEEK_SET);
+		sf_readf_float(g_snd_file, buffer, num_frames - readCount);
+	}
 	for (int frame = 0; frame < num_frames; frame++) {
 		for (int channel = 0; channel < channels; channel++) {
 			audio_buf->audio[frame][channel] = buffer[frame*channels+channel];
 		}
 	}
-	if(readCount==0)
-		sf_seek(g_snd_file,0,SEEK_SET);
 
 	//printf("read: %i\n",readCount);
 }

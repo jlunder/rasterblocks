@@ -1,5 +1,7 @@
 #include "stage_lights.h"
 
+#include <time.h>
+
 #include "audio_input.h"
 #include "audio_analysis.h"
 #include "configuration.h"
@@ -23,6 +25,7 @@ static char const * const g_slSubsystemNames[SLS_COUNT] = {
 };
 
 
+static uint64_t g_slGentleRestartFirstConsecutiveNs = 0;
 static size_t g_slGentleRestartConsecutiveCount = 0;
 
 
@@ -35,11 +38,15 @@ static SLConfiguration g_slConfiguration;
 static SLSubsystem g_slCurrentSubsystem = SLS_MAIN;
 
 static bool g_slGentleRestartRequested = false;
+static bool g_slDelayGentleRestart = false;
+static bool g_slIsRestarting = false;
 
 static SLLightData g_slLastFrameLightData;
 
+static uint64_t g_slClockNs = 0;
 
-void slProcessSubsystems(bool * pConfigChanged);
+
+void slProcessSubsystems(bool * pCoslClockNsnfigChanged);
 void slProcessConfigChanged(void);
 void slProcessGentleRestart(void);
 
@@ -60,9 +67,22 @@ void slRequestGentleRestart(void)
 }
 
 
+void slRequestDelayedGentleRestart(void)
+{
+    g_slDelayGentleRestart = true;
+    g_slGentleRestartRequested = true;
+}
+
+
 void slRequestImmediateRestart(void)
 {
     abort();
+}
+
+
+bool slIsRestarting(void)
+{
+    return g_slIsRestarting;
 }
 
 
@@ -86,7 +106,8 @@ void slLog(SLLogLevel level, char const * sourceFile, int sourceLine,
         if(level + 1 >= 1 && level < SLLL_COUNT) {
             logLevelName = g_slLogLevelNames[level];
         }
-        if(g_slCurrentSubsystem + 1 >= 1 && g_slCurrentSubsystem < SLS_COUNT) {
+        if(g_slCurrentSubsystem + 1 >= 1 &&
+                g_slCurrentSubsystem < SLS_COUNT) {
             subsystemName = g_slSubsystemNames[g_slCurrentSubsystem];
         }
         
@@ -119,7 +140,8 @@ void slInitialize(int argc, char * argv[])
     g_slSavedArgc = argc;
     g_slSavedArgv = argv;
     
-    g_slGentleRestartRequested = false;
+    if(slIsRestarting()) {
+    }
     
     for(int i = 0; i < argc; ++i) {
         if(strcmp(argv[i], "-v") == 0) {
@@ -199,21 +221,42 @@ void slProcess(uint64_t nsSinceLastProcess)
     SLSubsystem lastSubsystem = slChangeSubsystem(SLS_MAIN);
     bool configChanged = false;
     
-    UNUSED(nsSinceLastProcess);
+    g_slClockNs += nsSinceLastProcess;
+    slInfo("Frame time: %lluns\n", nsSinceLastProcess);
     
     slAssert(lastSubsystem == SLS_MAIN);
     
     slProcessSubsystems(&configChanged);
     
-    if(!g_slGentleRestartRequested && configChanged) {
-        slProcessConfigChanged();
-    }
-    else if(g_slGentleRestartRequested) {
+    if(g_slGentleRestartRequested) {
+        slInfo("Gentle restart requested, %d consecutive\n",
+            g_slGentleRestartConsecutiveCount);
+        
+        if(g_slGentleRestartConsecutiveCount == 0) {
+            // This is our first gentle restart, capture the time so we can
+            // monitor for timeout
+            g_slGentleRestartFirstConsecutiveNs = g_slClockNs;
+        }
+        else if((g_slClockNs - g_slGentleRestartFirstConsecutiveNs) >
+                SL_MAX_CONSECUTIVE_GENTLE_RESTART_NS) {
+            // We have been continuously restarting for a long time, give up!
+            slFatal("Continuous restart timeout exceeded\n");
+            slRequestImmediateRestart();
+        }
+        
         ++g_slGentleRestartConsecutiveCount;
+        
+        g_slGentleRestartRequested = false;
         slProcessGentleRestart();
     }
     else {
         g_slGentleRestartConsecutiveCount = 0;
+        
+        if(configChanged) {
+            // If the config changes AND restart is requested, it is processed
+            // as a restart.
+            slProcessConfigChanged();
+        }
     }
     
     slChangeSubsystem(lastSubsystem);
@@ -276,12 +319,22 @@ void slProcessGentleRestart(void)
 {
     SLSubsystem lastSubsystem = slChangeSubsystem(SLS_MAIN);
     
+    g_slIsRestarting = true;
     slShutdown();
-    if(g_slGentleRestartConsecutiveCount >
-            SL_MAX_CONSECUTIVE_GENTLE_RESTARTS) {
-        slRequestImmediateRestart();
+    
+    if(g_slDelayGentleRestart) {
+        struct timespec req;
+        
+        req.tv_sec = (long)(SL_GENTLE_RESTART_DELAY_NS / 1000000000LLU);
+        req.tv_nsec = (long)(SL_GENTLE_RESTART_DELAY_NS % 1000000000LLU);
+        
+        nanosleep(&req, NULL);
+        
+        g_slDelayGentleRestart = false;
     }
+    
     slInitialize(g_slSavedArgc, g_slSavedArgv);
+    g_slIsRestarting = false;
     
     slChangeSubsystem(lastSubsystem);
 }
