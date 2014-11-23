@@ -20,7 +20,7 @@ endif
 
 ifeq ($(OS), LINUX)
 	CC=gcc
-	CC_TARGET=arm-linux-gnueabi-gcc
+	CC_TARGET=arm-linux-gnueabihf-gcc
 	CFLAGS_COMMON=-W -Wall -Werror
 	CFLAGS=-O0 $(CFLAGS_COMMON)
 	CFLAGS_TARGET=-O2 $(CFLAGS_COMMON)
@@ -28,7 +28,7 @@ ifeq ($(OS), LINUX)
 	CPPFLAGS=$(CPPFLAGS_COMMON) -DSL_LINUX -DGLUS_ES2 -DSL_USE_SDL2_GLES2_HARNESS
 	CPPFLAGS_TARGET=$(CPPFLAGS_COMMON) -DSL_LINUX -DSL_USE_TARGET_HARNESS -Icross-dep/include
 	LDFLAGS=-g -lSDL2 -lm -lGLESv2 -lsndfile -lasound -ljson-c
-	LDFLAGS_TARGET=-g -lm -Lcross-dep/lib -Wl,-rpath=cross-dep/lib -lsndfile -lasound -ljson
+	LDFLAGS_TARGET=-g -lm -Lcross-dep/lib -Wl,-rpath=cross-dep/lib -lsndfile -lasound -ljson -lrt
 endif
 ifeq ($(OS), OSX)
 	CC=gcc
@@ -61,7 +61,7 @@ MAKEDEPEND=@set -e; rm -f $@; \
 	rm -f $@.$$$$
 
 MAKEDEPEND_TARGET=@set -e; rm -f $@; \
-	$(CC) -M $(CPPFLAGS_TARGET) $< > $@.$$$$; \
+	$(CC_TARGET) -M $(CPPFLAGS_TARGET) $< > $@.$$$$; \
 	sed 's,\($*\)\.o[ :]*,\1.target.o $@ : ,g' < $@.$$$$ > $@; \
 	rm -f $@.$$$$
 
