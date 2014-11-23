@@ -1,0 +1,1 @@
+sudo chroot precise-chroot /bin/bash -c "cd /home/stage-lights/ ; make stage_lights.target"
