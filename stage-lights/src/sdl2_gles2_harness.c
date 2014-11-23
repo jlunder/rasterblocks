@@ -1,4 +1,4 @@
-#ifdef STAGE_LIGHTS_USE_SDL2_GLES2_HARNESS
+#ifdef SL_USE_SDL2_GLES2_HARNESS
 
 #include "gles2_harness.h"
 
@@ -7,8 +7,8 @@
 
 #include <time.h>
 
-#if defined STAGE_LIGHTS_LINUX
-#elif defined STAGE_LIGHTS_OSX
+#if defined SL_LINUX
+#elif defined SL_OSX
 #include <mach/mach.h>
 #include <mach/mach_time.h>
 #endif
@@ -67,10 +67,10 @@ void checkSDLError(int line)
 /* Our program's entry point */
 int main(int argc, char *argv[])
 {
-#ifdef STAGE_LIGHTS_LINUX
+#ifdef SL_LINUX
     struct timespec lastts;
 #endif
-#ifdef STAGE_LIGHTS_OSX
+#ifdef SL_OSX
     uint64_t lasttime = mach_absolute_time();
     mach_timebase_info_data_t timebase;
 #endif
@@ -109,10 +109,10 @@ int main(int argc, char *argv[])
     SDL_GL_SetSwapInterval(1);
  
  
-#ifdef STAGE_LIGHTS_LINUX
+#ifdef SL_LINUX
     clock_gettime(CLOCK_MONOTONIC, &lastts);
 #endif
-#ifdef STAGE_LIGHTS_OSX
+#ifdef SL_OSX
     mach_timebase_info(&timebase);
 #endif
     gles2_harness_init(argc, argv);
@@ -120,10 +120,10 @@ int main(int argc, char *argv[])
     while (!quit)
     {
         int width = 0, height = 0;
-#ifdef STAGE_LIGHTS_LINUX
+#ifdef SL_LINUX
         struct timespec ts;
 #endif
-#ifdef STAGE_LIGHTS_OSX
+#ifdef SL_OSX
         uint64_t time;
 #endif
         uint64_t time_ns;
@@ -137,14 +137,14 @@ int main(int argc, char *argv[])
         SDL_GetWindowSize(mainwindow, &width, &height);
         gles2_harness_reshape(width, height);
         
-#ifdef STAGE_LIGHTS_LINUX
+#ifdef SL_LINUX
         clock_gettime(CLOCK_MONOTONIC, &ts);
         time_ns = (uint64_t)(ts.tv_nsec - lastts.tv_nsec) +
             (uint64_t)(ts.tv_sec - lastts.tv_sec) * 1000000000LLU;
         slAssert(time_ns < 0x8000000000000000LLU);
         lastts = ts;
 #endif
-#ifdef STAGE_LIGHTS_OSX
+#ifdef SL_OSX
         time = mach_absolute_time();
         time_ns = ((time - lasttime) * timebase.numer) / timebase.denom;
         lasttime = time;

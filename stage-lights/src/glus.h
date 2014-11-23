@@ -2,9 +2,9 @@
 #define GLUS_H_INCLUDED
 
 
-#if defined STAGE_LIGHTS_LINUX
+#if defined SL_LINUX
 #include <GL/glfw.h>
-#elif defined STAGE_LIGHTS_OSX
+#elif defined SL_OSX
 #include <GLFW/glfw3.h>
 #endif
 

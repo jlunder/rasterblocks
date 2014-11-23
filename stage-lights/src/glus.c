@@ -1,4 +1,4 @@
-#if defined STAGE_LIGHTS_USE_GLFW3_GLES2_HARNESS || defined STAGE_LIGHTS_USE_SDL2_GLES2_HARNESS
+#if defined SL_USE_GLFW3_GLES2_HARNESS || defined SL_USE_SDL2_GLES2_HARNESS
 
 #include "glus.h"
 
@@ -212,5 +212,5 @@ bool glusPerspectivef(GLfloat result[16], const GLfloat fovy, const GLfloat aspe
 }
 
 
-#endif // STAGE_LIGHTS_USE_GLES2_HARNESS
+#endif // SL_USE_GLES2_HARNESS
 

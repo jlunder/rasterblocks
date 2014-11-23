@@ -1,5 +1,12 @@
 #include "configuration_json.h"
+
+// Different include path in different build environments -- TARGET_HARNESS
+// distinguishes them now, this is not a great solution though
+#ifdef SL_USE_TARGET_HARNESS
+#include <json/json.h>
+#else
 #include <json-c/json.h>
+#endif
 
 // see http://linuxprograms.wordpress.com/2010/08/19/json_parser_json-c/
 

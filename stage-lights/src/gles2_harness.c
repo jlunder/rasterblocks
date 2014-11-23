@@ -23,12 +23,12 @@
 //
 //========================================================================
 
-#if defined STAGE_LIGHTS_USE_GLFW3_GLES2_HARNESS || defined STAGE_LIGHTS_USE_SDL2_GLES2_HARNESS
+#if defined SL_USE_GLFW3_GLES2_HARNESS || defined SL_USE_SDL2_GLES2_HARNESS
 
 #include "gles2_harness.h"
 
 
-#ifdef STAGE_LIGHTS_USE_GLFW3_GLES2_HARNESS
+#ifdef SL_USE_GLFW3_GLES2_HARNESS
 #include <GLFW/glfw3.h>
 #else
 #include <GLES2/gl2.h>
@@ -36,8 +36,8 @@
 
 #include <time.h>
 
-#if defined STAGE_LIGHTS_LINUX
-#elif defined STAGE_LIGHTS_OSX
+#if defined SL_LINUX
+#elif defined SL_OSX
 #include <mach/mach.h>
 #include <mach/mach_time.h>
 #endif
@@ -105,7 +105,7 @@ float gles2_harness_vertical_pos = 0.0f;
 
 
 static char const * light_frag =
-#ifdef STAGE_LIGHTS_USE_GLFW3_GLES2_HARNESS
+#ifdef SL_USE_GLFW3_GLES2_HARNESS
     "uniform vec4 u_color;\n"
     "varying vec4 v_texCoord;\n"
 #else
@@ -208,7 +208,7 @@ bool gles2_harness_init(int argc, char * argv[])
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 // Funny story, modern OpenGL differs from OpenGL ES (for us) ONLY in that ES
 // only has glClearDepthf() and non-ES only has glClearDepth()..!
-#ifdef STAGE_LIGHTS_USE_GLFW3_GLES2_HARNESS
+#ifdef SL_USE_GLFW3_GLES2_HARNESS
     glClearDepth(1.0f);
 #else
     glClearDepthf(1.0f);
@@ -635,6 +635,6 @@ void slLightOutputShowLights(SLLightData const * lights)
 }
 
 
-#endif // STAGE_LIGHTS_USE_GLES2_HARNESS
+#endif // SL_USE_GLES2_HARNESS
 
 

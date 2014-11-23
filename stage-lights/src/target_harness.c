@@ -1,5 +1,5 @@
 
-#ifdef STAGE_LIGHTS_USE_TARGET_HARNESS
+#ifdef SL_USE_TARGET_HARNESS
 
 #include <time.h>
 
@@ -170,6 +170,6 @@ void slLightOutputShowLights(SLLightData const * lights)
 }
 
 
-#endif // STAGE_LIGHTS_USE_TARGET_HARNESS
+#endif // SL_USE_TARGET_HARNESS
 
 
