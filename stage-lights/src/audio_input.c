@@ -1,6 +1,10 @@
 #include "audio_input.h"
 
+
+#ifdef SL_SNDFILE_SUPPORTED
 #include "audio_input_file.h"
+#endif
+
 #include "audio_alsa.h"
 
 
@@ -20,10 +24,16 @@ void slAudioInputInitialize(SLConfiguration const * config)
         g_slAudioSource = SLAIS_ALSA;
         break;
     case SLAIS_FILE:
-        slSndFileOpen((char *)config->audioSourceParam);
-        g_slAudioSource = SLAIS_FILE;
+        #ifdef SL_SNDFILE_SUPPORTED
+            slSndFileOpen((char *)config->audioSourceParam);
+            g_slAudioSource = SLAIS_FILE;
+        #else
+            g_slAudioSource = SLAIS_INVALID;
+            slFatal("Not compiled with libsndfile support, exiting\n");
+        #endif
         break;
     default:
+        g_slAudioSource = SLAIS_INVALID;
     	slFatal("Invalid audio source type %d\n", config->audioSource);
     	break;
     }
@@ -46,7 +56,9 @@ void slAudioInputShutdown(void)
         slAlsaCaptureClose();
         break;
     case SLAIS_FILE:
-        slSndFileClose();
+        #ifdef SL_SNDFILE_SUPPORTED
+            slSndFileClose();
+        #endif
         break;
     default:
     	slFatal("Invalid audio source type %d\n", g_slAudioSource);
@@ -67,8 +79,12 @@ void slAudioInputBlockingRead(SLRawAudio * audio)
         slAlsaRead(audio);
         break;
     case SLAIS_FILE:
-        slSndFileReadLooping(audio, SL_AUDIO_FRAMES_PER_VIDEO_FRAME,
-            SL_AUDIO_CHANNELS);
+        #ifdef SL_SNDFILE_SUPPORTED
+            slSndFileReadLooping(audio, SL_AUDIO_FRAMES_PER_VIDEO_FRAME,
+                SL_AUDIO_CHANNELS);
+        #else
+            slFatal("Not compiled with libsndfile support, exiting\n");
+        #endif
         break;
     default:
     	// SLAIS_INVALID is not legal here: we must be init'd

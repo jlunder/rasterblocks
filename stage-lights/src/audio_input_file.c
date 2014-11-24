@@ -1,3 +1,5 @@
+#ifdef SL_SNDFILE_SUPPORTED
+
 #include "audio_input_file.h"
 #include <sndfile.h>
 #include <stdio.h>
@@ -40,3 +42,5 @@ void slSndFileReadLooping(SLRawAudio* audio_buf, int num_frames, int channels)
 
 	//printf("read: %i\n",readCount);
 }
+
+#endif
