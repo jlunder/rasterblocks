@@ -83,8 +83,12 @@ STAGE_LIGHTS_O_TARGET := $(addprefix build/,$(addsuffix .target.o, $(STAGE_LIGHT
 STAGE_LIGHTS_D := $(addprefix build/,$(addsuffix .d, $(STAGE_LIGHTS_SRC)))
 STAGE_LIGHTS_D_TARGET := $(addprefix build/,$(addsuffix .target.d, $(STAGE_LIGHTS_SRC)))
 
--include $(STAGE_LIGHTS_D)
--include $(STAGE_LIGHTS_D_TARGET)
+ifeq ($(MAKECMDGOALS),stage-lights)
+	-include $(STAGE_LIGHTS_D)
+endif
+ifeq ($(MAKECMDGOALS),stage-lights.target)
+	-include $(STAGE_LIGHTS_D_TARGET)
+endif
 
 build/%.o: src/%.c Makefile
 	@mkdir -p build

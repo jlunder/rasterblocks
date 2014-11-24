@@ -145,7 +145,10 @@ void slLightOutputStartSpiDevice(void)
         }
         
         slWarning("BB SPI device not found, attempting startup\n");
-        system(SL_TARGET_SPI_DEVICE_STARTUP_COMMAND);
+        int ret = system(SL_TARGET_SPI_DEVICE_STARTUP_COMMAND);
+        if(ret==-1) {
+            slWarning("Failed to start up SPI\n");
+        }
         
         sleepTs.tv_sec = SL_TARGET_SPI_DEVICE_STARTUP_WAIT_NS / 1000000000LLU;
         sleepTs.tv_nsec = SL_TARGET_SPI_DEVICE_STARTUP_WAIT_NS % 1000000000LLU;
