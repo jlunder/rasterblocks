@@ -7,7 +7,7 @@ var TcpApp = function(socket) {
 
 TcpApp.prototype.processConfig = function(data) {
 	//console.log(JSON.stringify(data));
-	this.sendCommand(JSON.stringify(data, undefined, 2));
+	this.sendCommand(data);
 	return true;
 };
 
