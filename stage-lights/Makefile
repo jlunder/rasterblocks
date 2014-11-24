@@ -53,6 +53,7 @@ ifneq ($(TARGET_BUILD),)
 	CFLAGS := $(CFLAGS_TARGET)
 	CPPFLAGS := $(CPPFLAGS_TARGET)
 	LDFLAGS := $(LDFLAGS_TARGET)
+	INSTALL_DIR := /usr/local/lib/stage-lights
 endif
 
 MAKEDEPEND=@set -e; rm -f $@; \
@@ -68,7 +69,7 @@ MAKEDEPEND_TARGET=@set -e; rm -f $@; \
 
 .PHONY: all cleanall clean
 
-all: stage_lights
+all: stage-lights
 
 build/%.d: src/%.c Makefile
 	@$(MAKEDEPEND)
@@ -95,14 +96,33 @@ build/%.target.o: src/%.c Makefile
 	@$(MAKEDEPEND_TARGET)
 	$(CC_TARGET) -c -g $(CFLAGS_TARGET) -o $@ $(CPPFLAGS_TARGET) $<
 
-stage_lights: $(STAGE_LIGHTS_O)
+stage-lights: $(STAGE_LIGHTS_O)
 	@mkdir -p bin
 	$(CC) -o bin/$@ $^ $(LDFLAGS)
 
-stage_lights.target: $(STAGE_LIGHTS_O_TARGET)
+stage-lights.target: $(STAGE_LIGHTS_O_TARGET)
 	$(CC_TARGET) -o bin/$@ $^ $(LDFLAGS_TARGET)
 
 cleanall: clean
 
 clean:
 	@rm -f build/* bin/*
+
+ifneq ($(INSTALL_DIR),)
+
+install: stage-lights
+	systemctl stop stage-lights.service
+	mkdir -p $(INSTALL_DIR)
+	cp stage-lights.service $(INSTALL_DIR)/stage-lights.service
+	cp bin/stage-lights $(INSTALL_DIR)/stage-lights
+	systemctl enable $(INSTALL_DIR)/stage-lights.service
+	systemctl start stage-lights.service
+
+uninstall:
+	systemctl stop stage-lights.service
+	systemctl disable $(INSTALL_DIR)/stage-lights.service
+	rm $(INSTALL_DIR)/stage-lights.service
+	rm $(INSTALL_DIR)/stage-lights
+	rmdir $(INSTALL_DIR)
+
+endif

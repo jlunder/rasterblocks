@@ -27,7 +27,13 @@
 #include "stage_lights.h"
 
 
+#define SL_TARGET_MAX_SPI_OPEN_RETRY 5
 #define SL_TARGET_SPI_DEVICE "/dev/spidev1.0"
+#define SL_TARGET_SPI_DEVICE_STARTUP_COMMAND \
+    "echo BB-SPIDEV0 > /sys/devices/bone_capemgr.9/slots"
+#define SL_TARGET_SPI_DEVICE_STARTUP_WAIT_NS 2000000000LLU
+
+void slLightOutputStartSpiDevice(void);
 
 
 static int g_slSpiFd = -1;
@@ -111,15 +117,41 @@ void slLightOutputInitialize(SLConfiguration const * config)
     // Just in case this is a reinit
     slLightOutputShutdown();
     
-    g_slSpiFd = open(SL_TARGET_SPI_DEVICE, O_RDWR);
-    if(g_slSpiFd < 0) {
-        slFatal("open() failed for SPI device \"%s\": %s",
-            SL_TARGET_SPI_DEVICE, strerror(errno));
-    }
+    slLightOutputStartSpiDevice();
+    slVerify(g_slSpiFd >= 0);
+    
     slVerify(ioctl(g_slSpiFd, SPI_IOC_WR_MODE, &mode) >= 0);
     slVerify(ioctl(g_slSpiFd, SPI_IOC_WR_LSB_FIRST, &lsbFirst) >= 0);
     slVerify(ioctl(g_slSpiFd, SPI_IOC_WR_BITS_PER_WORD, &bitsPerWord) >= 0);
     slVerify(ioctl(g_slSpiFd, SPI_IOC_WR_MAX_SPEED_HZ, &maxSpeedHz) >= 0);
+}
+
+
+void slLightOutputStartSpiDevice(void)
+{
+    for(size_t i = 0; ; ++i) {
+        struct timespec sleepTs;
+        
+        g_slSpiFd = open(SL_TARGET_SPI_DEVICE, O_RDWR);
+        
+        if(g_slSpiFd >= 0) {
+            // Done! Success.
+            return;
+        }
+        
+        if(i >= SL_TARGET_MAX_SPI_OPEN_RETRY) {
+            slFatal("open() failed for SPI device \"%s\": %s",
+                SL_TARGET_SPI_DEVICE, strerror(errno));
+        }
+        
+        slWarning("BB SPI device not found, attempting startup\n");
+        system(SL_TARGET_SPI_DEVICE_STARTUP_COMMAND);
+        
+        sleepTs.tv_sec = SL_TARGET_SPI_DEVICE_STARTUP_WAIT_NS / 1000000000LLU;
+        sleepTs.tv_nsec = SL_TARGET_SPI_DEVICE_STARTUP_WAIT_NS % 1000000000LLU;
+        
+        nanosleep(&sleepTs, NULL);
+    }
 }
 
 
