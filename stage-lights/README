@@ -11,3 +11,7 @@ sudo apt-get install libfftw3-dev libfftw3-doc
 sudo apt-get install libav-tools
 
 sudo apt-get install libjson0 libjson0-dev
+
+nodeserver
+npm install
+node server.js <path to config file>

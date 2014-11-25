@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<title>Group 7 Project</title>
+	<title>Group 7 Project - Stage Lights</title>
 	<link rel='stylesheet' href='/stylesheets/style.css'></link>
 	<link rel="stylesheet" href="http://code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css">
 </head>
@@ -11,6 +11,7 @@
 <body>
 	<div id='content'>
 		<h1>Group 7 Project</h1>
+		<h2>Stage Lights Configuration</h2>
 		<div id='messages'></div>
 		<br>
 		<form id='config-form'>
@@ -28,16 +29,21 @@
 					<option value = "SLAIS_ALSA">Audio In (Target)</option>
 					<option value = "SLAIS_FILE">Audio File (Host)</option>
 		 		</select>
+		 		Audio Input Source: 
+		 		<input id="audioSourceParam" type="text" style="width:200px;">
+		 		<div>
+		 		Monitor Audio<input id="monitorAudio" type="checkbox">
+		 		</div>
 		 	</div>
 			<div id="cutoffselect">
 				<p>
 					<label for="lo-amount">Low Cutoff Frequency:</label>
-					<input type="text" id="lo-amount" readonly style="border:0; color:#f6931f; font-weight:bold;">
+					<input type="text" id="lo-amount" readonly>
 				</p>
 				<div id="slider-low" style="margin: 0 10px; width:200px;"></div>
 				<p>
 					<label for="hi-amount">High Cutoff Frequency:</label>
-					<input type="text" id="hi-amount" readonly style="border:0; color:#f6931f; font-weight:bold;">
+					<input type="text" id="hi-amount" readonly>
 				</p>
 				<div id="slider-hi" style="margin: 0 10px; width:400px;"></div>
 			</div>
@@ -48,12 +54,11 @@
 				</p>
 				<p>
 					<label for="gain-amount">Min &amp; Max AGC</label>
-					<input type="text" id="gain-amount" readonly style="border:0; color:#f6931f; font-weight:bold;">
+					<input type="text" id="gain-amount" readonly>
 				</p>
-				<div id="slider-gain" style="margin: 0 10px; width:400px;"></div>
+				<div id="slider-gain" style="margin: 0 10px; width:200px;"></div>
 			</div>
 			<br>
-			<input type="button" id="use-default" value="Set Default Values">
 			<button id="select-submit" type="button">Send Config</button>
 		</form>
 	</div>

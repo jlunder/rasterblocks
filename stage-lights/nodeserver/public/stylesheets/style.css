@@ -1,0 +1,39 @@
+body {
+	width: 800px;
+	margin-left: auto;
+	margin-right: auto;
+}
+h1, h2 {
+	margin-bottom: 1px;
+	padding-bottom: 1px;
+}
+
+#content {
+	margin-top: 10pt;
+}
+
+#config-form {
+	width: 700px;
+	border: thin black solid;
+	background-color: #f3f3f3;
+	padding: 10px;
+}
+
+#lo-amount {
+	border: 0; 
+	color: #f6931f; 
+	font-weight: bold;
+	background-color: #f3f3f3;
+}
+#hi-amount {
+	border: 0; 
+	color: #f6931f; 
+	font-weight: bold;
+	background-color: #f3f3f3;
+}
+#gain-amount {
+	border: 0; 
+	color: #f6931f; 
+	font-weight: bold;
+	background-color: #f3f3f3;
+}
