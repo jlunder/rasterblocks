@@ -16,10 +16,10 @@ static float const SL_AGC_ROOT_2 = 1.41421356237f;
 // 200Hz cutoff (For now)
 static float g_slGLOW = 3.523725849e+07;
 static float g_slKLOW[NPOLES] = {
-	-0.9338739884f,
-	3.7993827672f,
-	-5.7970987038f,
-	3.9315894710f,
+    -0.9338739884f,
+    3.7993827672f,
+    -5.7970987038f,
+    3.9315894710f,
 };
 
 // 300Hz cutoff
@@ -93,124 +93,124 @@ static void slAudioAnalysisLowPassFilter(float xv[NZEROS + 1],
 
 static float warpFrequency(float cutoffFreq)
 {
-	return SL_AUDIO_SAMPLE_RATE *
-	 tan(M_PI * cutoffFreq / SL_AUDIO_SAMPLE_RATE) / M_PI;
+    return SL_AUDIO_SAMPLE_RATE *
+     tan(M_PI * cutoffFreq / SL_AUDIO_SAMPLE_RATE) / M_PI;
 }
 
 static void butterworthPoles(complex* poles, float cutoff)
 {
-	float arg;
-	for (int i = 0; i < NZEROS; i++) {
-		arg = M_PI * (2* i + NZEROS + 1)/2/NZEROS;
-		poles[i] = cos(arg) + sin(arg) * I;
-		poles[i] *= 2* M_PI * cutoff;
-	}
+    float arg;
+    for (int i = 0; i < NZEROS; i++) {
+        arg = M_PI * (2* i + NZEROS + 1)/2/NZEROS;
+        poles[i] = cos(arg) + sin(arg) * I;
+        poles[i] *= 2* M_PI * cutoff;
+    }
 }
 
 static void polesToZeros(complex* poles, complex* zeros)
 {
-	complex defaultZero = (2*SL_AUDIO_SAMPLE_RATE + 0.0 * I);
-	for (int i = 0; i < NZEROS; i++) {
-		zeros[i] = (defaultZero + poles[i]) /  (defaultZero - poles[i]);
-	}
+    complex defaultZero = (2*SL_AUDIO_SAMPLE_RATE + 0.0 * I);
+    for (int i = 0; i < NZEROS; i++) {
+        zeros[i] = (defaultZero + poles[i]) /  (defaultZero - poles[i]);
+    }
 }
 
 static void zerosToCoeffs(complex* zeros, complex* coeffs)
 {
-	int b[NPOLES+1];
-	memset(b, 0, sizeof(int) * (NPOLES+1));
-	int i = 0;
-	while ( !b[NPOLES] ) {
-		i = 0;
-		while (b[i]) {
-			b[i++] = 0;
-		}
-		b[i] = 1;
+    int b[NPOLES+1];
+    memset(b, 0, sizeof(int) * (NPOLES+1));
+    int i = 0;
+    while ( !b[NPOLES] ) {
+        i = 0;
+        while (b[i]) {
+            b[i++] = 0;
+        }
+        b[i] = 1;
 
-		int subsetSize = 0;
-		complex sumVal = 1.0;
-		for (i = 0; i < NPOLES; i++) {
-			if(b[i]) {
-				sumVal *= zeros[i];
-				++subsetSize;
-			}
-		}
-		coeffs[NPOLES - subsetSize] += sumVal;
-	}
-	coeffs[NPOLES] = 1.0 + 0.0 * I;
+        int subsetSize = 0;
+        complex sumVal = 1.0;
+        for (i = 0; i < NPOLES; i++) {
+            if(b[i]) {
+                sumVal *= zeros[i];
+                ++subsetSize;
+            }
+        }
+        coeffs[NPOLES - subsetSize] += sumVal;
+    }
+    coeffs[NPOLES] = 1.0 + 0.0 * I;
 }
 
 static void butterworthZZeros(complex* zeros)
 {
-	for (int i = 0; i < NZEROS; i++) {
-		zeros[i] = -1.0 + 0.0 * I;
-	}
+    for (int i = 0; i < NZEROS; i++) {
+        zeros[i] = -1.0 + 0.0 * I;
+    }
 }
 
 static float calculateGain(complex *aCoeffs, complex *bCoeffs)
 {
-	float kNumer = 0.0f;
-	float kDenom = 0.0f;
-	for (int i = 0; i < NZEROS+1; i++) {
-		kNumer += crealf(aCoeffs[i]);
-	}
-	for (int i = 0; i < NPOLES; i++) {
-		kDenom += crealf(bCoeffs[i]);
-	}
-	return kNumer/(1.0f - kDenom);
+    float kNumer = 0.0f;
+    float kDenom = 0.0f;
+    for (int i = 0; i < NZEROS+1; i++) {
+        kNumer += crealf(aCoeffs[i]);
+    }
+    for (int i = 0; i < NPOLES; i++) {
+        kDenom += crealf(bCoeffs[i]);
+    }
+    return kNumer/(1.0f - kDenom);
 }
 
 static void slAudioAnalysisCalculateCoefficients(float cutoffFreq, float* gainVal, float* coeffs)
 {
-	complex pPoles[NPOLES];
-	complex zPoles[NPOLES];
-	complex bCoeffs[NPOLES+1];
-	complex zZeros[NPOLES];
-	complex aCoeffs[NPOLES+1];
+    complex pPoles[NPOLES];
+    complex zPoles[NPOLES];
+    complex bCoeffs[NPOLES+1];
+    complex zZeros[NPOLES];
+    complex aCoeffs[NPOLES+1];
 
-	memset(pPoles, 0, sizeof(complex) * NPOLES);
-	memset(zPoles, 0, sizeof(complex) * NPOLES);
-	memset(zZeros, 0, sizeof(complex) * NPOLES);
-	memset(bCoeffs, 0, sizeof(complex) * NPOLES+1);
-	memset(aCoeffs, 0, sizeof(complex) * NPOLES+1);
+    memset(pPoles, 0, sizeof(complex) * NPOLES);
+    memset(zPoles, 0, sizeof(complex) * NPOLES);
+    memset(zZeros, 0, sizeof(complex) * NPOLES);
+    memset(bCoeffs, 0, sizeof(complex) * NPOLES+1);
+    memset(aCoeffs, 0, sizeof(complex) * NPOLES+1);
 
-	float warpedCutoff = warpFrequency(cutoffFreq);
+    float warpedCutoff = warpFrequency(cutoffFreq);
 
-	butterworthPoles(pPoles, warpedCutoff);
-	polesToZeros(pPoles, zPoles);
-	zerosToCoeffs(zPoles, bCoeffs);
+    butterworthPoles(pPoles, warpedCutoff);
+    polesToZeros(pPoles, zPoles);
+    zerosToCoeffs(zPoles, bCoeffs);
 
-	for (int i = (NPOLES)%2; i < NPOLES; i+= 2){
-		bCoeffs[i] = -bCoeffs[i];
-	}
+    for (int i = (NPOLES)%2; i < NPOLES; i+= 2){
+        bCoeffs[i] = -bCoeffs[i];
+    }
 
-	butterworthZZeros(zZeros);
-	zerosToCoeffs(zZeros, aCoeffs);
+    butterworthZZeros(zZeros);
+    zerosToCoeffs(zZeros, aCoeffs);
 
-	for (int i = (NPOLES+1)%2; i < NPOLES; i+= 2){
-		aCoeffs[i] = -aCoeffs[i];
-	}
+    for (int i = (NPOLES+1)%2; i < NPOLES; i+= 2){
+        aCoeffs[i] = -aCoeffs[i];
+    }
 
-	for(int i=0; i<NZEROS; ++i){
-		coeffs[i] = crealf(bCoeffs[i]);
-	}
-	*gainVal = calculateGain(aCoeffs, bCoeffs);
+    for(int i=0; i<NZEROS; ++i){
+        coeffs[i] = crealf(bCoeffs[i]);
+    }
+    *gainVal = calculateGain(aCoeffs, bCoeffs);
 }
 
 void slAudioAnalysisInitialize(SLConfiguration const * config)
 {
     if (config->lowCutoff && config->hiCutoff) {
-		slAudioAnalysisCalculateCoefficients(config->lowCutoff, &g_slGLOW, g_slKLOW);
-		slAudioAnalysisCalculateCoefficients(config->hiCutoff, &g_slGHI, g_slKHI);
+        slAudioAnalysisCalculateCoefficients(config->lowCutoff, &g_slGLOW, g_slKLOW);
+        slAudioAnalysisCalculateCoefficients(config->hiCutoff, &g_slGHI, g_slKHI);
     }
     if (config->agcMax) {
-		g_slAgcMax = config->agcMax;
+        g_slAgcMax = config->agcMax;
     }
     if (config->agcMin) {
-		g_slAgcMin = config->agcMin;
+        g_slAgcMin = config->agcMin;
     }
     if (config->agcStrength) {
-		g_slAgcStrength = config->agcStrength;
+        g_slAgcStrength = config->agcStrength;
     }
 
     if(!g_slAudioAnalysisFirstInit) {
@@ -219,6 +219,11 @@ void slAudioAnalysisInitialize(SLConfiguration const * config)
         }
         g_slAudioAnalysisFirstInit = true;
     }
+    
+    memset(g_slXVLOW, 0, sizeof g_slXVLOW);
+    memset(g_slYVLOW, 0, sizeof g_slYVLOW);
+    memset(g_slXVHI, 0, sizeof g_slXVHI);
+    memset(g_slYVHI, 0, sizeof g_slYVHI);
 }
 
 
@@ -227,25 +232,25 @@ void slAudioAnalysisShutdown(void)
 }
 
 static void slAudioAnalysisGatherChannels(SLRawAudio const * audio,
-	float *leftPower, float *rightPower, float* inputBuf)
+    float *leftPower, float *rightPower, float* inputBuf)
 {
-	for (size_t i = 0; i < SL_AUDIO_FRAMES_PER_VIDEO_FRAME; ++i) {
-		*leftPower += audio->audio[i][0] * audio->audio[i][0] *
+    for (size_t i = 0; i < SL_AUDIO_FRAMES_PER_VIDEO_FRAME; ++i) {
+        *leftPower += audio->audio[i][0] * audio->audio[i][0] *
             (1.0f / SL_AUDIO_FRAMES_PER_VIDEO_FRAME);
         *rightPower += audio->audio[i][1] * audio->audio[i][1] *
             (1.0f / SL_AUDIO_FRAMES_PER_VIDEO_FRAME);
         inputBuf[i] = (audio->audio[i][0] + audio->audio[i][1]) * 0.5;
-	}
-	*leftPower = sqrtf(*leftPower);
+    }
+    *leftPower = sqrtf(*leftPower);
     *rightPower = sqrtf(*rightPower);
 }
 
 
 static void slAudioAnalysisCalculatePower(
-	float* inputBuf, float* buf100Hz, float* buf300Hz,
-	float *bassPower, float *midPower, float *treblePower)
+    float* inputBuf, float* buf100Hz, float* buf300Hz,
+    float *bassPower, float *midPower, float *treblePower)
 {
-	for(size_t i = 0; i < SL_AUDIO_FRAMES_PER_VIDEO_FRAME; ++i) {
+    for(size_t i = 0; i < SL_AUDIO_FRAMES_PER_VIDEO_FRAME; ++i) {
         *bassPower += buf100Hz[i] * buf100Hz[i] *
             (1.0f / SL_AUDIO_FRAMES_PER_VIDEO_FRAME);
 
@@ -260,10 +265,10 @@ static void slAudioAnalysisCalculatePower(
 }
 
 static void slAudioAnalysisCalculateEnergy( SLAnalyzedAudio * analysis,
-	float bassPower, float midPower, float treblePower,
-	float leftPower, float rightPower)
+    float bassPower, float midPower, float treblePower,
+    float leftPower, float rightPower)
 {
-	analysis->bassEnergy = sqrtf(bassPower) * 2.0f;
+    analysis->bassEnergy = sqrtf(bassPower) * 2.0f;
     analysis->midEnergy = sqrtf(midPower) * 2.0f;
     analysis->trebleEnergy = sqrtf(treblePower) * 2.0f;
     
@@ -278,7 +283,7 @@ static void slAudioAnalysisCalculateEnergy( SLAnalyzedAudio * analysis,
 
 static void slAudioAnalysisUpdateAgc(SLAnalyzedAudio * analysis)
 {
-	float agcTarget = 0.0f;
+    float agcTarget = 0.0f;
     float agcValue = 1.0f;
     g_slAgcIndex = (g_slAgcIndex + 1) % LENGTHOF(g_slAgcSamples);
     g_slAgcSamples[g_slAgcIndex] = analysis->totalEnergy * SL_AGC_ROOT_2;
@@ -339,7 +344,7 @@ void slAudioAnalysisAnalyze(SLRawAudio const * audio, SLAnalyzedAudio * analysis
         g_slKHI, inputBuf, bufHI);
 
     slAudioAnalysisCalculatePower(inputBuf, bufLOW, bufHI,
-    	&bassPower, &midPower, &treblePower);
+        &bassPower, &midPower, &treblePower);
 
     slAudioAnalysisCalculateEnergy(analysis, bassPower, midPower, treblePower, leftPower, rightPower);
 

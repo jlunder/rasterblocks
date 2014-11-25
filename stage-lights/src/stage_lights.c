@@ -156,12 +156,15 @@ void slInitialize(int argc, char * argv[])
     slChangeSubsystem(SLS_CONFIGURATION);
     slConfigurationSetDefaults(&g_slConfiguration);
     slConfigurationParseArgv(&g_slConfiguration, argc, argv);
+    
     if(reinitFrameData) {
         memset(&g_slLastFrameLightData, 0, sizeof g_slLastFrameLightData);
     }
     
     slChangeSubsystem(SLS_CONFIGURATION);
     slConfigurationLoad(&g_slConfiguration);
+    // Command-line params should override config file
+    slConfigurationParseArgv(&g_slConfiguration, argc, argv);
     
     for(size_t i = 0; i < SLS_COUNT; ++i) {
         g_slSubsystemLogLevels[i] = g_slConfiguration.logLevel;
@@ -295,6 +298,9 @@ void slProcessConfigChanged(void)
     SLSubsystem lastSubsystem = slChangeSubsystem(SLS_MAIN);
     
     slConfigurationSave(&g_slConfiguration);
+    
+    // Command-line params should override config file
+    slConfigurationParseArgv(&g_slConfiguration, g_slSavedArgc, g_slSavedArgv);
     
     slChangeSubsystem(SLS_AUDIO_INPUT);
     slAudioInputInitialize(&g_slConfiguration);

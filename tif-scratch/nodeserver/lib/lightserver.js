@@ -46,7 +46,7 @@ function handleCommand(socket) {
 			acgStrength : data.acgStrength
 		}
 
-		var outputFile = "../confign.json";
+		var outputFile = "/var/lib/stage-lights/config.json";
 		fs.writeFile(outputFile, JSON.stringify(configData, undefined, 2), function(err){
 			if(err){
 				console.log(err);

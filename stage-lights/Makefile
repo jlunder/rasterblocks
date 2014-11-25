@@ -23,10 +23,10 @@ ifeq ($(OS), LINUX)
 	CC_TARGET=arm-linux-gnueabihf-gcc
 	CFLAGS_COMMON=-W -Wall -Werror
 	CFLAGS=-O0 $(CFLAGS_COMMON)
-	CFLAGS_TARGET=-O2 $(CFLAGS_COMMON)
+	CFLAGS_TARGET=-O0 $(CFLAGS_COMMON)
 	CPPFLAGS_COMMON=--std=gnu99 -fgnu89-inline -D_POSIX_C_SOURCE=200809L -D__USE_MISC
 	CPPFLAGS=$(CPPFLAGS_COMMON) -DSL_LINUX -DGLUS_ES2 -DSL_USE_SDL2_GLES2_HARNESS -DSL_SNDFILE_SUPPORTED
-	CPPFLAGS_TARGET=$(CPPFLAGS_COMMON) -DSL_LINUX -DSL_USE_TARGET_HARNESS -Icross-dep/include
+	CPPFLAGS_TARGET=$(CPPFLAGS_COMMON) -DSL_LINUX -DSL_USE_TARGET_HARNESS -Icross-dep/include -DSL_SNDFILE_SUPPORTED
 	LDFLAGS=-g -lSDL2 -lm -lGLESv2 -lsndfile -lasound -ljson-c
 	LDFLAGS_TARGET=-g -lm -Lcross-dep/lib -Wl,-rpath=cross-dep/lib -lsndfile -lasound -ljson -lrt
 endif
@@ -121,6 +121,7 @@ install: stage-lights
 	cp bin/stage-lights $(INSTALL_DIR)/stage-lights
 	systemctl enable $(INSTALL_DIR)/stage-lights.service
 	systemctl start stage-lights.service
+	# npm install from node folder!
 
 uninstall:
 	systemctl stop stage-lights.service

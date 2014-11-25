@@ -1,9 +1,15 @@
 #include "configuration.h"
 #include "configuration_json.h"
 
+#include <sys/stat.h>
+#include <time.h>
+
 #define SL_DEFAULT_INPUT_ALSA "plughw:1,0"
 #define SL_DEFAULT_INPUT_FILE "../test/clips/909Tom X1.wav"
-#define SL_DEFAULT_INPUT_CONFIG "../config/host_config.json"
+#define SL_DEFAULT_INPUT_CONFIG "/var/lib/stage-lights/config.json"
+
+
+time_t g_slConfigFileMTime;
 
 
 void slConfigurationSetDefaults(SLConfiguration * config)
@@ -49,7 +55,7 @@ void slConfigurationParseArgv(SLConfiguration * config, int argc,
                     sizeof config->audioSourceParam, "%s", argv[i]);
             }
         }
-        if(strcmp(argv[i], "-sc") == 0) {
+        if(strcmp(argv[i], "-c") == 0) {
             if(i + 1 < argc) {
                 ++i;
                 snprintf(config->configPath,
@@ -63,11 +69,11 @@ void slConfigurationParseArgv(SLConfiguration * config, int argc,
 void slConfigurationLoad(SLConfiguration * config)
 {
     if(config->configPath[0]) {
-        slParseJson(config,config->configPath);
+        slParseJson(config, config->configPath);
     }
-    slWarning("Using Audio Source: %d\n",config->audioSource);
-    slWarning("Using Audio Source Param: %s\n",config->audioSourceParam);
-    slWarning("Audio Playback Enabled: %s\n",config->monitorAudio?"true":"false");
+    slInfo("Config audio source: %d\n",config->audioSource);
+    slInfo("Config audio source param: %s\n",config->audioSourceParam);
+    slInfo("Config audio playback enabled: %s\n",config->monitorAudio?"true":"false");
 }
 
 
@@ -80,6 +86,7 @@ void slConfigurationSave(SLConfiguration const * config)
 void slHotConfigurationInitialize(SLConfiguration const * config)
 {
     UNUSED(config);
+    g_slConfigFileMTime = time(NULL);
 }
 
 
@@ -91,8 +98,17 @@ void slHotConfigurationShutdown(void)
 void slHotConfigurationProcessAndUpdateConfiguration(SLConfiguration * config,
     bool * configurationModified)
 {
-    UNUSED(config);
-    UNUSED(configurationModified);
+    if(config->configPath[0]) {
+        struct stat statBuf;
+        
+        stat(config->configPath, &statBuf);
+        if(g_slConfigFileMTime != statBuf.st_mtime) {
+            slWarning("Config changed, rereading\n");
+            g_slConfigFileMTime = statBuf.st_mtime;
+            slParseJson(config, config->configPath);
+            *configurationModified = true;
+        }
+    }
 }
 
 
