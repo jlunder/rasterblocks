@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # create minimal ubuntu 12.04 install
 if [ ! -d precise-chroot ]; then
   echo "Running debootstrap to make initial cross-build env"
@@ -15,6 +17,19 @@ sudo mount --bind ./ ./precise-chroot/home/stage-lights
 if ! grep 'deb http://archive.ubuntu.com/ubuntu precise universe' precise-chroot/etc/apt/sources.list; then
   echo "Updating apt sources in cross-build env"
   sudo sh -c "echo deb http://archive.ubuntu.com/ubuntu precise universe >> ./precise-chroot/etc/apt/sources.list"
+fi
+
+USERNAME=`id -un`
+USERID=`id -u`
+GROUPNAME=`id -gn`
+GROUPID=`id -g`
+
+if ! grep "$GROUPNAME" precise-chroot/etc/group; then
+  sudo chroot precise-chroot groupadd --gid "$GROUPID" "$GROUPNAME"
+fi
+
+if ! grep "$USERNAME" precise-chroot/etc/passwd; then
+  sudo chroot precise-chroot useradd --uid "$USERID" --gid "$GROUPID" "$USERNAME"
 fi
 
 # download build dependencies to chroot

@@ -5,10 +5,9 @@ else
 	
 	ifeq ($(UNAME_S),Linux)
 		OS = LINUX
+		PACKAGE_BUILD = TRUE
 		ifeq ($(UNAME_M),armv7l)
 			TARGET_BUILD = TRUE
-		else
-			TARGET_BUILD =
 		endif
 	endif
 	ifeq ($(UNAME_S),Darwin)
@@ -50,6 +49,7 @@ ifeq ($(OS), WIN32)
 endif
 
 ifneq ($(TARGET_BUILD),)
+	CC_TARGET := $(CC)
 	CFLAGS := $(CFLAGS_TARGET)
 	CPPFLAGS := $(CPPFLAGS_TARGET)
 	LDFLAGS := $(LDFLAGS_TARGET)
@@ -69,25 +69,18 @@ MAKEDEPEND_TARGET=@set -e; rm -f $@; \
 
 .PHONY: all cleanall clean
 
-all: stage-lights
+all: bin/stage-lights-1.0_armhf.deb
+
+STAGE_LIGHTS_SRC := $(basename $(notdir $(wildcard src/*.c)))
+
+STAGE_LIGHTS_O := $(addprefix build/,$(addsuffix .o, $(STAGE_LIGHTS_SRC)))
+STAGE_LIGHTS_D := $(addprefix build/,$(addsuffix .d, $(STAGE_LIGHTS_SRC)))
 
 build/%.d: src/%.c Makefile
 	@$(MAKEDEPEND)
 
-build/%.target.d: src/%.c Makefile
-	@$(MAKEDEPEND_TARGET)
-
-STAGE_LIGHTS_SRC := $(basename $(notdir $(wildcard src/*.c)))
-STAGE_LIGHTS_O := $(addprefix build/,$(addsuffix .o, $(STAGE_LIGHTS_SRC)))
-STAGE_LIGHTS_O_TARGET := $(addprefix build/,$(addsuffix .target.o, $(STAGE_LIGHTS_SRC)))
-STAGE_LIGHTS_D := $(addprefix build/,$(addsuffix .d, $(STAGE_LIGHTS_SRC)))
-STAGE_LIGHTS_D_TARGET := $(addprefix build/,$(addsuffix .target.d, $(STAGE_LIGHTS_SRC)))
-
 ifeq ($(MAKECMDGOALS),stage-lights)
 	-include $(STAGE_LIGHTS_D)
-endif
-ifeq ($(MAKECMDGOALS),stage-lights.target)
-	-include $(STAGE_LIGHTS_D_TARGET)
 endif
 
 build/%.o: src/%.c Makefile
@@ -95,55 +88,59 @@ build/%.o: src/%.c Makefile
 	@$(MAKEDEPEND)
 	$(CC) -c -g $(CFLAGS) -o $@ $(CPPFLAGS) $<
 
+bin/stage-lights: $(STAGE_LIGHTS_O)
+	@mkdir -p bin
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+ifneq ($(CROSS_BUILD)$(TARGET_BUILD),)
+
+# Either we're building on target or we're in the cross-build env -- enable
+# the cross-build target directly.
+STAGE_LIGHTS_O_TARGET := $(addprefix build/,$(addsuffix .target.o, $(STAGE_LIGHTS_SRC)))
+STAGE_LIGHTS_D_TARGET := $(addprefix build/,$(addsuffix .target.d, $(STAGE_LIGHTS_SRC)))
+
+build/%.target.d: src/%.c Makefile
+	@$(MAKEDEPEND_TARGET)
+
+ifeq ($(MAKECMDGOALS),stage-lights.target)
+	-include $(STAGE_LIGHTS_D_TARGET)
+endif
+
 build/%.target.o: src/%.c Makefile
 	@mkdir -p build
 	@$(MAKEDEPEND_TARGET)
 	$(CC_TARGET) -c -g $(CFLAGS_TARGET) -o $@ $(CPPFLAGS_TARGET) $<
 
-stage-lights: $(STAGE_LIGHTS_O)
-	@mkdir -p bin
-	$(CC) -o bin/$@ $^ $(LDFLAGS)
+bin/stage-lights.target: $(STAGE_LIGHTS_O_TARGET)
+	$(CC_TARGET) -o $@ $^ $(LDFLAGS_TARGET)
 
-stage-lights.target: $(STAGE_LIGHTS_O_TARGET)
-	$(CC_TARGET) -o bin/$@ $^ $(LDFLAGS_TARGET)
+else
+
+# We're in the host build env, use the cross-build script to perform the
+# target build.
+bin/stage-lights.target: Makefile precise-chroot
+	./target-build
+
+endif
+
+ifneq ($(PACKAGE_BUILD),)
+bin/stage-lights-1.0_armhf.deb: $(wildcard package/DEBIAN/control/*) $(wildcard nodeserver/*) stage-lights.service stage-lights-nodeserver.service bin/stage-lights.target
+	mkdir -p package/usr/lib/stage-lights
+	mkdir -p package/var/lib/stage-lights
+	cp -r nodeserver package/usr/lib/stage-lights/
+	rm -r package/usr/lib/stage-lights/nodeserver/node_modules
+	cp bin/stage-lights.target package/usr/lib/stage-lights/stage-lights
+	cp stage-lights.service package/usr/lib/stage-lights
+	cp stage-lights-nodeserver.service package/usr/lib/stage-lights
+	dpkg-deb --build package $@
+endif
 
 cleanall: clean
+	sudo umount precise-chroot/home/stage-lights
+	sudo rm -rf precise-chroot
+	rm -rf package/usr
+	rm -rf package/var
 
 clean:
 	@rm -f build/* bin/*
 
-ifneq ($(INSTALL_DIR),)
-
-install: stage-lights install-server
-	systemctl stop stage-lights.service
-	mkdir -p $(INSTALL_DIR)
-	cp stage-lights.service $(INSTALL_DIR)/stage-lights.service
-	cp bin/stage-lights $(INSTALL_DIR)/stage-lights
-	systemctl enable $(INSTALL_DIR)/stage-lights.service
-	systemctl start stage-lights.service
-	# npm install from node folder!
-
-install-server:
-	systemctl stop stage-lights-config-server.service
-	mkdir -p $(INSTALL_DIR)
-	cp stage-lights-config-server.service $(INSTALL_DIR)/stage-lights-config-server.service
-	cp nodeserver $(INSTALL_DIR)/stage-lights/nodeserver
-	mkdir -p /var/lib/stage-lights
-	cp config/target_config.json /var/lib/stage-lights/config.json
-	systemctl enable $(INSTALL_DIR)/stage-lights-config-server.service
-	systemctl start stage-lights-config-server.service
-
-uninstall: uninstall-server
-	systemctl stop stage-lights.service
-	systemctl disable $(INSTALL_DIR)/stage-lights.service
-	rm $(INSTALL_DIR)/stage-lights.service
-	rm $(INSTALL_DIR)/stage-lights
-	rmdir $(INSTALL_DIR)
-
-uninstall-server:
-	systemctl stop stage-lights-config-server.service
-	systemctl disable $(INSTALL_DIR)/stage-lights-config-server.service
-	rm $(INSTALL_DIR)/stage-lights-config-server.service
-	rm -r $(INSTALL_DIR)/stage-lights/nodeserver
-
-endif

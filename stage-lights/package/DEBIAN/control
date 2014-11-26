@@ -1,0 +1,10 @@
+Package: stage-lights
+Version: 1.0
+Depends: nodejs, npm
+Section: custom
+Priority: optional
+Architecture: all
+Essential: no
+Installed-Size: 1024
+Maintainer: Team 7
+Description: Make flashy lights to music

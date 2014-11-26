@@ -1,0 +1,3 @@
+#!/bin/bash
+USERNAME=`id -un`
+sudo chroot precise-chroot /bin/bash -c "su \"$USERNAME\" -c \"cd /home/stage-lights/; CROSS_BUILD=TRUE make bin/stage-lights.target\""

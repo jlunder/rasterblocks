@@ -1,9 +1,9 @@
 [Unit]
 Description=CMPT433 Stage Lights
-After=syslog.target basic.target sound.target
+After=syslog.target basic.target sound.target stage-lights-nodeserver.service
 
 [Service]
-ExecStart=/usr/local/lib/stage-lights/stage-lights
+ExecStart=/usr/lib/stage-lights/stage-lights
 Restart=on-abort
 
 [Install]
