@@ -29,7 +29,7 @@ void slAudioInputInitialize(SLConfiguration const * config)
             g_slAudioSource = SLAIS_FILE;
         #else
             g_slAudioSource = SLAIS_INVALID;
-            slFatal("Not compiled with libsndfile support, exiting\n");
+            slFatal("Not compiled with libsndfile support\n");
         #endif
         break;
     default:
