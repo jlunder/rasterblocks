@@ -210,31 +210,53 @@ void slAlsaPlaybackInit(int num_frames, int channels)
 {
     int error = 0;
     
+    // Ensure all structures freed to prevent memory leaks
+    slAlsaPlaybackClose();
+    
     error = snd_pcm_open(&playback_handle, "default", SND_PCM_STREAM_PLAYBACK,
         0);
 
-    if (error < 0) {
+    if (error < 0 || playback_handle == NULL) {
+        slAlsaPlaybackClose();
         slError("Alsa playback open failed\n");
+        return;
     }
 
     error =  snd_pcm_set_params(playback_handle, SND_PCM_FORMAT_FLOAT,
                            SND_PCM_ACCESS_RW_INTERLEAVED, channels,
                            SL_AUDIO_SAMPLE_RATE, 1, 500000);
     if (error < 0) {
+        slAlsaPlaybackClose();
         slError("Alsa playback set params failed\n");
+        return;
     }
 
     playback_buffer = malloc(num_frames*channels*sizeof(*playback_buffer));
+    // Alloc should never fail on a system with this much memory; if it does,
+    // crashing is appropriate
     memset(playback_buffer, 0, num_frames*channels*sizeof(*playback_buffer));
 }
 
-void slAlsaPlaybackClose() {
+void slAlsaPlaybackClose()
+{
     slInfo("Closing alsa playback device\n");
-    snd_pcm_close(playback_handle);
-    free(playback_buffer);
+    // Free and reset pointers
+    if(playback_handle != NULL) {
+        snd_pcm_close(playback_handle);
+        playback_handle = NULL;
+    }
+    if(playback_buffer != NULL) {
+        free(playback_buffer);
+        playback_buffer = NULL;
+    }
 }
 
-void slAlsaPlayback(SLRawAudio* audio_buf, int num_frames, int channels) {
+void slAlsaPlayback(SLRawAudio* audio_buf, int num_frames, int channels)
+{
+    if(playback_buffer == NULL || playback_handle == NULL) {
+        // Init must have failed -- playback is non-essential so don't fatal
+        return;
+    }
 
     for (int frame = 0; frame < num_frames; frame++) {
         for (int channel = 0; channel < channels; channel++) {
