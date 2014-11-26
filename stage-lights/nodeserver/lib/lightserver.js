@@ -21,27 +21,12 @@ exports.listen = function(server) {
 
 function handleCommand(socket) {
 	//data from client
-	socket.on('configData', function(data) {
-		console.log('received config data: ' + data);
-
-		var configData = {
-			logLevel : data.logLevel,
-			audioSource : data.audioSource,
-			audioSourceParam : data.audioSourceParam,
-			monitorAudio : data.monitorAudio,
-			lowCutoff : data.lowCutoff,
-			hiCutoff : data.hiCutoff,
-			agcMax : data.agcMax,
-			agcMin : data.agcMin,
-			agcStrength : data.agcStrength
-		}
-
-		var args = process.argv.slice(2);
-		//console.log(args[0]);
+	socket.on('configData', function(config) {
+		console.log('received config data: ' + config);
 
 		//var outputFile = '/var/lib/stage-lights/config.json';
-		var outputFile = args[0];
-		fs.writeFile(outputFile, JSON.stringify(configData, undefined, 2), function(err){
+		var outputFile = process.argv.slice(2)[0];
+		fs.writeFile(outputFile, JSON.stringify(config, undefined, 2), function(err){
 			if(err){
 				console.log(err);
 			} else {

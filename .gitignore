@@ -10,3 +10,4 @@ stage-lights/test/tracks/*.wav
 stage-lights/bin/*
 stage-lights/build/*
 stage-lights/precise-chroot
+stage-lights/nodeserver/node_modules

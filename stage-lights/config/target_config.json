@@ -1,10 +1,12 @@
 {
-	"logLevel": "SLLL_WARNING", 	//SLLL_INFO, SLLL_WARNING, SLLL_ERROR
-	// input
-	"audioSource": 	"SLAIS_ALSA",	//SLAIS_ALSA, SLAIS_FILE
+	"logLevel": "SLLL_WARNING",
+	"audioSource": 	"SLAIS_ALSA",
 	"audioSourceParam": "plughw:1,0",
-	"monitorAudio": false
-	// analysis
-	// light gen
-	// output
+	"monitorAudio": false,
+
+	"lowCutoff": 200,
+	"hiCutoff": 300,
+	"agcMax": 1,
+	"agcMin": 0.001,
+	"agcStrength": 0.5
 }

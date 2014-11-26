@@ -5,7 +5,7 @@ var SockApp = function(socket) {
 	this.socket = socket
 };
 
-SockApp.prototype.processConfig = function(data) {
+SockApp.prototype.sendConfig = function(data) {
 	//console.log(JSON.stringify(data));
 	this.sendCommand(data);
 	return true;
