@@ -28,7 +28,7 @@ var server = http.createServer(function(request, response) {
 });
 
 server.listen(PORT_NUMBER, function() {
-	console.log("Server listeneing on port " + PORT_NUMBER);
+	console.log('Server listeneing on port ' + PORT_NUMBER);
 });
 
 function serveStatic(response, absPath) {
@@ -56,7 +56,7 @@ function send404(response) {
 function sendFile(response, filePath, fileContents) {
 	response.writeHead(
 			200,
-			{"content-type": mime.lookup(path.basename(filePath))}
+			{'Content-Type': mime.lookup(path.basename(filePath))}
 		);
 	response.end(fileContents);
 }
@@ -65,7 +65,7 @@ function sendFile(response, filePath, fileContents) {
 /*
  * Create the Userver to listen for the websocket
  */
-var tcpServer = require('./lib/lightserver');
-tcpServer.listen(server);
+var sockServer = require('./lib/lightserver');
+sockServer.listen(server);
 
 

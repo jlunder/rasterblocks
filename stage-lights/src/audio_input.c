@@ -25,7 +25,7 @@ void slAudioInputInitialize(SLConfiguration const * config)
         break;
     case SLAIS_FILE:
         #ifdef SL_SNDFILE_SUPPORTED
-            slSndFileOpen((char *)config->audioSourceParam);
+            slVerify(slSndFileOpen((char *)config->audioSourceParam) != NULL);
             g_slAudioSource = SLAIS_FILE;
         #else
             g_slAudioSource = SLAIS_INVALID;

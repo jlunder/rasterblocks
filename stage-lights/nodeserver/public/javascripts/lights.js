@@ -1,17 +1,17 @@
 // TCP Relay application to interact with server.
 // used by the UI components
 
-var TcpApp = function(socket) {
+var SockApp = function(socket) {
 	this.socket = socket
 };
 
-TcpApp.prototype.processConfig = function(data) {
+SockApp.prototype.processConfig = function(data) {
 	//console.log(JSON.stringify(data));
 	this.sendCommand(data);
 	return true;
 };
 
-TcpApp.prototype.sendCommand = function(message) {
-	this.socket.emit('command', message);
+SockApp.prototype.sendCommand = function(message) {
+	this.socket.emit('configData', message);
 };
 
