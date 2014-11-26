@@ -1,10 +1,11 @@
 [Unit]
-Description=CMPT433 Stage Lights Config Server
+Description=CMPT433 Stage Lights Node Configuration Server
 After=syslog.target basic.target sound.target
 
 [Service]
-ExecStart=nodejs /usr/lib/stage-lights/nodeserver/server.js
+ExecStart=/usr/bin/node /usr/lib/stage-lights/nodeserver/server.js /var/lib/stage-lights/config.json
 Restart=on-abort
+WorkingDirectory=/usr/lib/stage-lights/nodeserver
 
 [Install]
 WantedBy=multi-user.target

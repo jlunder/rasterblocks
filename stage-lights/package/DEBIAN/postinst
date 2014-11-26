@@ -1,6 +1,4 @@
 #!/bin/bash
-echo HELLO WORLD
-exit
 
 INSTALL_DIR=/usr/lib/stage-lights
 
@@ -8,7 +6,7 @@ pushd "$INSTALL_DIR/nodeserver"
 npm install
 popd
 
-systemctl enable "$INSTALL_DIR/stage-lights.service"
-systemctl start stage-lights.service
 systemctl enable "$INSTALL_DIR/stage-lights-nodeserver.service"
 systemctl start stage-lights-nodeserver.service
+systemctl enable "$INSTALL_DIR/stage-lights.service"
+#systemctl start stage-lights.service

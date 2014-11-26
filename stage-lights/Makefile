@@ -124,7 +124,23 @@ bin/stage-lights.target: Makefile precise-chroot
 endif
 
 ifneq ($(PACKAGE_BUILD),)
-bin/stage-lights-1.0_armhf.deb: $(wildcard package/DEBIAN/control/*) $(wildcard nodeserver/*) stage-lights.service stage-lights-nodeserver.service bin/stage-lights.target
+
+ifeq ($(CROSS_BUILD)$(TARGET_BUILD),)
+# Neither the cross-build env nor the target has tools to build a host package
+bin/stage-lights-1.0_x64.deb: $(wildcard package/DEBIAN/*) $(wildcard nodeserver/*) stage-lights.service stage-lights-nodeserver.service bin/stage-lights
+	mkdir -p package/usr/lib/stage-lights
+	mkdir -p package/var/lib/stage-lights
+	cp -r nodeserver package/usr/lib/stage-lights/
+	rm -r package/usr/lib/stage-lights/nodeserver/node_modules
+	cp bin/stage-lights package/usr/lib/stage-lights/stage-lights
+	cp stage-lights.service package/usr/lib/stage-lights
+	cp stage-lights-nodeserver.service package/usr/lib/stage-lights
+	dpkg-deb --build package $@
+endif
+
+ifeq ($(CROSS_BUILD),)
+# The cross-build env doesn't have enough toolchain to build a package
+bin/stage-lights-1.0_armhf.deb: $(wildcard package/DEBIAN/*) $(wildcard nodeserver/*) stage-lights.service stage-lights-nodeserver.service bin/stage-lights.target
 	mkdir -p package/usr/lib/stage-lights
 	mkdir -p package/var/lib/stage-lights
 	cp -r nodeserver package/usr/lib/stage-lights/
@@ -133,6 +149,8 @@ bin/stage-lights-1.0_armhf.deb: $(wildcard package/DEBIAN/control/*) $(wildcard 
 	cp stage-lights.service package/usr/lib/stage-lights
 	cp stage-lights-nodeserver.service package/usr/lib/stage-lights
 	dpkg-deb --build package $@
+endif
+
 endif
 
 cleanall: clean

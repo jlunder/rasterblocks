@@ -1,6 +1,4 @@
 #!/bin/bash
-echo GOODBYE WORLD
-exit
 
 INSTALL_DIR=/usr/lib/stage-lights
 
