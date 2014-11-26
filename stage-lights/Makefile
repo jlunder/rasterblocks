@@ -127,7 +127,9 @@ install-server:
 	systemctl stop stage-lights-config-server.service
 	mkdir -p $(INSTALL_DIR)
 	cp stage-lights-config-server.service $(INSTALL_DIR)/stage-lights-config-server.service
-	cp nodeserver $(INSTALL_DIR)/stage-lights/nodeserver
+	rm -r $(INSTALL_DIR)/nodeserver
+	cp -r nodeserver $(INSTALL_DIR)/nodeserver
+	cd $(INSTALL_DIR)/nodeserver; npm install;
 	mkdir -p /var/lib/stage-lights
 	cp config/target_config.json /var/lib/stage-lights/config.json
 	systemctl enable $(INSTALL_DIR)/stage-lights-config-server.service
