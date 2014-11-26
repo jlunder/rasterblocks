@@ -9,7 +9,7 @@
 #define SL_DEFAULT_INPUT_CONFIG "/var/lib/stage-lights/config.json"
 
 
-time_t g_slConfigFileMTime;
+time_t g_slConfigFileMTime = 0;
 
 
 void slConfigurationSetDefaults(SLConfiguration * config)
@@ -68,12 +68,9 @@ void slConfigurationParseArgv(SLConfiguration * config, int argc,
 
 void slConfigurationLoad(SLConfiguration * config)
 {
-    if(config->configPath[0]) {
-        slParseJson(config, config->configPath);
-    }
-    slInfo("Config audio source: %d\n",config->audioSource);
-    slInfo("Config audio source param: %s\n",config->audioSourceParam);
-    slInfo("Config audio playback enabled: %s\n",config->monitorAudio?"true":"false");
+    bool configModified = true;
+    
+    slHotConfigurationProcessAndUpdateConfiguration(config, &configModified);
 }
 
 
@@ -86,7 +83,6 @@ void slConfigurationSave(SLConfiguration const * config)
 void slHotConfigurationInitialize(SLConfiguration const * config)
 {
     UNUSED(config);
-    g_slConfigFileMTime = time(NULL);
 }
 
 
@@ -96,17 +92,27 @@ void slHotConfigurationShutdown(void)
 
 
 void slHotConfigurationProcessAndUpdateConfiguration(SLConfiguration * config,
-    bool * configurationModified)
+    bool * pConfigurationModified)
 {
     if(config->configPath[0]) {
         struct stat statBuf;
         
         stat(config->configPath, &statBuf);
-        if(g_slConfigFileMTime != statBuf.st_mtime) {
-            slWarning("Config changed, rereading\n");
+        // *pConfigurationModified indicates the caller would like to force a
+        // config reload for whatever reason.
+        if(*pConfigurationModified ||
+                g_slConfigFileMTime != statBuf.st_mtime) {
+            if(!*pConfigurationModified) {
+                slWarning("Config changed, rereading\n");
+            }
             g_slConfigFileMTime = statBuf.st_mtime;
             slParseJson(config, config->configPath);
-            *configurationModified = true;
+            *pConfigurationModified = true;
+            slInfo("Config audio source: %d\n", config->audioSource);
+            slInfo("Config audio source param: %s\n",
+                config->audioSourceParam);
+            slInfo("Config audio playback enabled: %s\n",
+                config->monitorAudio ? "true" : "false");
         }
     }
 }

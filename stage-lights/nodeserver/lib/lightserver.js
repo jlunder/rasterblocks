@@ -26,7 +26,8 @@ function handleCommand(socket) {
 
 		//var outputFile = '/var/lib/stage-lights/config.json';
 		var outputFile = process.argv.slice(2)[0];
-		fs.writeFile(outputFile, JSON.stringify(config, undefined, 2), function(err){
+		fs.writeFile(outputFile + "~", JSON.stringify(config, undefined, 2), function(err){
+			fs.renameSync(outputFile + "~", outputFile);
 			if(err){
 				console.log(err);
 			} else {
