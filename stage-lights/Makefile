@@ -114,7 +114,7 @@ clean:
 
 ifneq ($(INSTALL_DIR),)
 
-install: stage-lights
+install: stage-lights install-server
 	systemctl stop stage-lights.service
 	mkdir -p $(INSTALL_DIR)
 	cp stage-lights.service $(INSTALL_DIR)/stage-lights.service
@@ -123,11 +123,27 @@ install: stage-lights
 	systemctl start stage-lights.service
 	# npm install from node folder!
 
-uninstall:
+install-server:
+	systemctl stop stage-lights-config-server.service
+	mkdir -p $(INSTALL_DIR)
+	cp stage-lights-config-server.service $(INSTALL_DIR)/stage-lights-config-server.service
+	cp nodeserver $(INSTALL_DIR)/stage-lights/nodeserver
+	mkdir -p /var/lib/stage-lights
+	cp config/target_config.json /var/lib/stage-lights/config.json
+	systemctl enable $(INSTALL_DIR)/stage-lights-config-server.service
+	systemctl start stage-lights-config-server.service
+
+uninstall: uninstall-server
 	systemctl stop stage-lights.service
 	systemctl disable $(INSTALL_DIR)/stage-lights.service
 	rm $(INSTALL_DIR)/stage-lights.service
 	rm $(INSTALL_DIR)/stage-lights
 	rmdir $(INSTALL_DIR)
+
+uninstall-server:
+	systemctl stop stage-lights-config-server.service
+	systemctl disable $(INSTALL_DIR)/stage-lights-config-server.service
+	rm $(INSTALL_DIR)/stage-lights-config-server.service
+	rm -r $(INSTALL_DIR)/stage-lights/nodeserver
 
 endif
