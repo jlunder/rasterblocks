@@ -18,31 +18,34 @@ var server = http.createServer(function(request, response) {
 	var filePath = false;
 	
 	if (request.url == '/') {
-		filePath = 'public/index.html';
+		filePath = './public/index.html';
+	} else if (request.url == '/config.json') {
+		filePath = process.argv.slice(2)[0];
 	} else {
-		filePath = 'public' + request.url;
+		filePath = './public' + request.url;
 	}
 	
-	var absPath = './' + filePath;
-	serveStatic(response, absPath);
+	serveStatic(response, filePath);
 });
 
 server.listen(PORT_NUMBER, function() {
-	console.log('Server listeneing on port ' + PORT_NUMBER);
+	console.log('Server listening on port ' + PORT_NUMBER);
 });
 
-function serveStatic(response, absPath) {
-	fs.exists(absPath, function(exists) {
+function serveStatic(response, filePath) {
+	fs.exists(filePath, function(exists) {
 		if (exists) {
-			fs.readFile(absPath, function(err, data) {
+			fs.readFile(filePath, function(err, data) {
 				if (err) {
 					send404(response);
+					console.log(err);
 				} else {
-					sendFile(response, absPath, data);
+					sendFile(response, filePath, data);
 				}
 			});
 		} else {
 			send404(response);
+			console.log(filePath+" does not exist");
 		}
 	});
 }

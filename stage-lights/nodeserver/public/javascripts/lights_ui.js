@@ -51,7 +51,9 @@ $(document).ready(function() {
 		}
 	});
 
-	setDefault();
+	$.get( "/config.json", function( config ) {
+		setConfig(config);
+	}, "json");
 
 	socket.on('commandReply', function(result) {
 		$('#messages').append(divMessage(result));
@@ -59,40 +61,29 @@ $(document).ready(function() {
 	});
 
 	$('#select-submit').click(function() {
-		processSelect(sockApp, socket);
+		sendConfig(sockApp, socket);
 		// Return false to show we have handleded it.
 		return false;
 	});
 });
 
-function processSelect(sockApp, socket){
-	var logdata = $('#logLevel').val();
+function getConfig() {
+	var config = {};
+	config.logLevel = $('#logLevel').val();
+	config.audioSource = $('#audioSource').val();
+	config.audioSourceParam = $('#audioSourceParam').val();
+	config.monitorAudio = $('#monitorAudio').prop('checked');
+	config.lowCutoff = $('#slider-low').slider('value');
+	config.hiCutoff = $('#slider-hi').slider('value');
+	config.agcMax = gvalues[$('#slider-gain').slider('values', 1)];
+	config.agcMin = gvalues[$('#slider-gain').slider('values', 0)];
+	config.agcStrength = parseFloat($('#gain-strength').val());
+	return config;
+}
+function sendConfig(sockApp, socket){
+	var data = getConfig();
 
-	var audiodata = $('#audioSource').val();
-	var audioSPdata = $('#audioSourceParam').val();
-	var monitorAud = $('#monitorAudio').prop('checked');
-
-	var lowdata = $('#slider-low').slider('value');
-	var hidata = $('#slider-hi').slider('value');
-
-	var maxagc = gvalues[$('#slider-gain').slider('values', 1)];
-	var minagc = gvalues[$('#slider-gain').slider('values', 0)];
-	var strengthagc = parseFloat($('#gain-strength').val());
-
-	var data = {
-			logLevel: logdata,
-			audioSource: audiodata,
-			audioSourceParam: audioSPdata,
-			monitorAudio: monitorAud,
-			lowCutoff : lowdata,
-			hiCutoff : hidata,
-			agcMax : maxagc,
-			agcMin : minagc,
-			agcStrength : strengthagc
-
-	}
-
-	var systemMessage = sockApp.processConfig(data);
+	var systemMessage = sockApp.sendConfig(data);
 	if(systemMessage){
 		console.log('sock ok');
 	}
@@ -102,21 +93,29 @@ function divMessage(inString) {
 	return $('<div></div>').text(inString);
 }
 
-function setDefault() {
-	$('#logLevel').val('SLLL_WARNING');
+function agcRangeToSliderValue(value) {
+	for(i=0;i<gvalues.length;i++) {
+		if(value<=gvalues[i])
+			return i;
+	}
+	return 1;
+}
 
-	$('#audioSource').val('SLAIS_ALSA');
-	$('#audioSourceParam').val('plughw:1,0');
-	$('#monitorAudio').prop('checked', false);
+function setConfig(config) {
+	$('#logLevel').val(config.logLevel);
 
-	$('#slider-low').slider('value', 200);
+	$('#audioSource').val(config.audioSource);
+	$('#audioSourceParam').val(config.audioSourceParam);
+	$('#monitorAudio').prop('checked', config.monitorAudio);
+
+	$('#slider-low').slider('value', config.lowCutoff);
 	$('#lo-amount').val($('#slider-low').slider('value'));
-	$('#slider-hi').slider('value', 300);
+	$('#slider-hi').slider('value', config.hiCutoff);
 	$('#hi-amount').val($('#slider-hi').slider('value'));
 
-	$('#slider-gain').slider('values', 1, 4);
-	$('#slider-gain').slider('values', 0, 1);
+	$('#slider-gain').slider('values', 1, agcRangeToSliderValue(config.agcMax));
+	$('#slider-gain').slider('values', 0, agcRangeToSliderValue(config.agcMin));
 	$('#gain-amount').val(gvalues[$('#slider-gain').slider('values', 0)] + ' - ' + gvalues[$('#slider-gain').slider('values', 1)]);
-	$('#gain-strength').val(0.5);
+	$('#gain-strength').val(config.agcStrength);
 }
 
