@@ -11,4 +11,4 @@ cp "$INSTALL_DIR/config.json" "/var/lib/stage-lights/config.json"
 systemctl enable "$INSTALL_DIR/stage-lights-nodeserver.service"
 systemctl start stage-lights-nodeserver.service
 systemctl enable "$INSTALL_DIR/stage-lights.service"
-#systemctl start stage-lights.service
+systemctl start stage-lights.service
