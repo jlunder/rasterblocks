@@ -156,7 +156,7 @@ endif
 endif
 
 cleanall: clean
-	sudo umount precise-chroot/home/stage-lights
+	-sudo umount precise-chroot/home/stage-lights
 	sudo rm -rf precise-chroot
 	rm -rf package/usr
 	rm -rf package/var
