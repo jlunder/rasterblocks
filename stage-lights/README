@@ -1,15 +1,34 @@
 README
 
-compilation on Ubuntu 14.04:
+If you just want to do a full cross-build, then you need to run the
+./setup-target-build-environment script found in this folder first to set up
+your build environment; then, just "make". The default target builds
+"bin/stage-lights-1.0_armhf.deb"; copy that to the target platform, install
+it, and it should just go.
+
+There should not be any extra runtime dependencies not already on the BBB,
+but if you encounter problems with this and you cannot figure out which
+packages are needed we can give you a shortlist of likely candidates so
+please let us know.
+
+It's best if the BBB is connected to the network during installation so npm
+setup can fetch dependencies.
+
+
+
+You need to install some extra packages to do local development on Ubuntu
+14.04 (trusty):
 
 sudo apt-get install libgles2-mesa-dev
 sudo apt-get install libsdl2-dev
 sudo apt-get install libglfw-dev
 
-sudo apt-get install libav-tools
-
 sudo apt-get install libjson0 libjson0-dev
 
-nodeserver
-npm install
+When working on the nodeserver, you need to "npm install" to get
+dependencies of the code installed alongside.
+
+Then, to launch the server:
+
 node server.js <path to config file>
+
