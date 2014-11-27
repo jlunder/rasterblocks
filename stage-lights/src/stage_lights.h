@@ -65,10 +65,10 @@ typedef enum {
 
 
 typedef struct {
-	uint8_t r;
-	uint8_t g;
-	uint8_t b;
-	uint8_t x;
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+    uint8_t x;
 } SLColor;
 
 
@@ -149,6 +149,13 @@ void slLogOutput(char const * format, ...);
 // to frame it's easy to become "infected" with these values. This function
 // can be used to strategically scrub them
 static inline void slSanitizeFloat(float * pF, float saneValue)
+{
+    if(isinf(*pF) || isnan(*pF)) {
+        *pF = saneValue;
+    }
+}
+
+static inline void slSanitizeDouble(double * pF, double saneValue)
 {
     if(isinf(*pF) || isnan(*pF)) {
         *pF = saneValue;

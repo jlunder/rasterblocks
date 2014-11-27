@@ -1,7 +1,7 @@
 {
 	"logLevel": "SLLL_WARNING",
 	"audioSource": 	"SLAIS_ALSA",
-	"audioSourceParam": "plughw:1,0",
+	"audioSourceParam": "plughw:1",
 	"monitorAudio": false,
 
 	"lowCutoff": 200,

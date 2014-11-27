@@ -8,3 +8,4 @@ systemctl stop stage-lights-nodeserver.service
 systemctl disable "$INSTALL_DIR/stage-lights-nodeserver.service"
 
 rm -r "$INSTALL_DIR/nodeserver/node_modules"
+rm "/var/lib/stage-lights/config.json"

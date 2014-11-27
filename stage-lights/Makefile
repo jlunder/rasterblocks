@@ -22,7 +22,7 @@ ifeq ($(OS), LINUX)
 	CC_TARGET=arm-linux-gnueabihf-gcc
 	CFLAGS_COMMON=-W -Wall -Werror
 	CFLAGS=-O0 $(CFLAGS_COMMON)
-	CFLAGS_TARGET=-O0 $(CFLAGS_COMMON)
+	CFLAGS_TARGET=-O2 $(CFLAGS_COMMON)
 	CPPFLAGS_COMMON=--std=gnu99 -fgnu89-inline -D_POSIX_C_SOURCE=200809L -D__USE_MISC
 	CPPFLAGS=$(CPPFLAGS_COMMON) -DSL_LINUX -DGLUS_ES2 -DSL_USE_SDL2_GLES2_HARNESS -DSL_SNDFILE_SUPPORTED
 	CPPFLAGS_TARGET=$(CPPFLAGS_COMMON) -DSL_LINUX -DSL_USE_TARGET_HARNESS -Icross-dep/include -DSL_SNDFILE_SUPPORTED
@@ -50,7 +50,7 @@ endif
 
 ifneq ($(TARGET_BUILD),)
 	CC_TARGET := $(CC)
-	CFLAGS := $(CFLAGS_TARGET)
+	#CFLAGS := $(CFLAGS_TARGET)
 	CPPFLAGS := $(CPPFLAGS_TARGET)
 	LDFLAGS := $(LDFLAGS_TARGET)
 	INSTALL_DIR := /usr/local/lib/stage-lights
@@ -132,6 +132,7 @@ bin/stage-lights-1.0_x64.deb: $(wildcard package/DEBIAN/*) $(wildcard nodeserver
 	mkdir -p package/var/lib/stage-lights
 	cp -r nodeserver package/usr/lib/stage-lights/
 	rm -r package/usr/lib/stage-lights/nodeserver/node_modules
+	cp config/host_config.json package/usr/lib/stage-lights/config.json
 	cp bin/stage-lights package/usr/lib/stage-lights/stage-lights
 	cp stage-lights.service package/usr/lib/stage-lights
 	cp stage-lights-nodeserver.service package/usr/lib/stage-lights
@@ -144,7 +145,8 @@ bin/stage-lights-1.0_armhf.deb: $(wildcard package/DEBIAN/*) $(wildcard nodeserv
 	mkdir -p package/usr/lib/stage-lights
 	mkdir -p package/var/lib/stage-lights
 	cp -r nodeserver package/usr/lib/stage-lights/
-	rm -r package/usr/lib/stage-lights/nodeserver/node_modules
+	rm -rf package/usr/lib/stage-lights/nodeserver/node_modules
+	cp config/target_config.json package/usr/lib/stage-lights/config.json
 	cp bin/stage-lights.target package/usr/lib/stage-lights/stage-lights
 	cp stage-lights.service package/usr/lib/stage-lights
 	cp stage-lights-nodeserver.service package/usr/lib/stage-lights
