@@ -14,8 +14,8 @@ static float const SL_AGC_ROOT_2 = 1.41421356237f;
 #define NPOLES 4
 
 // Filter state floating point type: internally we may need extra precision
-typedef double slFSFloat;
-#define slSanitizeFSFloat slSanitizeDouble
+typedef float slFSFloat;
+#define slSanitizeFSFloat slSanitizeFloat
 
 // 200Hz cutoff (For now)
 static slFSFloat g_slGLOW = 3.523725849e+07;

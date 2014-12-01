@@ -176,9 +176,15 @@ void slLightOutputShowLights(SLLightData const * lights)
     size_t j = 0;
 
     for(size_t i = 0; i < SL_NUM_LIGHTS_LEFT; ++i) {
-        buf[j++] = g_slCieTable[lights->left[SL_NUM_LIGHTS_LEFT - 1 - i].b];
-        buf[j++] = g_slCieTable[lights->left[SL_NUM_LIGHTS_LEFT - 1 - i].r];
-        buf[j++] = g_slCieTable[lights->left[SL_NUM_LIGHTS_LEFT - 1 - i].g];
+        buf[j++] = g_slCieTable[lights->left[i].b];
+        buf[j++] = g_slCieTable[lights->left[i].r];
+        buf[j++] = g_slCieTable[lights->left[i].g];
+    }
+    
+    for(size_t i = 0; i < SL_NUM_LIGHTS_OVERHEAD; ++i) {
+        buf[j++] = g_slCieTable[lights->overhead[i].b];
+        buf[j++] = g_slCieTable[lights->overhead[i].r];
+        buf[j++] = g_slCieTable[lights->overhead[i].g];
     }
     
     for(size_t i = 0; i < SL_NUM_LIGHTS_RIGHT; ++i) {
@@ -187,10 +193,8 @@ void slLightOutputShowLights(SLLightData const * lights)
         buf[j++] = g_slCieTable[lights->right[i].g];
     }
     
-    for(size_t i = 0; i < SL_NUM_LIGHTS_OVERHEAD; ++i) {
-        buf[j++] = g_slCieTable[lights->overhead[i].b];
-        buf[j++] = g_slCieTable[lights->overhead[i].r];
-        buf[j++] = g_slCieTable[lights->overhead[i].g];
+    for(size_t i = 0; i < (SL_NUM_LIGHTS_LEFT + SL_NUM_LIGHTS_RIGHT + SL_NUM_LIGHTS_OVERHEAD) * 3; ++i) {
+        buf[i] = (buf[i] + 15) / 16;
     }
     
     memset(&xfer, 0, sizeof xfer);

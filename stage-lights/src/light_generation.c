@@ -68,7 +68,7 @@ void slLightGenerationGenerate(SLAnalyzedAudio const * analysis,
     }
     
     for(int i = 0; i < SL_NUM_LIGHTS_OVERHEAD; ++i) {
-        lights->overhead[i] = getPaletteF(g_slWarmPalette, bass - i * (2.0f / SL_NUM_LIGHTS_OVERHEAD));
+        lights->overhead[SL_NUM_LIGHTS_OVERHEAD - 1 - i] = getPaletteF(g_slWarmPalette, bass - i * (2.0f / SL_NUM_LIGHTS_OVERHEAD));
     }
 }
 
