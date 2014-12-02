@@ -21,6 +21,7 @@ SNDFILE* slSndFileOpen(char *file_name) {
 void slSndFileClose() {
     if(g_snd_file) {
         sf_close(g_snd_file);
+        g_snd_file = NULL;
     }
 }
 

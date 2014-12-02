@@ -1,5 +1,18 @@
 README
 
+
+WARNING the automatic dependency generation in the Makefile seems to recently
+have been broken, so PLEASE issue a "make clean" before rebuilding with any
+changes!
+
+
+There is a known bug that the server allows "0" values for some config items.
+The program interprets a "0" value as "value not set, don't change", so it
+will behave strangely if you use these values. This is what happened in the
+demo with the AGC settings appearing not to be reset (they weren't, because I
+chose a 0 AGC min).
+
+
 If you just want to do a full cross-build, then you need to run the
 ./setup-target-build-environment script found in this folder first to set up
 your build environment; then, just "make". The default target builds
@@ -15,6 +28,7 @@ It's best if the BBB is connected to the network during installation so npm
 setup can fetch dependencies.
 
 
+There is a local test version of the app that builds in Linux and uses OpenGL to render a simulation of the lights. It is not the default build, it can be built using the command "make bin/stage-lights".
 
 You need to install some extra packages to do local development on Ubuntu
 14.04 (trusty):
@@ -24,6 +38,17 @@ sudo apt-get install libsdl2-dev
 sudo apt-get install libglfw-dev
 
 sudo apt-get install libjson0 libjson0-dev
+
+
+When running the local test system, a couple command-line parameters are
+helpful:
+
+-c <config_file_path> # specify the path to the initial config file
+-sf <wav_file_path>   # run in test mode using an audio file instead of ALSA
+-sa <audio_hw>        # run using actual audio input via ALSA; param is usually
+                      # "plughw:1" for an external USB audio device, or
+                      # "plughw:0" for the default internal audio device.
+
 
 When working on the nodeserver, you need to "npm install" to get
 dependencies of the code installed alongside.
