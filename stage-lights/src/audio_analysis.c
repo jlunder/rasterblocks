@@ -205,19 +205,11 @@ static void slAudioAnalysisCalculateCoefficients(double cutoffFreq,
 
 void slAudioAnalysisInitialize(SLConfiguration const * config)
 {
-    if (config->lowCutoff && config->hiCutoff) {
-        slAudioAnalysisCalculateCoefficients(config->lowCutoff, &g_slGLOW, g_slKLOW);
-        slAudioAnalysisCalculateCoefficients(config->hiCutoff, &g_slGHI, g_slKHI);
-    }
-    if (config->agcMax) {
-        g_slAgcMax = config->agcMax;
-    }
-    if (config->agcMin) {
-        g_slAgcMin = config->agcMin;
-    }
-    if (config->agcStrength) {
-        g_slAgcStrength = config->agcStrength;
-    }
+    slAudioAnalysisCalculateCoefficients(config->lowCutoff, &g_slGLOW, g_slKLOW);
+    slAudioAnalysisCalculateCoefficients(config->hiCutoff, &g_slGHI, g_slKHI);
+    g_slAgcMax = config->agcMax;
+    g_slAgcMin = config->agcMin;
+    g_slAgcStrength = config->agcStrength;
 
     if(!g_slAudioAnalysisFirstInit) {
         for(size_t i = 0; i < LENGTHOF(g_slAgcSamples); ++i) {
