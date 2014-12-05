@@ -33,7 +33,10 @@
     "echo BB-SPIDEV0 > /sys/devices/bone_capemgr.9/slots"
 #define SL_TARGET_SPI_DEVICE_STARTUP_WAIT_NS 2000000000LLU
 
-void slLightOutputStartSpiDevice(void);
+
+static void slLightOutputStartSpiDevice(void);
+static uint8_t * slLightOutputEmitPanel(uint8_t * pBuf,
+    SLColor const * pLights, size_t panelWidth, size_t panelHeight);
 
 
 static int g_slSpiFd = -1;
@@ -171,32 +174,18 @@ void slLightOutputShowLights(SLLightData const * lights)
 {
     struct spi_ioc_transfer xfer;
     int result;
-    uint8_t buf[(SL_NUM_LIGHTS_LEFT + SL_NUM_LIGHTS_RIGHT +
-        SL_NUM_LIGHTS_OVERHEAD) * 3];
-    size_t j = 0;
+    uint8_t buf[SL_NUM_LIGHTS * 3];
+    uint8_t * pB = buf;
 
-    for(size_t i = 0; i < SL_NUM_LIGHTS_LEFT; ++i) {
-        buf[j++] = g_slCieTable[lights->left[i].b];
-        buf[j++] = g_slCieTable[lights->left[i].r];
-        buf[j++] = g_slCieTable[lights->left[i].g];
-    }
+    pB = slLightOutputEmitPanel(pB, &lights->left[0][0],
+        SL_PANEL_WIDTH_LEFT, SL_PANEL_HEIGHT_LEFT);
+    pB = slLightOutputEmitPanel(pB, &lights->overhead[0][0],
+        SL_PANEL_WIDTH_OVERHEAD, SL_PANEL_HEIGHT_OVERHEAD);
+    pB = slLightOutputEmitPanel(pB, &lights->right[0][0],
+        SL_PANEL_WIDTH_RIGHT, SL_PANEL_HEIGHT_RIGHT);
     
-    for(size_t i = 0; i < SL_NUM_LIGHTS_OVERHEAD; ++i) {
-        buf[j++] = g_slCieTable[lights->overhead[i].b];
-        buf[j++] = g_slCieTable[lights->overhead[i].r];
-        buf[j++] = g_slCieTable[lights->overhead[i].g];
-    }
-    
-    for(size_t i = 0; i < SL_NUM_LIGHTS_RIGHT; ++i) {
-        buf[j++] = g_slCieTable[lights->right[i].b];
-        buf[j++] = g_slCieTable[lights->right[i].r];
-        buf[j++] = g_slCieTable[lights->right[i].g];
-    }
-    
-    for(size_t i = 0; i < (SL_NUM_LIGHTS_LEFT + SL_NUM_LIGHTS_RIGHT + SL_NUM_LIGHTS_OVERHEAD) * 3; ++i) {
-        buf[i] = (buf[i] + 15) / 16;
-    }
-    
+    slAssert(pB == buf + LENGTHOF(buf));
+
     memset(&xfer, 0, sizeof xfer);
     
     xfer.tx_buf = (unsigned long)buf;
@@ -206,6 +195,49 @@ void slLightOutputShowLights(SLLightData const * lights)
     if(result < 0) {
         slError("SPI IOCTL failed: %s", strerror(result));
     }
+}
+
+
+uint8_t * slLightOutputEmitPanel(uint8_t * pBuf, SLColor const * pLights,
+    size_t panelWidth, size_t panelHeight)
+{
+    // Our lights are strung top-left to bottom-left or right, weaving back
+    // and forth. This means every second row is backwards. This back-and-
+    // forth is explicitly unrolled in the loop; every loop on i emits two
+    // rows.
+    // An odd-height panel is a special case; the i < (panelHeight - 1)
+    // condition prevents us from overrunning in that case. There's a
+    // conditional following this loop which emits the last lone line, since
+    // this loop always emits full line pairs.
+    for(size_t i = 0; i < (panelHeight - 1); i += 2) {
+        for(size_t j = 0; j < panelWidth; ++j) {
+            *(pBuf++) = g_slCieTable[pLights->b];
+            *(pBuf++) = g_slCieTable[pLights->r];
+            *(pBuf++) = g_slCieTable[pLights->g];
+            ++pLights;
+        }
+        pLights += panelWidth;
+        for(size_t j = 0; j < panelWidth; ++j) {
+            --pLights;
+            *(pBuf++) = g_slCieTable[pLights->b];
+            *(pBuf++) = g_slCieTable[pLights->r];
+            *(pBuf++) = g_slCieTable[pLights->g];
+        }
+        pLights += panelWidth;
+    }
+    
+    // If our panel is odd-height, we didn't emit the last row in the loop
+    // above: emit it now.
+    if(panelHeight % 2 == 1) {
+        for(size_t j = 0; j < panelWidth; ++j) {
+            *(pBuf++) = g_slCieTable[pLights->b];
+            *(pBuf++) = g_slCieTable[pLights->r];
+            *(pBuf++) = g_slCieTable[pLights->g];
+            ++pLights;
+        }
+    }
+    
+    return pBuf;
 }
 
 

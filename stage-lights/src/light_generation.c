@@ -59,16 +59,28 @@ void slLightGenerationGenerate(SLAnalyzedAudio const * analysis,
     float rightTreble = analysis->trebleEnergy * sqrtf(analysis->leftRightBalance);
     float bass = analysis->bassEnergy;
 
-    for(int i = 0; i < SL_NUM_LIGHTS_LEFT; ++i) {
-        lights->left[i] = getPaletteF(g_slColdPalette, leftTreble - i * (2.0f / SL_NUM_LIGHTS_LEFT));
+    for(size_t i = 0; i < SL_PANEL_HEIGHT_LEFT; ++i) {
+        for(size_t j = 0; j < SL_PANEL_WIDTH_LEFT; ++j) {
+            lights->left[i][SL_PANEL_WIDTH_LEFT - 1 - j] =
+                getPaletteF(g_slColdPalette,
+                    leftTreble - j * (2.0f / SL_PANEL_WIDTH_LEFT));
+        }
     }
     
-    for(int i = 0; i < SL_NUM_LIGHTS_RIGHT; ++i) {
-        lights->right[i] = getPaletteF(g_slColdPalette, rightTreble - i * (2.0f / SL_NUM_LIGHTS_RIGHT));
+    for(size_t i = 0; i < SL_PANEL_HEIGHT_RIGHT; ++i) {
+        for(size_t j = 0; j < SL_PANEL_WIDTH_RIGHT; ++j) {
+            lights->right[i][j] =
+                getPaletteF(g_slColdPalette,
+                    rightTreble - j * (2.0f / SL_PANEL_WIDTH_RIGHT));
+        }
     }
     
-    for(int i = 0; i < SL_NUM_LIGHTS_OVERHEAD; ++i) {
-        lights->overhead[SL_NUM_LIGHTS_OVERHEAD - 1 - i] = getPaletteF(g_slWarmPalette, bass - i * (2.0f / SL_NUM_LIGHTS_OVERHEAD));
+    for(size_t i = 0; i < SL_PANEL_HEIGHT_LEFT; ++i) {
+        for(size_t j = 0; j < SL_PANEL_WIDTH_LEFT; ++j) {
+            lights->overhead[SL_PANEL_HEIGHT_OVERHEAD - 1 - i][j] =
+                getPaletteF(g_slWarmPalette,
+                    bass - i * (2.0f / SL_PANEL_HEIGHT_OVERHEAD));
+        }
     }
 }
 
