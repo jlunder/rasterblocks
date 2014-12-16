@@ -1,0 +1,11 @@
+#!/bin/bash
+
+INSTALL_DIR=/usr/lib/rasterblocks
+
+systemctl stop rasterblocks.service
+systemctl disable "$INSTALL_DIR/rasterblocks.service"
+systemctl stop rasterblocks-nodeserver.service
+systemctl disable "$INSTALL_DIR/rasterblocks-nodeserver.service"
+
+rm -r "$INSTALL_DIR/nodeserver/node_modules"
+rm "/var/lib/rasterblocks/config.json"

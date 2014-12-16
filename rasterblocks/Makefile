@@ -53,7 +53,7 @@ ifneq ($(TARGET_BUILD),)
 	#CFLAGS := $(CFLAGS_TARGET)
 	CPPFLAGS := $(CPPFLAGS_TARGET)
 	LDFLAGS := $(LDFLAGS_TARGET)
-	INSTALL_DIR := /usr/local/lib/stage-lights
+	INSTALL_DIR := /usr/local/lib/rasterblocks
 endif
 
 MAKEDEPEND=@set -e; rm -f $@; \
@@ -69,7 +69,7 @@ MAKEDEPEND_TARGET=@set -e; rm -f $@; \
 
 .PHONY: all cleanall clean
 
-all: bin/stage-lights-1.0_armhf.deb
+all: bin/rasterblocks-1.0_armhf.deb
 
 STAGE_LIGHTS_SRC := $(basename $(notdir $(wildcard src/*.c)))
 
@@ -79,7 +79,7 @@ STAGE_LIGHTS_D := $(addprefix build/,$(addsuffix .d, $(STAGE_LIGHTS_SRC)))
 build/%.d: src/%.c Makefile
 	@$(MAKEDEPEND)
 
-ifeq ($(MAKECMDGOALS),stage-lights)
+ifeq ($(MAKECMDGOALS),rasterblocks)
 	-include $(STAGE_LIGHTS_D)
 endif
 
@@ -88,7 +88,7 @@ build/%.o: src/%.c Makefile
 	@$(MAKEDEPEND)
 	$(CC) -c -g $(CFLAGS) -o $@ $(CPPFLAGS) $<
 
-bin/stage-lights: $(STAGE_LIGHTS_O)
+bin/rasterblocks: $(STAGE_LIGHTS_O)
 	@mkdir -p bin
 	$(CC) -o $@ $^ $(LDFLAGS)
 
@@ -105,7 +105,7 @@ src/icons.h: $(wildcard icons/[0-9][0-9]*)
 build/%.target.d: src/%.c Makefile
 	@$(MAKEDEPEND_TARGET)
 
-ifeq ($(MAKECMDGOALS),stage-lights.target)
+ifeq ($(MAKECMDGOALS),rasterblocks.target)
 	-include $(STAGE_LIGHTS_D_TARGET)
 endif
 
@@ -114,14 +114,14 @@ build/%.target.o: src/%.c Makefile
 	@$(MAKEDEPEND_TARGET)
 	$(CC_TARGET) -c -g $(CFLAGS_TARGET) -o $@ $(CPPFLAGS_TARGET) $<
 
-bin/stage-lights.target: $(STAGE_LIGHTS_O_TARGET)
+bin/rasterblocks.target: $(STAGE_LIGHTS_O_TARGET)
 	$(CC_TARGET) -o $@ $^ $(LDFLAGS_TARGET)
 
 else
 
 # We're in the host build env, use the cross-build script to perform the
 # target build.
-bin/stage-lights.target: Makefile precise-chroot
+bin/rasterblocks.target: Makefile precise-chroot
 	./target-build
 
 endif
@@ -130,36 +130,36 @@ ifneq ($(PACKAGE_BUILD),)
 
 ifeq ($(CROSS_BUILD)$(TARGET_BUILD),)
 # Neither the cross-build env nor the target has tools to build a host package
-bin/stage-lights-1.0_x64.deb: $(wildcard package/DEBIAN/*) $(wildcard nodeserver/*) stage-lights.service stage-lights-nodeserver.service bin/stage-lights
-	mkdir -p package/usr/lib/stage-lights
-	mkdir -p package/var/lib/stage-lights
-	cp -r nodeserver package/usr/lib/stage-lights/
-	rm -r package/usr/lib/stage-lights/nodeserver/node_modules
-	cp config/host_config.json package/usr/lib/stage-lights/config.json
-	cp bin/stage-lights package/usr/lib/stage-lights/stage-lights
-	cp stage-lights.service package/usr/lib/stage-lights
-	cp stage-lights-nodeserver.service package/usr/lib/stage-lights
+bin/rasterblocks-1.0_x64.deb: $(wildcard package/DEBIAN/*) $(wildcard nodeserver/*) rasterblocks.service rasterblocks-nodeserver.service bin/rasterblocks
+	mkdir -p package/usr/lib/rasterblocks
+	mkdir -p package/var/lib/rasterblocks
+	cp -r nodeserver package/usr/lib/rasterblocks/
+	rm -r package/usr/lib/rasterblocks/nodeserver/node_modules
+	cp config/host_config.json package/usr/lib/rasterblocks/config.json
+	cp bin/rasterblocks package/usr/lib/rasterblocks/rasterblocks
+	cp rasterblocks.service package/usr/lib/rasterblocks
+	cp rasterblocks-nodeserver.service package/usr/lib/rasterblocks
 	dpkg-deb --build package $@
 endif
 
 ifeq ($(CROSS_BUILD),)
 # The cross-build env doesn't have enough toolchain to build a package
-bin/stage-lights-1.0_armhf.deb: $(wildcard package/DEBIAN/*) $(wildcard nodeserver/*) stage-lights.service stage-lights-nodeserver.service bin/stage-lights.target
-	mkdir -p package/usr/lib/stage-lights
-	mkdir -p package/var/lib/stage-lights
-	cp -r nodeserver package/usr/lib/stage-lights/
-	rm -rf package/usr/lib/stage-lights/nodeserver/node_modules
-	cp config/target_config.json package/usr/lib/stage-lights/config.json
-	cp bin/stage-lights.target package/usr/lib/stage-lights/stage-lights
-	cp stage-lights.service package/usr/lib/stage-lights
-	cp stage-lights-nodeserver.service package/usr/lib/stage-lights
+bin/rasterblocks-1.0_armhf.deb: $(wildcard package/DEBIAN/*) $(wildcard nodeserver/*) rasterblocks.service rasterblocks-nodeserver.service bin/rasterblocks.target
+	mkdir -p package/usr/lib/rasterblocks
+	mkdir -p package/var/lib/rasterblocks
+	cp -r nodeserver package/usr/lib/rasterblocks/
+	rm -rf package/usr/lib/rasterblocks/nodeserver/node_modules
+	cp config/target_config.json package/usr/lib/rasterblocks/config.json
+	cp bin/rasterblocks.target package/usr/lib/rasterblocks/rasterblocks
+	cp rasterblocks.service package/usr/lib/rasterblocks
+	cp rasterblocks-nodeserver.service package/usr/lib/rasterblocks
 	dpkg-deb --build package $@
 endif
 
 endif
 
 cleanall: clean
-	-sudo umount precise-chroot/home/stage-lights
+	-sudo umount precise-chroot/home/rasterblocks
 	sudo rm -rf precise-chroot
 	rm -rf package/usr
 	rm -rf package/var

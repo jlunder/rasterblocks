@@ -1,4 +1,4 @@
-Package: stage-lights
+Package: rasterblocks
 Version: 1.0
 Depends: nodejs, npm
 Section: custom

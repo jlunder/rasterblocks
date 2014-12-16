@@ -7,11 +7,11 @@ if [ ! -d precise-chroot ]; then
   sudo debootstrap --variant=minbase precise ./precise-chroot http://archive.ubuntu.com/ubuntu/
 fi
 
-# bind stage-lights dir to chroot
+# bind rasterblocks dir to chroot
 echo "Binding build folder to home dir in cross-build env"
 sudo umount ./
-sudo mkdir -p precise-chroot/home/stage-lights
-sudo mount --bind ./ ./precise-chroot/home/stage-lights
+sudo mkdir -p precise-chroot/home/rasterblocks
+sudo mount --bind ./ ./precise-chroot/home/rasterblocks
 
 # add universe repo for gcc-arm-linux-gnueabihf
 if ! grep 'deb http://archive.ubuntu.com/ubuntu precise universe' precise-chroot/etc/apt/sources.list; then
