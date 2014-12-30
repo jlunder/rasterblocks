@@ -23,12 +23,12 @@
 //
 //========================================================================
 
-#if defined SL_USE_GLFW3_GLES2_HARNESS || defined SL_USE_SDL2_GLES2_HARNESS
+#if defined RB_USE_GLFW3_GLES2_HARNESS || defined RB_USE_SDL2_GLES2_HARNESS
 
 #include "gles2_harness.h"
 
 
-#ifdef SL_USE_GLFW3_GLES2_HARNESS
+#ifdef RB_USE_GLFW3_GLES2_HARNESS
 #include <GLFW/glfw3.h>
 #else
 #include <GLES2/gl2.h>
@@ -36,8 +36,8 @@
 
 #include <time.h>
 
-#if defined SL_LINUX
-#elif defined SL_OSX
+#if defined RB_LINUX
+#elif defined RB_OSX
 #include <mach/mach.h>
 #include <mach/mach_time.h>
 #endif
@@ -63,9 +63,9 @@
 #include "rasterblocks.h"
 
 
-SLColor gles2_harness_lights_left[SL_NUM_LIGHTS_LEFT];
-SLColor gles2_harness_lights_right[SL_NUM_LIGHTS_RIGHT];
-SLColor gles2_harness_lights_overhead[SL_NUM_LIGHTS_OVERHEAD];
+RBColor gles2_harness_lights_left[RB_NUM_LIGHTS_LEFT];
+RBColor gles2_harness_lights_right[RB_NUM_LIGHTS_RIGHT];
+RBColor gles2_harness_lights_overhead[RB_NUM_LIGHTS_OVERHEAD];
 
 
 static GLuint g_program;
@@ -105,7 +105,7 @@ float gles2_harness_vertical_pos = 0.0f;
 
 
 static char const * light_frag =
-#ifdef SL_USE_GLFW3_GLES2_HARNESS
+#ifdef RB_USE_GLFW3_GLES2_HARNESS
     "uniform vec4 u_color;\n"
     "varying vec4 v_texCoord;\n"
 #else
@@ -208,7 +208,7 @@ bool gles2_harness_init(int argc, char * argv[])
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 // Funny story, modern OpenGL differs from OpenGL ES (for us) ONLY in that ES
 // only has glClearDepthf() and non-ES only has glClearDepth()..!
-#ifdef SL_USE_GLFW3_GLES2_HARNESS
+#ifdef RB_USE_GLFW3_GLES2_HARNESS
     glClearDepth(1.0f);
 #else
     glClearDepthf(1.0f);
@@ -277,7 +277,7 @@ bool gles2_harness_init(int argc, char * argv[])
     //    gles2_harness_init_serial(dev);
     //}
     
-    slInitialize(argc, argv);
+    rbInitialize(argc, argv);
     
     return true;
 }
@@ -472,7 +472,7 @@ void gles2_harness_update(float time)
 {
     int64_t frame_nsec = (int64_t)round(time * 1.0e9);
     
-    slProcess(frame_nsec);
+    rbProcess(frame_nsec);
     
     gles2_harness_draw_lights(time);
 }
@@ -527,8 +527,8 @@ void gles2_harness_draw_lights(float time)
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
-    for(size_t i = 0; i < SL_NUM_LIGHTS_LEFT; ++i) {
-    	float x = ((float)i - (float)SL_NUM_LIGHTS_LEFT) * lightSize * 2;
+    for(size_t i = 0; i < RB_NUM_LIGHTS_LEFT; ++i) {
+    	float x = ((float)i - (float)RB_NUM_LIGHTS_LEFT) * lightSize * 2;
     	
         /////////
         glusMatrix4x4Identityf(modelMatrix);
@@ -546,7 +546,7 @@ void gles2_harness_draw_lights(float time)
         ////////
     }
     
-    for(size_t i = 0; i < SL_NUM_LIGHTS_RIGHT; ++i) {
+    for(size_t i = 0; i < RB_NUM_LIGHTS_RIGHT; ++i) {
     	float x = ((float)i + 1.0f) * lightSize * 2;
     	
         /////////
@@ -565,8 +565,8 @@ void gles2_harness_draw_lights(float time)
         ////////
     }
     
-    for(size_t i = 0; i < SL_NUM_LIGHTS_OVERHEAD; ++i) {
-    	float x = ((float)i - (float)(SL_NUM_LIGHTS_OVERHEAD - 1) / 2.0f) * lightSize * 2;
+    for(size_t i = 0; i < RB_NUM_LIGHTS_OVERHEAD; ++i) {
+    	float x = ((float)i - (float)(RB_NUM_LIGHTS_OVERHEAD - 1) / 2.0f) * lightSize * 2;
     	
         /////////
         glusMatrix4x4Identityf(modelMatrix);
@@ -604,37 +604,37 @@ void gles2_harness_terminate(void)
 }
 
 
-void slLogOutputV(char const * format, va_list args)
+void rbLogOutputV(char const * format, va_list args)
 {
     vprintf(format, args);
 }
 
 
-void slLightOutputInitialize(SLConfiguration const * config)
+void rbLightOutputInitialize(RBConfiguration const * config)
 {
     UNUSED(config);
 }
 
 
-void slLightOutputShutdown(void)
+void rbLightOutputShutdown(void)
 {
 }
 
 
-void slLightOutputShowLights(SLLightData const * lights)
+void rbLightOutputShowLights(RBLightData const * lights)
 {
-	for(size_t i = 0; i < SL_NUM_LIGHTS_LEFT; ++i) {
-		gles2_harness_lights_left[i] = lights->left[SL_NUM_LIGHTS_LEFT - 1 - i];
+	for(size_t i = 0; i < RB_NUM_LIGHTS_LEFT; ++i) {
+		gles2_harness_lights_left[i] = lights->left[RB_NUM_LIGHTS_LEFT - 1 - i];
 	}
-	for(size_t i = 0; i < SL_NUM_LIGHTS_RIGHT; ++i) {
+	for(size_t i = 0; i < RB_NUM_LIGHTS_RIGHT; ++i) {
 		gles2_harness_lights_right[i] = lights->right[i];
 	}
-	for(size_t i = 0; i < SL_NUM_LIGHTS_OVERHEAD; ++i) {
+	for(size_t i = 0; i < RB_NUM_LIGHTS_OVERHEAD; ++i) {
 		gles2_harness_lights_overhead[i] = lights->overhead[i];
 	}
 }
 
 
-#endif // SL_USE_GLES2_HARNESS
+#endif // RB_USE_GLES2_HARNESS
 
 

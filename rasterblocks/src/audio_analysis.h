@@ -6,10 +6,10 @@
 
 
 // Audio analysis subsystem
-void slAudioAnalysisInitialize(SLConfiguration const * config);
-void slAudioAnalysisShutdown(void);
-void slAudioAnalysisAnalyze(SLRawAudio const * audio,
-    SLAnalyzedAudio * analysis);
+void rbAudioAnalysisInitialize(RBConfiguration const * config);
+void rbAudioAnalysisShutdown(void);
+void rbAudioAnalysisAnalyze(RBRawAudio const * audio,
+    RBAnalyzedAudio * analysis);
 
 
 #endif

@@ -1,4 +1,4 @@
-#ifdef SL_SNDFILE_SUPPORTED
+#ifdef RB_SNDFILE_SUPPORTED
 
 #include "audio_input_file.h"
 #include <sndfile.h>
@@ -6,11 +6,11 @@
 
 SNDFILE* g_snd_file;
 
-SNDFILE* slSndFileOpen(char *file_name) {
+SNDFILE* rbSndFileOpen(char *file_name) {
     SF_INFO  sfinfo;
 
     if ((g_snd_file = sf_open(file_name, SFM_READ, &sfinfo)) == NULL) {
-        slFatal("Not able to open input file %s.\n", file_name);
+        rbFatal("Not able to open input file %s.\n", file_name);
         return NULL;
     }
 
@@ -18,7 +18,7 @@ SNDFILE* slSndFileOpen(char *file_name) {
 
 }
 
-void slSndFileClose() {
+void rbSndFileClose() {
     if(g_snd_file) {
         sf_close(g_snd_file);
         g_snd_file = NULL;
@@ -26,7 +26,7 @@ void slSndFileClose() {
 }
 
 
-void slSndFileReadLooping(SLRawAudio* audio_buf, int num_frames, int channels)
+void rbSndFileReadLooping(RBRawAudio* audio_buf, int num_frames, int channels)
 {
     float buffer[channels * num_frames];
     int readCount;

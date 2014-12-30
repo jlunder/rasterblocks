@@ -18,91 +18,91 @@
 #define LENGTHOF(x) (sizeof (x) / sizeof (*(x)))
 
 
-#define SL_AUDIO_CHANNELS 2
-#define SL_AUDIO_SAMPLE_RATE 48000
-#if defined SL_USE_TARGET_HARNESS
-#define SL_VIDEO_FRAME_RATE 60
+#define RB_AUDIO_CHANNELS 2
+#define RB_AUDIO_SAMPLE_RATE 48000
+#if defined RB_USE_TARGET_HARNESS
+#define RB_VIDEO_FRAME_RATE 60
 #else
-#define SL_VIDEO_FRAME_RATE 60
+#define RB_VIDEO_FRAME_RATE 60
 #endif
-#define SL_AUDIO_FRAMES_PER_VIDEO_FRAME ((SL_AUDIO_SAMPLE_RATE / SL_VIDEO_FRAME_RATE)*2)
+#define RB_AUDIO_FRAMES_PER_VIDEO_FRAME ((RB_AUDIO_SAMPLE_RATE / RB_VIDEO_FRAME_RATE)*2)
 
-#define SL_PANEL_WIDTH 8
-#define SL_PANEL_HEIGHT 8
+#define RB_PANEL_WIDTH 8
+#define RB_PANEL_HEIGHT 8
 
-#define SL_NUM_LIGHTS (SL_PANEL_WIDTH * SL_PANEL_HEIGHT * 3)
+#define RB_NUM_LIGHTS (RB_PANEL_WIDTH * RB_PANEL_HEIGHT * 3)
 
-#define SL_MAX_CONSECUTIVE_GENTLE_RESTART_NS (10 * 1000000000LLU)
-#define SL_GENTLE_RESTART_DELAY_NS 500000000LLU
+#define RB_MAX_CONSECUTIVE_GENTLE_RESTART_NS (10 * 1000000000LLU)
+#define RB_GENTLE_RESTART_DELAY_NS 500000000LLU
 
-#define SL_E (2.71828182845905f)
-
-
-typedef enum {
-    SLLL_INFO,
-    SLLL_WARNING,
-    SLLL_ERROR,
-    SLLL_COUNT
-} SLLogLevel;
+#define RB_E (2.71828182845905f)
 
 
 typedef enum {
-    SLS_MAIN,
-    SLS_CONFIGURATION,
-    SLS_AUDIO_INPUT,
-    SLS_AUDIO_ANALYSIS,
-    SLS_LIGHT_GENERATION,
-    SLS_LIGHT_OUTPUT,
-    SLS_HOT_CONFIGURATION,
-    SLS_COUNT
-} SLSubsystem;
+    RBLL_INFO,
+    RBLL_WARNING,
+    RBLL_ERROR,
+    RBLL_COUNT
+} RBLogLevel;
 
 
 typedef enum {
-    SLAIS_INVALID,
-    SLAIS_ALSA,
-    SLAIS_FILE,
-} SLAudioInputSource;
+    RBS_MAIN,
+    RBS_CONFIGURATION,
+    RBS_AUDIO_INPUT,
+    RBS_AUDIO_ANALYSIS,
+    RBS_LIGHT_GENERATION,
+    RBS_LIGHT_OUTPUT,
+    RBS_HOT_CONFIGURATION,
+    RBS_COUNT
+} RBSubsystem;
 
 
-#ifdef SL_USE_NEON
-typedef uint16x4_t SLColor;
+typedef enum {
+    RBAIS_INVALID,
+    RBAIS_ALSA,
+    RBAIS_FILE,
+} RBAudioInputSource;
+
+
+#ifdef RB_USE_NEON
+typedef uint16x4_t RBColor;
 #else
 typedef struct {
     uint8_t r;
     uint8_t g;
     uint8_t b;
     uint8_t x;
-} SLColor;
+} RBColor;
 #endif
 
 
 typedef struct {
-    SLColor c[5];
-} SLPalette;
+    RBColor c[5];
+} RBPalette;
 
 
-typedef int32_t SLCoord;
+typedef int32_t RBCoord;
 
 
-typedef int32_t SLTime;
-
-
-typedef struct {
-    SLTime time;
-    SLTime period;
-} SLTimer;
+typedef int32_t RBTime;
 
 
 typedef struct {
-    SLLogLevel logLevel;
+    RBTime time;
+    RBTime period;
+} RBTimer;
+
+
+typedef struct {
+    RBLogLevel logLevel;
     
     // Not read/written to config file, obviously. Comes from command line or
     // defaults
     char configPath[PATH_MAX];
     
     //
-    SLAudioInputSource audioSource;
+    RBAudioInputSource audioSource;
     char audioSourceParam[PATH_MAX];
     
     bool monitorAudio;
@@ -119,12 +119,12 @@ typedef struct {
     // hot config port/etc.?
     
     float brightness;
-} SLConfiguration;
+} RBConfiguration;
 
 
 typedef struct {
-    float audio[SL_AUDIO_FRAMES_PER_VIDEO_FRAME][SL_AUDIO_CHANNELS];
-} SLRawAudio;
+    float audio[RB_AUDIO_FRAMES_PER_VIDEO_FRAME][RB_AUDIO_CHANNELS];
+} RBRawAudio;
 
 
 typedef struct {
@@ -133,99 +133,99 @@ typedef struct {
     float trebleEnergy;
     float totalEnergy;
     float leftRightBalance;
-} SLAnalyzedAudio;
+} RBAnalyzedAudio;
 
 
 typedef struct {
-    SLColor data[SL_PANEL_HEIGHT][SL_PANEL_WIDTH];
-} SLPanel;    
+    RBColor data[RB_PANEL_HEIGHT][RB_PANEL_WIDTH];
+} RBPanel;    
 
 
 typedef struct {
-    SLPanel left;
-    SLPanel right;
-    SLPanel overhead;
-} SLLightData;
+    RBPanel left;
+    RBPanel right;
+    RBPanel overhead;
+} RBLightData;
 
 
 // Tell the main program which subsystem is currently running (in this thread).
 // The main subsystem will handle changing the current subsystem when it calls
 // into subsystems, but this may be needed for inter-subsystem calls.
-SLSubsystem slChangeSubsystem(SLSubsystem subsystem);
+RBSubsystem rbChangeSubsystem(RBSubsystem subsystem);
 
 // In some exceptional cases we may need to reinitialize some subsystems
-void slRequestGentleRestart(void);
-void slRequestDelayedGentleRestart(void);
+void rbRequestGentleRestart(void);
+void rbRequestDelayedGentleRestart(void);
 
 // If we've encountered an error condition that indicates an insane program
 // state, use immediate restart to prevent any further execution and restart
 // the whole process
-void slRequestImmediateRestart(void);
+void rbRequestImmediateRestart(void);
 
-// Returns true if we are in the middle of a subsystem sl*Initialize() due to
+// Returns true if we are in the middle of a subsystem rb*Initialize() due to
 // a gentle restart; false if this is first-time init.
-bool slIsRestarting(void);
+bool rbIsRestarting(void);
 
-static inline SLTime slTimeFromMs(int32_t ms)
+static inline RBTime rbTimeFromMs(int32_t ms)
 {
     return ms;
 }
 
-SLTime slGetTime(void);
+RBTime rbGetTime(void);
 
-static inline SLTime slDiffTime(SLTime x, SLTime y)
+static inline RBTime rbDiffTime(RBTime x, RBTime y)
 {
     return x - y;
 }
 
-static inline SLTime slGetTimeSince(SLTime x)
+static inline RBTime rbGetTimeSince(RBTime x)
 {
-    return slDiffTime(slGetTime(), x);
+    return rbDiffTime(rbGetTime(), x);
 }
 
-void slStartTimer(SLTimer * pTimer, SLTime period);
+void rbStartTimer(RBTimer * pTimer, RBTime period);
 
-static inline void slStopTimer(SLTimer * pTimer)
+static inline void rbStopTimer(RBTimer * pTimer)
 {
-    slStartTimer(pTimer, 0);
+    rbStartTimer(pTimer, 0);
 }
 
-int32_t slGetTimerPeriods(SLTimer * pTimer);
-int32_t slGetTimerPeriodsAndReset(SLTimer * pTimer);
+int32_t rbGetTimerPeriods(RBTimer * pTimer);
+int32_t rbGetTimerPeriodsAndReset(RBTimer * pTimer);
 
-static inline bool slTimerElapsed(SLTimer * pTimer)
+static inline bool rbTimerElapsed(RBTimer * pTimer)
 {
-    return !!slGetTimerPeriods(pTimer);
+    return !!rbGetTimerPeriods(pTimer);
 }
 
-SLTime slGetTimeLeft(SLTimer * pTimer);
+RBTime rbGetTimeLeft(RBTimer * pTimer);
 
 // Logging functions; these are for internal consumption only, please use the
-// macros below (slInfo/slWarning/SlError...)
-void slLog(SLLogLevel level, char const * sourceFile, int sourceLine,
+// macros below (rbInfo/rbWarning/SlError...)
+void rbLog(RBLogLevel level, char const * sourceFile, int sourceLine,
     char const * format, ...);
-bool slLogShouldLog(SLLogLevel level, char const * sourceFile,
+bool rbLogShouldLog(RBLogLevel level, char const * sourceFile,
     int sourceLine);
-void slLogOutput(char const * format, ...);
+void rbLogOutput(char const * format, ...);
 
 // Reset stray NaN/+inf/-inf values; for algorithms that preserve state frame
 // to frame it's easy to become "infected" with these values. This function
 // can be used to strategically scrub them
-static inline void slSanitizeFloat(float * pF, float saneValue)
+static inline void rbSanitizeFloat(float * pF, float saneValue)
 {
     if(isinf(*pF) || isnan(*pF)) {
         *pF = saneValue;
     }
 }
 
-static inline void slSanitizeDouble(double * pF, double saneValue)
+static inline void rbSanitizeDouble(double * pF, double saneValue)
 {
     if(isinf(*pF) || isnan(*pF)) {
         *pF = saneValue;
     }
 }
 
-static inline float slClampF(float f, float fMin, float fMax)
+static inline float rbClampF(float f, float fMin, float fMax)
 {
     // This is structured carefully so that NaN will clamp as fMin.
     // If you are modifying it, also consider +inf/-inf.
@@ -240,65 +240,65 @@ static inline float slClampF(float f, float fMin, float fMax)
 
 
 #ifdef NDEBUG
-#define slAssert(assertExpr) do {} while(false)
+#define rbAssert(assertExpr) do {} while(false)
 #else
-#define slAssert(assertExpr) \
+#define rbAssert(assertExpr) \
     do { \
         if(!(assertExpr)) { \
-            slLog(SLLL_ERROR, __FILE__, __LINE__, \
+            rbLog(RBLL_ERROR, __FILE__, __LINE__, \
                 "Assert fail (%s:%d): expected %s\n", \
                 __FILE__, __LINE__, #assertExpr); \
-            slRequestImmediateRestart(); \
+            rbRequestImmediateRestart(); \
         } \
     } while(false)
 #endif
 
-#define slVerify(verifyExpr) \
+#define rbVerify(verifyExpr) \
     do { \
         if(!(verifyExpr)) { \
-            slLog(SLLL_ERROR, __FILE__, __LINE__, \
+            rbLog(RBLL_ERROR, __FILE__, __LINE__, \
                 "Fatal error (%s:%d): expected %s\n", __FILE__, __LINE__, \
                 #verifyExpr); \
-            slRequestImmediateRestart(); \
+            rbRequestImmediateRestart(); \
         } \
     } while(false)
 
-#define slFatal(...) \
+#define rbFatal(...) \
     do { \
-        if(slLogShouldLog(SLLL_ERROR, __FILE__, __LINE__)) { \
-            slLog(SLLL_ERROR, __FILE__, __LINE__, "Fatal error: "); \
-            slLogOutput(__VA_ARGS__); \
+        if(rbLogShouldLog(RBLL_ERROR, __FILE__, __LINE__)) { \
+            rbLog(RBLL_ERROR, __FILE__, __LINE__, "Fatal error: "); \
+            rbLogOutput(__VA_ARGS__); \
         } \
-        slRequestImmediateRestart(); \
+        rbRequestImmediateRestart(); \
     } while(false)
 
 #ifdef NDEBUG
-#define slDebugInfo(...) do {} while(false)
+#define rbDebugInfo(...) do {} while(false)
 #else
-#define slDebugInfo(...) slLog(SLLL_INFO, __FILE__, __LINE__, __VA_ARGS__)
+#define rbDebugInfo(...) rbLog(RBLL_INFO, __FILE__, __LINE__, __VA_ARGS__)
 #endif
  
-#define slInfo(...) slLog(SLLL_INFO, __FILE__, __LINE__, __VA_ARGS__)
-#define slWarning(...) slLog(SLLL_WARNING, __FILE__, __LINE__, __VA_ARGS__)
-#define slError(...) slLog(SLLL_ERROR, __FILE__, __LINE__, __VA_ARGS__)
+#define rbInfo(...) rbLog(RBLL_INFO, __FILE__, __LINE__, __VA_ARGS__)
+#define rbWarning(...) rbLog(RBLL_WARNING, __FILE__, __LINE__, __VA_ARGS__)
+#define rbError(...) rbLog(RBLL_ERROR, __FILE__, __LINE__, __VA_ARGS__)
 
-#define slInfoEnabled() slLogShouldLog(SLLL_INFO, __FILE__, __LINE__)
-#define slInfoWarningEnabled() \
-    slLogShouldLog(SLLL_WARNING, __FILE__, __LINE__)
-#define slInfoErrorEnabled() slLogShouldLog(SLLL_ERROR, __FILE__, __LINE__)
+#define rbInfoEnabled() rbLogShouldLog(RBLL_INFO, __FILE__, __LINE__)
+#define rbInfoWarningEnabled() \
+    rbLogShouldLog(RBLL_WARNING, __FILE__, __LINE__)
+#define rbInfoErrorEnabled() rbLogShouldLog(RBLL_ERROR, __FILE__, __LINE__)
 
 
 // Framework: coordinates all the other subsystems
-void slInitialize(int argc, char * argv[]);
-void slShutdown(void);
-void slProcess(uint64_t nsSinceLastProcess);
+void rbInitialize(int argc, char * argv[]);
+void rbShutdown(void);
+void rbProcess(uint64_t nsSinceLastProcess);
 
 
 // Implemented in the harness!
-void slLogOutputV(char const * format, va_list va);
-void slLightOutputInitialize(SLConfiguration const * config);
-void slLightOutputShutdown(void);
-void slLightOutputShowLights(SLLightData const * lights);
+void rbLogOutputV(char const * format, va_list va);
+void rbLightOutputInitialize(RBConfiguration const * config);
+void rbLightOutputShutdown(void);
+void rbLightOutputShowLights(RBLightData const * lights);
 
 
 #endif // STAGE_LIGHTS_H_INCLUDED

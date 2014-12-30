@@ -6,17 +6,17 @@
 
 
 // Configurations subsystem
-void slConfigurationSetDefaults(SLConfiguration * config);
-void slConfigurationParseArgv(SLConfiguration * config, int argc,
+void rbConfigurationSetDefaults(RBConfiguration * config);
+void rbConfigurationParseArgv(RBConfiguration * config, int argc,
     char * argv[]);
-void slConfigurationLoad(SLConfiguration * config);
-void slConfigurationSave(SLConfiguration const * config);
+void rbConfigurationLoad(RBConfiguration * config);
+void rbConfigurationSave(RBConfiguration const * config);
 
 
 // Hot configuration subsystem
-void slHotConfigurationInitialize(SLConfiguration const * config);
-void slHotConfigurationShutdown(void);
-void slHotConfigurationProcessAndUpdateConfiguration(SLConfiguration * config,
+void rbHotConfigurationInitialize(RBConfiguration const * config);
+void rbHotConfigurationShutdown(void);
+void rbHotConfigurationProcessAndUpdateConfiguration(RBConfiguration * config,
     bool * configurationModified);
 
 

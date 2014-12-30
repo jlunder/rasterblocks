@@ -2,7 +2,7 @@
 
 // Different include path in different build environments -- TARGET_HARNESS
 // distinguishes them now, this is not a great solution though
-#ifdef SL_USE_TARGET_HARNESS
+#ifdef RB_USE_TARGET_HARNESS
 #include <json/json.h>
 #else
 #include <json-c/json.h>
@@ -10,38 +10,38 @@
 
 // see http://linuxprograms.wordpress.com/2010/08/19/json_parser_json-c/
 
-SLLogLevel getLogLevel(const char* val)
+RBLogLevel getLogLevel(const char* val)
 {
-    if(strcmp(val, "SLLL_INFO") == 0) {
-        return SLLL_INFO;
+    if(strcmp(val, "RBLL_INFO") == 0) {
+        return RBLL_INFO;
     }
-    else if(strcmp(val, "SLLL_WARNING") == 0) {
-        return SLLL_WARNING;
+    else if(strcmp(val, "RBLL_WARNING") == 0) {
+        return RBLL_WARNING;
     }
-    else if(strcmp(val, "SLLL_ERROR") == 0) {
-        return SLLL_ERROR;
+    else if(strcmp(val, "RBLL_ERROR") == 0) {
+        return RBLL_ERROR;
     } 
     else {
-        slError("Invalid log level: %s, using SLL_INFO",val);
-        return SLLL_INFO;
+        rbError("Invalid log level: %s, using RBL_INFO",val);
+        return RBLL_INFO;
     }
 }
 
-SLAudioInputSource getAudioSource(const char* val)
+RBAudioInputSource getAudioSource(const char* val)
 {
-    if(strcmp(val, "SLAIS_ALSA") == 0) {
-        return SLAIS_ALSA;
+    if(strcmp(val, "RBAIS_ALSA") == 0) {
+        return RBAIS_ALSA;
     }
-    else if(strcmp(val, "SLAIS_FILE") == 0) {
-        return SLAIS_FILE;
+    else if(strcmp(val, "RBAIS_FILE") == 0) {
+        return RBAIS_FILE;
     }
     else {
-        slError("Invalid audio source type: %s",val);
-        return SLAIS_INVALID;
+        rbError("Invalid audio source type: %s",val);
+        return RBAIS_INVALID;
     }
 }
 
-void parseJsonObject(SLConfiguration * config,json_object * jobj)
+void parseJsonObject(RBConfiguration * config,json_object * jobj)
 {
     json_object_object_foreach(jobj, key, val) {
         const char* s_val = json_object_get_string(val);
@@ -78,7 +78,7 @@ void parseJsonObject(SLConfiguration * config,json_object * jobj)
     }
 }
 
-void slParseJson(SLConfiguration * config, char* filename) {
+void rbParseJson(RBConfiguration * config, char* filename) {
     char * buffer = 0;
     size_t length;
     FILE * f = fopen (filename, "rb");
@@ -91,7 +91,7 @@ void slParseJson(SLConfiguration * config, char* filename) {
         if (buffer) {
             size_t result = fread (buffer, 1, length, f);
             if(result!=length) {
-                slError("Error reading %s\n",filename);
+                rbError("Error reading %s\n",filename);
             }
         }
         fclose (f);
@@ -103,10 +103,10 @@ void slParseJson(SLConfiguration * config, char* filename) {
             parseJsonObject(config,jobj);
         }
         else {
-	    slError("Failed to parse %s\n", filename);
+	    rbError("Failed to parse %s\n", filename);
 	}
     }
     else {
-        slError("Failed to read %s\n", filename);
+        rbError("Failed to read %s\n", filename);
     }
 }

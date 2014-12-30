@@ -8,13 +8,13 @@
 #include "light_generation.h"
 
 
-static char const * const g_slLogLevelNames[SLLL_COUNT] = {
+static char const * const g_slLogLevelNames[RBLL_COUNT] = {
     "INFO",
     "WARN",
     "ERR"
 };
 
-static char const * const g_slSubsystemNames[SLS_COUNT] = {
+static char const * const g_slSubsystemNames[RBS_COUNT] = {
     "MAIN",
     "CONFIGURATION",
     "AUDIO_INPUT",
@@ -32,100 +32,100 @@ static size_t g_slGentleRestartConsecutiveCount = 0;
 static int g_slSavedArgc = 0;
 static char * * g_slSavedArgv = NULL;
 
-static SLLogLevel g_slSubsystemLogLevels[SLS_COUNT];
+static RBLogLevel g_slSubsystemLogLevels[RBS_COUNT];
 
-static SLConfiguration g_slConfiguration;
-static SLSubsystem g_slCurrentSubsystem = SLS_MAIN;
+static RBConfiguration g_slConfiguration;
+static RBSubsystem g_slCurrentSubsystem = RBS_MAIN;
 
 static bool g_slGentleRestartRequested = false;
 static bool g_slDelayGentleRestart = false;
 static bool g_slIsRestarting = false;
 
-static SLLightData g_slLastFrameLightData;
+static RBLightData g_slLastFrameLightData;
 
 static uint64_t g_slClockNs = 0;
 static uint64_t g_slClockMsNsRemainder = 0;
-static SLTime g_slClockMs = 0;
+static RBTime g_slClockMs = 0;
 
 
-void slProcessSubsystems(bool * pCoslClockNsnfigChanged);
-void slProcessConfigChanged(void);
-void slProcessGentleRestart(void);
+void rbProcessSubsystems(bool * pCoslClockNsnfigChanged);
+void rbProcessConfigChanged(void);
+void rbProcessGentleRestart(void);
 
 
-SLSubsystem slChangeSubsystem(SLSubsystem subsystem)
+RBSubsystem rbChangeSubsystem(RBSubsystem subsystem)
 {
-    SLSubsystem lastSubsystem = g_slCurrentSubsystem;
+    RBSubsystem lastSubsystem = g_slCurrentSubsystem;
     
-    slVerify(subsystem + 1 >= 1 && subsystem < SLS_COUNT);
+    rbVerify(subsystem + 1 >= 1 && subsystem < RBS_COUNT);
     g_slCurrentSubsystem = subsystem;
     return lastSubsystem;
 }
 
 
-void slRequestGentleRestart(void)
+void rbRequestGentleRestart(void)
 {
     g_slGentleRestartRequested = true;
 }
 
 
-void slRequestDelayedGentleRestart(void)
+void rbRequestDelayedGentleRestart(void)
 {
     g_slDelayGentleRestart = true;
     g_slGentleRestartRequested = true;
 }
 
 
-void slRequestImmediateRestart(void)
+void rbRequestImmediateRestart(void)
 {
     abort();
 }
 
 
-bool slIsRestarting(void)
+bool rbIsRestarting(void)
 {
     return g_slIsRestarting;
 }
 
 
-SLTime slGetTime(void)
+RBTime rbGetTime(void)
 {
     return g_slClockMs;
 }
 
 
-void slStartTimer(SLTimer * pTimer, SLTime period)
+void rbStartTimer(RBTimer * pTimer, RBTime period)
 {
-    pTimer->time = slGetTime();
+    pTimer->time = rbGetTime();
     pTimer->period = period;
     
-    slAssert(period >= 0);
+    rbAssert(period >= 0);
 }
 
 
-int32_t slGetTimerPeriods(SLTimer * pTimer)
+int32_t rbGetTimerPeriods(RBTimer * pTimer)
 {
     if(pTimer->period == 0) {
         return 1;
     }
-    return slDiffTime(slGetTime(), pTimer->time) / pTimer->period;
+    return rbDiffTime(rbGetTime(), pTimer->time) / pTimer->period;
 }
 
 
-int32_t slGetTimerPeriodsAndReset(SLTimer * pTimer)
+int32_t rbGetTimerPeriodsAndReset(RBTimer * pTimer)
 {
-    SLTime currentTime = slGetTime();
-    SLTime diff = slDiffTime(currentTime, pTimer->time);
-    SLTime period = pTimer->period;
-    SLTime periodCount;
+    RBTime currentTime = rbGetTime();
+    RBTime diff = rbDiffTime(currentTime, pTimer->time);
+    RBTime period = pTimer->period;
+    RBTime periodCount;
     
     if(period == 0) {
         return 1;
     }
     
-    slAssert(diff >= 0);
+    rbAssert(diff >= 0);
     
-    // Division is slow, only do it if the diff is large
+    // Division is rbow, only do it if the diff is large
     if(diff > period * 16) {
         periodCount = diff / period;
         diff -= period * periodCount;
@@ -138,9 +138,9 @@ int32_t slGetTimerPeriodsAndReset(SLTimer * pTimer)
         }
     }
     
-    slAssert(periodCount == slGetTimerPeriods(pTimer));
-    slAssert(diff < pTimer->period);
-    slAssert(diff >= 0);
+    rbAssert(periodCount == rbGetTimerPeriods(pTimer));
+    rbAssert(diff < pTimer->period);
+    rbAssert(diff >= 0);
     
     pTimer->time = currentTime - diff;
     
@@ -148,9 +148,9 @@ int32_t slGetTimerPeriodsAndReset(SLTimer * pTimer)
 }
 
 
-SLTime slGetTimeLeft(SLTimer * pTimer)
+RBTime rbGetTimeLeft(RBTimer * pTimer)
 {
-    SLTime diff = slDiffTime(pTimer->time + pTimer->period, slGetTime());
+    RBTime diff = rbDiffTime(pTimer->time + pTimer->period, rbGetTime());
     
     if(diff < 0) {
         return 0;
@@ -161,142 +161,142 @@ SLTime slGetTimeLeft(SLTimer * pTimer)
 }
 
 
-bool slLogShouldLog(SLLogLevel level, char const * sourceFile, int sourceLine)
+bool rbLogShouldLog(RBLogLevel level, char const * sourceFile, int sourceLine)
 {
     UNUSED(sourceFile);
     UNUSED(sourceLine);
-    slAssert(g_slCurrentSubsystem + 1 >= 1 && g_slCurrentSubsystem < SLS_COUNT);
+    rbAssert(g_slCurrentSubsystem + 1 >= 1 && g_slCurrentSubsystem < RBS_COUNT);
     return level >= g_slSubsystemLogLevels[g_slCurrentSubsystem];
 }
 
 
-void slLog(SLLogLevel level, char const * sourceFile, int sourceLine,
+void rbLog(RBLogLevel level, char const * sourceFile, int sourceLine,
     char const * format, ...)
 {
-    if(slLogShouldLog(level, sourceFile, sourceLine)) {
+    if(rbLogShouldLog(level, sourceFile, sourceLine)) {
         char const * logLevelName = "???";
         char const * subsystemName = "???";
         va_list va;
         
-        if(level + 1 >= 1 && level < SLLL_COUNT) {
+        if(level + 1 >= 1 && level < RBLL_COUNT) {
             logLevelName = g_slLogLevelNames[level];
         }
         if(g_slCurrentSubsystem + 1 >= 1 &&
-                g_slCurrentSubsystem < SLS_COUNT) {
+                g_slCurrentSubsystem < RBS_COUNT) {
             subsystemName = g_slSubsystemNames[g_slCurrentSubsystem];
         }
         
-        slLogOutput("%s[%s]:", logLevelName, subsystemName);
+        rbLogOutput("%s[%s]:", logLevelName, subsystemName);
         
         va_start(va, format);
-        slLogOutputV(format, va);
+        rbLogOutputV(format, va);
         va_end(va);
     }
 }
 
 
-void slLogOutput(char const * format, ...)
+void rbLogOutput(char const * format, ...)
 {
     va_list va;
     
     va_start(va, format);
-    slLogOutputV(format, va);
+    rbLogOutputV(format, va);
     va_end(va);
 }
 
 
-void slInitialize(int argc, char * argv[])
+void rbInitialize(int argc, char * argv[])
 {
-    SLSubsystem lastSubsystem = slChangeSubsystem(SLS_MAIN);
+    RBSubsystem lastSubsystem = rbChangeSubsystem(RBS_MAIN);
     bool reinitFrameData = !g_slGentleRestartRequested;
-    SLLogLevel logLevel = SLLL_WARNING;
+    RBLogLevel logLevel = RBLL_WARNING;
     
     // Init global variables
     g_slSavedArgc = argc;
     g_slSavedArgv = argv;
     
-    if(slIsRestarting()) {
+    if(rbIsRestarting()) {
     }
     
     for(int i = 0; i < argc; ++i) {
         if(strcmp(argv[i], "-v") == 0) {
-            logLevel = SLLL_INFO;
+            logLevel = RBLL_INFO;
         }
     }
     
-    for(size_t i = 0; i < SLS_COUNT; ++i) {
+    for(size_t i = 0; i < RBS_COUNT; ++i) {
         g_slSubsystemLogLevels[i] = logLevel;
     }
     
-    slChangeSubsystem(SLS_CONFIGURATION);
-    slConfigurationSetDefaults(&g_slConfiguration);
-    slConfigurationParseArgv(&g_slConfiguration, argc, argv);
+    rbChangeSubsystem(RBS_CONFIGURATION);
+    rbConfigurationSetDefaults(&g_slConfiguration);
+    rbConfigurationParseArgv(&g_slConfiguration, argc, argv);
     
     if(reinitFrameData) {
         memset(&g_slLastFrameLightData, 0, sizeof g_slLastFrameLightData);
     }
     
-    slChangeSubsystem(SLS_CONFIGURATION);
-    slConfigurationLoad(&g_slConfiguration);
+    rbChangeSubsystem(RBS_CONFIGURATION);
+    rbConfigurationLoad(&g_slConfiguration);
     // Command-line params should override config file
-    slConfigurationParseArgv(&g_slConfiguration, argc, argv);
+    rbConfigurationParseArgv(&g_slConfiguration, argc, argv);
     
-    for(size_t i = 0; i < SLS_COUNT; ++i) {
+    for(size_t i = 0; i < RBS_COUNT; ++i) {
         g_slSubsystemLogLevels[i] = g_slConfiguration.logLevel;
     }
     
-    slChangeSubsystem(SLS_AUDIO_INPUT);
-    slAudioInputInitialize(&g_slConfiguration);
+    rbChangeSubsystem(RBS_AUDIO_INPUT);
+    rbAudioInputInitialize(&g_slConfiguration);
     
-    slChangeSubsystem(SLS_AUDIO_ANALYSIS);
-    slAudioAnalysisInitialize(&g_slConfiguration);
+    rbChangeSubsystem(RBS_AUDIO_ANALYSIS);
+    rbAudioAnalysisInitialize(&g_slConfiguration);
     
-    slChangeSubsystem(SLS_LIGHT_GENERATION);
-    slLightGenerationInitialize(&g_slConfiguration);
+    rbChangeSubsystem(RBS_LIGHT_GENERATION);
+    rbLightGenerationInitialize(&g_slConfiguration);
     
-    slChangeSubsystem(SLS_LIGHT_OUTPUT);
-    slLightOutputInitialize(&g_slConfiguration);
+    rbChangeSubsystem(RBS_LIGHT_OUTPUT);
+    rbLightOutputInitialize(&g_slConfiguration);
     
-    slChangeSubsystem(SLS_HOT_CONFIGURATION);
-    slHotConfigurationInitialize(&g_slConfiguration);
+    rbChangeSubsystem(RBS_HOT_CONFIGURATION);
+    rbHotConfigurationInitialize(&g_slConfiguration);
     
-    slChangeSubsystem(SLS_MAIN);
+    rbChangeSubsystem(RBS_MAIN);
     // If something goes wrong during init, reinit'ing won't help -- that
     // should be a fatal error!
-    slAssert(!g_slGentleRestartRequested);
+    rbAssert(!g_slGentleRestartRequested);
     
-    slChangeSubsystem(lastSubsystem);
+    rbChangeSubsystem(lastSubsystem);
 }
 
 
-void slShutdown(void)
+void rbShutdown(void)
 {
-    SLSubsystem lastSubsystem = slChangeSubsystem(SLS_MAIN);
+    RBSubsystem lastSubsystem = rbChangeSubsystem(RBS_MAIN);
     
-    slAssert(lastSubsystem == SLS_MAIN);
+    rbAssert(lastSubsystem == RBS_MAIN);
     
-    slChangeSubsystem(SLS_HOT_CONFIGURATION);
-    slHotConfigurationShutdown();
+    rbChangeSubsystem(RBS_HOT_CONFIGURATION);
+    rbHotConfigurationShutdown();
     
-    slChangeSubsystem(SLS_LIGHT_OUTPUT);
-    slLightOutputShutdown();
+    rbChangeSubsystem(RBS_LIGHT_OUTPUT);
+    rbLightOutputShutdown();
     
-    slChangeSubsystem(SLS_LIGHT_GENERATION);
-    slLightGenerationShutdown();
+    rbChangeSubsystem(RBS_LIGHT_GENERATION);
+    rbLightGenerationShutdown();
     
-    slChangeSubsystem(SLS_AUDIO_ANALYSIS);
-    slAudioAnalysisShutdown();
+    rbChangeSubsystem(RBS_AUDIO_ANALYSIS);
+    rbAudioAnalysisShutdown();
     
-    slChangeSubsystem(SLS_AUDIO_INPUT);
-    slAudioInputShutdown();
+    rbChangeSubsystem(RBS_AUDIO_INPUT);
+    rbAudioInputShutdown();
     
-    slChangeSubsystem(lastSubsystem);
+    rbChangeSubsystem(lastSubsystem);
 }
 
 
-void slProcess(uint64_t nsSinceLastProcess)
+void rbProcess(uint64_t nsSinceLastProcess)
 {
-    SLSubsystem lastSubsystem = slChangeSubsystem(SLS_MAIN);
+    RBSubsystem lastSubsystem = rbChangeSubsystem(RBS_MAIN);
     bool configChanged = false;
     int32_t msSinceLastProcess;
     
@@ -307,14 +307,14 @@ void slProcess(uint64_t nsSinceLastProcess)
         msSinceLastProcess * 1000000;
     g_slClockMs += msSinceLastProcess;
     
-    slInfo("Frame time: %lluns\n", msSinceLastProcess);
+    rbInfo("Frame time: %lluns\n", msSinceLastProcess);
     
-    slAssert(lastSubsystem == SLS_MAIN);
+    rbAssert(lastSubsystem == RBS_MAIN);
     
-    slProcessSubsystems(&configChanged);
+    rbProcessSubsystems(&configChanged);
     
     if(g_slGentleRestartRequested) {
-        slInfo("Gentle restart requested, %d consecutive\n",
+        rbInfo("Gentle restart requested, %d consecutive\n",
             g_slGentleRestartConsecutiveCount);
         
         if(g_slGentleRestartConsecutiveCount == 0) {
@@ -323,16 +323,16 @@ void slProcess(uint64_t nsSinceLastProcess)
             g_slGentleRestartFirstConsecutiveNs = g_slClockNs;
         }
         else if((g_slClockNs - g_slGentleRestartFirstConsecutiveNs) >
-                SL_MAX_CONSECUTIVE_GENTLE_RESTART_NS) {
+                RB_MAX_CONSECUTIVE_GENTLE_RESTART_NS) {
             // We have been continuously restarting for a long time, give up!
-            slFatal("Continuous restart timeout exceeded\n");
-            slRequestImmediateRestart();
+            rbFatal("Continuous restart timeout exceeded\n");
+            rbRequestImmediateRestart();
         }
         
         ++g_slGentleRestartConsecutiveCount;
         
         g_slGentleRestartRequested = false;
-        slProcessGentleRestart();
+        rbProcessGentleRestart();
     }
     else {
         g_slGentleRestartConsecutiveCount = 0;
@@ -340,91 +340,91 @@ void slProcess(uint64_t nsSinceLastProcess)
         if(configChanged) {
             // If the config changes AND restart is requested, it is processed
             // as a restart.
-            slProcessConfigChanged();
+            rbProcessConfigChanged();
         }
     }
     
-    slChangeSubsystem(lastSubsystem);
+    rbChangeSubsystem(lastSubsystem);
 }
 
 
-void slProcessSubsystems(bool * pConfigChanged)
+void rbProcessSubsystems(bool * pConfigChanged)
 {
-    SLSubsystem lastSubsystem = slChangeSubsystem(SLS_MAIN);
-    SLRawAudio rawAudio;
-    SLAnalyzedAudio analysis;
+    RBSubsystem lastSubsystem = rbChangeSubsystem(RBS_MAIN);
+    RBRawAudio rawAudio;
+    RBAnalyzedAudio analysis;
     
-    slChangeSubsystem(SLS_AUDIO_INPUT);
-    slAudioInputBlockingRead(&rawAudio);
+    rbChangeSubsystem(RBS_AUDIO_INPUT);
+    rbAudioInputBlockingRead(&rawAudio);
     
-    slChangeSubsystem(SLS_LIGHT_OUTPUT);
-    slLightOutputShowLights(&g_slLastFrameLightData);
+    rbChangeSubsystem(RBS_LIGHT_OUTPUT);
+    rbLightOutputShowLights(&g_slLastFrameLightData);
     
-    slChangeSubsystem(SLS_AUDIO_ANALYSIS);
-    slAudioAnalysisAnalyze(&rawAudio, &analysis);
+    rbChangeSubsystem(RBS_AUDIO_ANALYSIS);
+    rbAudioAnalysisAnalyze(&rawAudio, &analysis);
     
-    slChangeSubsystem(SLS_LIGHT_GENERATION);
-    slLightGenerationGenerate(&analysis, &g_slLastFrameLightData);
+    rbChangeSubsystem(RBS_LIGHT_GENERATION);
+    rbLightGenerationGenerate(&analysis, &g_slLastFrameLightData);
     
     // Output will happen right after the next audio read, to minimize jitter.
-    slChangeSubsystem(SLS_HOT_CONFIGURATION);
-    slHotConfigurationProcessAndUpdateConfiguration(&g_slConfiguration,
+    rbChangeSubsystem(RBS_HOT_CONFIGURATION);
+    rbHotConfigurationProcessAndUpdateConfiguration(&g_slConfiguration,
         pConfigChanged);
     
-    slChangeSubsystem(lastSubsystem);
+    rbChangeSubsystem(lastSubsystem);
 }
 
 
-void slProcessConfigChanged(void)
+void rbProcessConfigChanged(void)
 {
-    SLSubsystem lastSubsystem = slChangeSubsystem(SLS_MAIN);
+    RBSubsystem lastSubsystem = rbChangeSubsystem(RBS_MAIN);
     
-    slConfigurationSave(&g_slConfiguration);
+    rbConfigurationSave(&g_slConfiguration);
     
     // Command-line params should override config file
-    slConfigurationParseArgv(&g_slConfiguration, g_slSavedArgc, g_slSavedArgv);
+    rbConfigurationParseArgv(&g_slConfiguration, g_slSavedArgc, g_slSavedArgv);
     
-    slChangeSubsystem(SLS_AUDIO_INPUT);
-    slAudioInputInitialize(&g_slConfiguration);
+    rbChangeSubsystem(RBS_AUDIO_INPUT);
+    rbAudioInputInitialize(&g_slConfiguration);
     
-    slChangeSubsystem(SLS_AUDIO_ANALYSIS);
-    slAudioAnalysisInitialize(&g_slConfiguration);
+    rbChangeSubsystem(RBS_AUDIO_ANALYSIS);
+    rbAudioAnalysisInitialize(&g_slConfiguration);
     
-    slChangeSubsystem(SLS_LIGHT_GENERATION);
-    slLightGenerationInitialize(&g_slConfiguration);
+    rbChangeSubsystem(RBS_LIGHT_GENERATION);
+    rbLightGenerationInitialize(&g_slConfiguration);
     
-    slChangeSubsystem(SLS_LIGHT_OUTPUT);
-    slLightOutputInitialize(&g_slConfiguration);
+    rbChangeSubsystem(RBS_LIGHT_OUTPUT);
+    rbLightOutputInitialize(&g_slConfiguration);
     
-    slChangeSubsystem(SLS_HOT_CONFIGURATION);
-    slHotConfigurationInitialize(&g_slConfiguration);
+    rbChangeSubsystem(RBS_HOT_CONFIGURATION);
+    rbHotConfigurationInitialize(&g_slConfiguration);
     
-    slChangeSubsystem(lastSubsystem);
+    rbChangeSubsystem(lastSubsystem);
 }
 
 
-void slProcessGentleRestart(void)
+void rbProcessGentleRestart(void)
 {
-    SLSubsystem lastSubsystem = slChangeSubsystem(SLS_MAIN);
+    RBSubsystem lastSubsystem = rbChangeSubsystem(RBS_MAIN);
     
     g_slIsRestarting = true;
-    slShutdown();
+    rbShutdown();
     
     if(g_slDelayGentleRestart) {
         struct timespec req;
         
-        req.tv_sec = (long)(SL_GENTLE_RESTART_DELAY_NS / 1000000000LLU);
-        req.tv_nsec = (long)(SL_GENTLE_RESTART_DELAY_NS % 1000000000LLU);
+        req.tv_sec = (long)(RB_GENTLE_RESTART_DELAY_NS / 1000000000LLU);
+        req.tv_nsec = (long)(RB_GENTLE_RESTART_DELAY_NS % 1000000000LLU);
         
         nanosleep(&req, NULL);
         
         g_slDelayGentleRestart = false;
     }
     
-    slInitialize(g_slSavedArgc, g_slSavedArgv);
+    rbInitialize(g_slSavedArgc, g_slSavedArgv);
     g_slIsRestarting = false;
     
-    slChangeSubsystem(lastSubsystem);
+    rbChangeSubsystem(lastSubsystem);
 }
 
 

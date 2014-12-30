@@ -1,103 +1,103 @@
 #include "audio_input.h"
 
 
-#ifdef SL_SNDFILE_SUPPORTED
+#ifdef RB_SNDFILE_SUPPORTED
 #include "audio_input_file.h"
 #endif
 
 #include "audio_alsa.h"
 
 
-static SLAudioInputSource g_slAudioSource = SLAIS_INVALID;
+static RBAudioInputSource g_slAudioSource = RBAIS_INVALID;
 static uint64_t g_slAudioVideoFrameCount = 0;
 static bool g_monitorAudio = false;
 
 
-void slAudioInputInitialize(SLConfiguration const * config)
+void rbAudioInputInitialize(RBConfiguration const * config)
 {
     // In case of reinit, shut down first
-    slAudioInputShutdown();
+    rbAudioInputShutdown();
     
     switch(config->audioSource) {
-    case SLAIS_ALSA:
-        slAlsaCaptureInit(config->audioSourceParam);
-        g_slAudioSource = SLAIS_ALSA;
+    case RBAIS_ALSA:
+        rbAlsaCaptureInit(config->audioSourceParam);
+        g_slAudioSource = RBAIS_ALSA;
         break;
-    case SLAIS_FILE:
-        #ifdef SL_SNDFILE_SUPPORTED
-            slVerify(slSndFileOpen((char *)config->audioSourceParam) != NULL);
-            g_slAudioSource = SLAIS_FILE;
+    case RBAIS_FILE:
+        #ifdef RB_SNDFILE_SUPPORTED
+            rbVerify(rbSndFileOpen((char *)config->audioSourceParam) != NULL);
+            g_slAudioSource = RBAIS_FILE;
         #else
-            g_slAudioSource = SLAIS_INVALID;
-            slFatal("Not compiled with libsndfile support\n");
+            g_slAudioSource = RBAIS_INVALID;
+            rbFatal("Not compiled with libsndfile support\n");
         #endif
         break;
     default:
-        g_slAudioSource = SLAIS_INVALID;
-    	slFatal("Invalid audio source type %d\n", config->audioSource);
+        g_slAudioSource = RBAIS_INVALID;
+    	rbFatal("Invalid audio source type %d\n", config->audioSource);
     	break;
     }
     
     if(config->monitorAudio) {
         g_monitorAudio = true;
-        slAlsaPlaybackInit(SL_AUDIO_FRAMES_PER_VIDEO_FRAME,SL_AUDIO_CHANNELS);
+        rbAlsaPlaybackInit(RB_AUDIO_FRAMES_PER_VIDEO_FRAME,RB_AUDIO_CHANNELS);
     }
 }
 
 
-void slAudioInputShutdown(void)
+void rbAudioInputShutdown(void)
 {
     switch(g_slAudioSource) {
-    case SLAIS_INVALID:
+    case RBAIS_INVALID:
     	// Do nothing! We have already been shut down properly, or maybe we
     	// were never init'd.
     	break;
-    case SLAIS_ALSA:
-        slAlsaCaptureClose();
+    case RBAIS_ALSA:
+        rbAlsaCaptureClose();
         break;
-    case SLAIS_FILE:
-        #ifdef SL_SNDFILE_SUPPORTED
-            slSndFileClose();
+    case RBAIS_FILE:
+        #ifdef RB_SNDFILE_SUPPORTED
+            rbSndFileClose();
         #endif
         break;
     default:
-    	slFatal("Invalid audio source type %d\n", g_slAudioSource);
+    	rbFatal("Invalid audio source type %d\n", g_slAudioSource);
     	break;
     }
     if(g_monitorAudio) {
-        slAlsaPlaybackClose();
+        rbAlsaPlaybackClose();
     }
     
-    g_slAudioSource = SLAIS_INVALID;
+    g_slAudioSource = RBAIS_INVALID;
 }
 
 
-void slAudioInputBlockingRead(SLRawAudio * audio)
+void rbAudioInputBlockingRead(RBRawAudio * audio)
 {
     switch(g_slAudioSource) {
-    case SLAIS_ALSA:
-        slAlsaRead(audio);
+    case RBAIS_ALSA:
+        rbAlsaRead(audio);
         break;
-    case SLAIS_FILE:
-        #ifdef SL_SNDFILE_SUPPORTED
-            slSndFileReadLooping(audio, SL_AUDIO_FRAMES_PER_VIDEO_FRAME,
-                SL_AUDIO_CHANNELS);
+    case RBAIS_FILE:
+        #ifdef RB_SNDFILE_SUPPORTED
+            rbSndFileReadLooping(audio, RB_AUDIO_FRAMES_PER_VIDEO_FRAME,
+                RB_AUDIO_CHANNELS);
         #else
-            slFatal("Not compiled with libsndfile support, exiting\n");
+            rbFatal("Not compiled with libsndfile support, exiting\n");
         #endif
         break;
     default:
-    	// SLAIS_INVALID is not legal here: we must be init'd
-    	slFatal("Invalid audio source type %d\n", g_slAudioSource);
+    	// RBAIS_INVALID is not legal here: we must be init'd
+    	rbFatal("Invalid audio source type %d\n", g_slAudioSource);
     	break;
     }
 
     if(g_monitorAudio) {
-        slAlsaPlayback(audio, SL_AUDIO_FRAMES_PER_VIDEO_FRAME, 
-            SL_AUDIO_CHANNELS);
+        rbAlsaPlayback(audio, RB_AUDIO_FRAMES_PER_VIDEO_FRAME, 
+            RB_AUDIO_CHANNELS);
     }
     
-    if(slInfoEnabled()) {
+    if(rbInfoEnabled()) {
         float totalPower = 0.0f;
         float peak = 0.0f;
         for(size_t i = 0; i < LENGTHOF(audio->audio); ++i) {
@@ -110,7 +110,7 @@ void slAudioInputBlockingRead(SLRawAudio * audio)
             }
         }
         totalPower = sqrtf(totalPower / LENGTHOF(audio->audio));
-        slInfo("Audio for video frame %llu; peak = %.4f, power = %.4f\n",
+        rbInfo("Audio for video frame %llu; peak = %.4f, power = %.4f\n",
             g_slAudioVideoFrameCount, peak, totalPower);
     }
     

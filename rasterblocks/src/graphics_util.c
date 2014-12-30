@@ -1,12 +1,12 @@
 #include "graphics_util.h"
 
 
-SLColor SLColorMakeF(float r, float g, float b)
+RBColor RBColorMakeF(float r, float g, float b)
 {
-    SLColor res = {
-        (uint8_t)slClampF(r * 256.0f, 0.0f, 255.0f),
-        (uint8_t)slClampF(g * 256.0f, 0.0f, 255.0f),
-        (uint8_t)slClampF(b * 256.0f, 0.0f, 255.0f),
+    RBColor res = {
+        (uint8_t)rbClampF(r * 256.0f, 0.0f, 255.0f),
+        (uint8_t)rbClampF(g * 256.0f, 0.0f, 255.0f),
+        (uint8_t)rbClampF(b * 256.0f, 0.0f, 255.0f),
         0
     };
     
@@ -14,25 +14,25 @@ SLColor SLColorMakeF(float r, float g, float b)
 }
 
 
-SLColor slColorScaleF(SLColor a, float alpha)
+RBColor rbColorScaleF(RBColor a, float alpha)
 {
-    return slColorMake(
-        (uint8_t)slClampF(roundf(a.r * alpha), 0.0f, 255.0f),
-        (uint8_t)slClampF(roundf(a.g * alpha), 0.0f, 255.0f),
-        (uint8_t)slClampF(roundf(a.b * alpha), 0.0f, 255.0f));
+    return rbColorMake(
+        (uint8_t)rbClampF(roundf(a.r * alpha), 0.0f, 255.0f),
+        (uint8_t)rbClampF(roundf(a.g * alpha), 0.0f, 255.0f),
+        (uint8_t)rbClampF(roundf(a.b * alpha), 0.0f, 255.0f));
 }
 
 
-SLColor slColorMixF(SLColor a, float aAlpha, SLColor b, float bAlpha)
+RBColor rbColorMixF(RBColor a, float aAlpha, RBColor b, float bAlpha)
 {
-    return slColorMake(
-        (uint8_t)slClampF(roundf(a.r * aAlpha + b.r * bAlpha), 0.0f, 255.0f),
-        (uint8_t)slClampF(roundf(a.g * aAlpha + b.g * bAlpha), 0.0f, 255.0f),
-        (uint8_t)slClampF(roundf(a.b * aAlpha + b.b * bAlpha), 0.0f, 255.0f));
+    return rbColorMake(
+        (uint8_t)rbClampF(roundf(a.r * aAlpha + b.r * bAlpha), 0.0f, 255.0f),
+        (uint8_t)rbClampF(roundf(a.g * aAlpha + b.g * bAlpha), 0.0f, 255.0f),
+        (uint8_t)rbClampF(roundf(a.b * aAlpha + b.b * bAlpha), 0.0f, 255.0f));
 }
 
 
-SLColor slPaletteLookupF(SLPalette const * pPal, float f)
+RBColor rbPaletteLookupF(RBPalette const * pPal, float f)
 {
     // Conditional arrangement carefully ensures a NaN f will result in
     // selecting palette entry 0
@@ -45,7 +45,7 @@ SLColor slPaletteLookupF(SLPalette const * pPal, float f)
         size_t i = (size_t)floorf4;
         float a = f4 - floorf4;
         float b = 1.0f - a;
-        return slColorMixF(pPal->c[i], b, pPal->c[i + 1], a);
+        return rbColorMixF(pPal->c[i], b, pPal->c[i + 1], a);
     }
     else {
         return pPal->c[0];
@@ -53,97 +53,97 @@ SLColor slPaletteLookupF(SLPalette const * pPal, float f)
 }
 
 
-SLVector2 slVector2Normalize(SLVector2 a)
+RBVector2 rbVector2Normalize(RBVector2 a)
 {
-    float l = slVector2Length(a);
+    float l = rbVector2Length(a);
     if(l != 0.0f) {
-        SLVector2 res = {a.x / l, a.y / l};
+        RBVector2 res = {a.x / l, a.y / l};
         return res;
     }
     else {
         // Putting this in the "else" case should catch NaN
-        SLVector2 res = {1.0f, 0.0f};
+        RBVector2 res = {1.0f, 0.0f};
         return res;
     }
 }
 
 
-float slVector2Dot(SLVector2 a, SLVector2 b)
+float rbVector2Dot(RBVector2 a, RBVector2 b)
 {
     return a.x * b.x + a.y * b.y;
 }
 
 
-SLMatrix2 slMatrix2Identity(void)
+RBMatrix2 rbMatrix2Identity(void)
 {
-    SLMatrix2 res = {0.0f, 0.0f, 0.0f, 0.0f};
+    RBMatrix2 res = {0.0f, 0.0f, 0.0f, 0.0f};
     return res;
 }
 
 
-SLMatrix2 slMatrix2Scale(SLVector2 s)
+RBMatrix2 rbMatrix2Scale(RBVector2 s)
 {
-    SLMatrix2 res = {0.0f, 0.0f, 0.0f, 0.0f};
+    RBMatrix2 res = {0.0f, 0.0f, 0.0f, 0.0f};
     UNUSED(s);
     return res;
 }
 
 
-SLMatrix2 slMatrix2Rotate(float r)
+RBMatrix2 rbMatrix2Rotate(float r)
 {
-    SLMatrix2 res = {0.0f, 0.0f, 0.0f, 0.0f};
+    RBMatrix2 res = {0.0f, 0.0f, 0.0f, 0.0f};
     UNUSED(r);
     return res;
 }
 
 
-SLMatrix2 slMatrix2RotateScale(SLVector2 rs)
+RBMatrix2 rbMatrix2RotateScale(RBVector2 rs)
 {
-    SLMatrix2 res = {0.0f, 0.0f, 0.0f, 0.0f};
+    RBMatrix2 res = {0.0f, 0.0f, 0.0f, 0.0f};
     UNUSED(rs);
     return res;
 }
 
 
-SLMatrix2 slMatrix2Multiply(SLMatrix2 a, SLMatrix2 b)
+RBMatrix2 rbMatrix2Multiply(RBMatrix2 a, RBMatrix2 b)
 {
-    SLMatrix2 res = {0.0f, 0.0f, 0.0f, 0.0f};
+    RBMatrix2 res = {0.0f, 0.0f, 0.0f, 0.0f};
     UNUSED(a);
     UNUSED(b);
     return res;
 }
 
 
-SLVector2 slMatrix2Transform(SLMatrix2 m, SLVector2 v)
+RBVector2 rbMatrix2Transform(RBMatrix2 m, RBVector2 v)
 {
     UNUSED(m);
     return v;
 }
 
 
-void slHarmonicPathGeneratorInitialize(SLHarmonicPathGenerator * pPathGen,
-    float frequency, SLVector2 orientation,
-    SLVector2 scale0, SLVector2 scale1, SLVector2 scale2, SLVector2 scale3)
+void rbHarmonicPathGeneratorInitialize(RBHarmonicPathGenerator * pPathGen,
+    float frequency, RBVector2 orientation,
+    RBVector2 scale0, RBVector2 scale1, RBVector2 scale2, RBVector2 scale3)
 {
-    pPathGen->time = slGetTime();
+    pPathGen->time = rbGetTime();
     pPathGen->frequency = frequency;
     pPathGen->phase = 0.0f;
-    pPathGen->orientation = slVector2Normalize(orientation);
+    pPathGen->orientation = rbVector2Normalize(orientation);
     pPathGen->scale[0] = scale0;
     pPathGen->scale[1] = scale1;
     pPathGen->scale[2] = scale2;
     pPathGen->scale[3] = scale3;
-    pPathGen->pos = slVector2RotateScale(scale0, pPathGen->orientation);
+    pPathGen->pos = rbVector2RotateScale(scale0, pPathGen->orientation);
 }
 
 
-void slHarmonicPathGeneratorUpdate(SLHarmonicPathGenerator * pPathGen)
+void rbHarmonicPathGeneratorUpdate(RBHarmonicPathGenerator * pPathGen)
 {
     float phase = 0.0f;
-    SLVector2 pos = {0.0f, 0.0f};
+    RBVector2 pos = {0.0f, 0.0f};
     
     for(size_t i = 0; i < LENGTHOF(pPathGen->scale); ++i) {
-        SLVector2 scale = pPathGen->scale[i];
+        RBVector2 scale = pPathGen->scale[i];
         if(scale.x != 0.0f) {
             pos.x += scale.x * cosf(phase * i);
         }
@@ -152,7 +152,7 @@ void slHarmonicPathGeneratorUpdate(SLHarmonicPathGenerator * pPathGen)
         }
     }
     
-    pPathGen->pos = slVector2RotateScale(pos, pPathGen->orientation);
+    pPathGen->pos = rbVector2RotateScale(pos, pPathGen->orientation);
 }
 
 

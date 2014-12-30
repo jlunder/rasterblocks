@@ -1,5 +1,5 @@
 
-#ifdef SL_USE_TARGET_HARNESS
+#ifdef RB_USE_TARGET_HARNESS
 
 #include <time.h>
 
@@ -27,16 +27,16 @@
 #include "rasterblocks.h"
 
 
-#define SL_TARGET_MAX_SPI_OPEN_RETRY 5
-#define SL_TARGET_SPI_DEVICE "/dev/spidev1.0"
-#define SL_TARGET_SPI_DEVICE_STARTUP_COMMAND \
-    "echo BB-SPIDEV0 > /sys/devices/bone_capemgr.9/slots"
-#define SL_TARGET_SPI_DEVICE_STARTUP_WAIT_NS 2000000000LLU
+#define RB_TARGET_MAX_SPI_OPEN_RETRY 5
+#define RB_TARGET_SPI_DEVICE "/dev/spidev1.0"
+#define RB_TARGET_SPI_DEVICE_STARTUP_COMMAND \
+    "echo BB-SPIDEV0 > /sys/devices/bone_capemgr.9/rbots"
+#define RB_TARGET_SPI_DEVICE_STARTUP_WAIT_NS 2000000000LLU
 
 
-static void slLightOutputStartSpiDevice(void);
-static uint8_t * slLightOutputEmitPanel(uint8_t * pBuf,
-    SLPanel const * pLights);
+static void rbLightOutputStartSpiDevice(void);
+static uint8_t * rbLightOutputEmitPanel(uint8_t * pBuf,
+    RBPanel const * pLights);
 
 
 static int g_slSpiFd = -1;
@@ -84,7 +84,7 @@ int main(int argc, char * argv[])
     
     clock_gettime(CLOCK_MONOTONIC, &lastts);
     
-    slInitialize(argc, argv);
+    rbInitialize(argc, argv);
 
     while(true)
     {
@@ -94,23 +94,23 @@ int main(int argc, char * argv[])
         clock_gettime(CLOCK_MONOTONIC, &ts);
         time_ns = (uint64_t)(ts.tv_nsec - lastts.tv_nsec) +
             (uint64_t)(ts.tv_sec - lastts.tv_sec) * 1000000000LLU;
-        slAssert(time_ns < 0x8000000000000000LLU);
+        rbAssert(time_ns < 0x8000000000000000LLU);
         lastts = ts;
         
-        slProcess(time_ns);
+        rbProcess(time_ns);
     }
     
     exit(EXIT_SUCCESS);
 }
 
 
-void slLogOutputV(char const * format, va_list args)
+void rbLogOutputV(char const * format, va_list args)
 {
     vprintf(format, args);
 }
 
 
-void slLightOutputInitialize(SLConfiguration const * config)
+void rbLightOutputInitialize(RBConfiguration const * config)
 {
     uint8_t mode = SPI_MODE_0;
     uint8_t lsbFirst = 0;
@@ -120,55 +120,55 @@ void slLightOutputInitialize(SLConfiguration const * config)
     UNUSED(config);
     
     // Just in case this is a reinit
-    slLightOutputShutdown();
+    rbLightOutputShutdown();
     
-    slLightOutputStartSpiDevice();
-    slVerify(g_slSpiFd >= 0);
+    rbLightOutputStartSpiDevice();
+    rbVerify(g_slSpiFd >= 0);
     
-    slVerify(ioctl(g_slSpiFd, SPI_IOC_WR_MODE, &mode) >= 0);
-    slVerify(ioctl(g_slSpiFd, SPI_IOC_WR_LSB_FIRST, &lsbFirst) >= 0);
-    slVerify(ioctl(g_slSpiFd, SPI_IOC_WR_BITS_PER_WORD, &bitsPerWord) >= 0);
-    slVerify(ioctl(g_slSpiFd, SPI_IOC_WR_MAX_SPEED_HZ, &maxSpeedHz) >= 0);
+    rbVerify(ioctl(g_slSpiFd, SPI_IOC_WR_MODE, &mode) >= 0);
+    rbVerify(ioctl(g_slSpiFd, SPI_IOC_WR_LSB_FIRST, &lsbFirst) >= 0);
+    rbVerify(ioctl(g_slSpiFd, SPI_IOC_WR_BITS_PER_WORD, &bitsPerWord) >= 0);
+    rbVerify(ioctl(g_slSpiFd, SPI_IOC_WR_MAX_SPEED_HZ, &maxSpeedHz) >= 0);
     
     for(size_t i = 0; i < LENGTHOF(g_slCieTable); ++i) {
-        g_slModifiedCieTable[i] = (uint8_t)slClampF(
+        g_slModifiedCieTable[i] = (uint8_t)rbClampF(
             ceilf(g_slCieTable[i] * config->brightness), 0.0f, 255.0f);
     }
 }
 
 
-void slLightOutputStartSpiDevice(void)
+void rbLightOutputStartSpiDevice(void)
 {
     for(size_t i = 0; ; ++i) {
-        struct timespec sleepTs;
+        struct timespec rbeepTs;
         
-        g_slSpiFd = open(SL_TARGET_SPI_DEVICE, O_RDWR);
+        g_slSpiFd = open(RB_TARGET_SPI_DEVICE, O_RDWR);
         
         if(g_slSpiFd >= 0) {
             // Done! Success.
             return;
         }
         
-        if(i >= SL_TARGET_MAX_SPI_OPEN_RETRY) {
-            slFatal("open() failed for SPI device \"%s\": %s",
-                SL_TARGET_SPI_DEVICE, strerror(errno));
+        if(i >= RB_TARGET_MAX_SPI_OPEN_RETRY) {
+            rbFatal("open() failed for SPI device \"%s\": %s",
+                RB_TARGET_SPI_DEVICE, strerror(errno));
         }
         
-        slWarning("BB SPI device not found, attempting startup\n");
-        int ret = system(SL_TARGET_SPI_DEVICE_STARTUP_COMMAND);
+        rbWarning("BB SPI device not found, attempting startup\n");
+        int ret = system(RB_TARGET_SPI_DEVICE_STARTUP_COMMAND);
         if(ret==-1) {
-            slWarning("Failed to start up SPI\n");
+            rbWarning("Failed to start up SPI\n");
         }
         
-        sleepTs.tv_sec = SL_TARGET_SPI_DEVICE_STARTUP_WAIT_NS / 1000000000LLU;
-        sleepTs.tv_nsec = SL_TARGET_SPI_DEVICE_STARTUP_WAIT_NS % 1000000000LLU;
+        rbeepTs.tv_sec = RB_TARGET_SPI_DEVICE_STARTUP_WAIT_NS / 1000000000LLU;
+        rbeepTs.tv_nsec = RB_TARGET_SPI_DEVICE_STARTUP_WAIT_NS % 1000000000LLU;
         
-        nanosleep(&sleepTs, NULL);
+        nanosleep(&rbeepTs, NULL);
     }
 }
 
 
-void slLightOutputShutdown(void)
+void rbLightOutputShutdown(void)
 {
     if(g_slSpiFd >= 0) {
         close(g_slSpiFd);
@@ -177,18 +177,18 @@ void slLightOutputShutdown(void)
 }
 
 
-void slLightOutputShowLights(SLLightData const * lights)
+void rbLightOutputShowLights(RBLightData const * lights)
 {
     struct spi_ioc_transfer xfer;
     int result;
-    uint8_t buf[SL_NUM_LIGHTS * 3];
+    uint8_t buf[RB_NUM_LIGHTS * 3];
     uint8_t * pB = buf;
 
-    pB = slLightOutputEmitPanel(pB, &lights->left);
-    pB = slLightOutputEmitPanel(pB, &lights->overhead);
-    pB = slLightOutputEmitPanel(pB, &lights->right);
+    pB = rbLightOutputEmitPanel(pB, &lights->left);
+    pB = rbLightOutputEmitPanel(pB, &lights->overhead);
+    pB = rbLightOutputEmitPanel(pB, &lights->right);
     
-    slAssert(pB == buf + LENGTHOF(buf));
+    rbAssert(pB == buf + LENGTHOF(buf));
 
     memset(&xfer, 0, sizeof xfer);
     
@@ -197,35 +197,35 @@ void slLightOutputShowLights(SLLightData const * lights)
     
     result = ioctl(g_slSpiFd, SPI_IOC_MESSAGE(1), &xfer);
     if(result < 0) {
-        slError("SPI IOCTL failed: %s", strerror(result));
+        rbError("SPI IOCTL failed: %s", strerror(result));
     }
 }
 
 
-uint8_t * slLightOutputEmitPanel(uint8_t * pBuf, SLPanel const * pLights)
+uint8_t * rbLightOutputEmitPanel(uint8_t * pBuf, RBPanel const * pLights)
 {
-    SLColor const * pData = pLights->data[0];
-    for(size_t i = 0; i < SL_PANEL_HEIGHT; i += 2) {
-        for(size_t j = 0; j < SL_PANEL_WIDTH; ++j) {
+    RBColor const * pData = pLights->data[0];
+    for(size_t i = 0; i < RB_PANEL_HEIGHT; i += 2) {
+        for(size_t j = 0; j < RB_PANEL_WIDTH; ++j) {
             *(pBuf++) = g_slModifiedCieTable[pData->b];
             *(pBuf++) = g_slModifiedCieTable[pData->r];
             *(pBuf++) = g_slModifiedCieTable[pData->g];
             ++pData;
         }
-        pData += SL_PANEL_WIDTH;
-        for(size_t j = 0; j < SL_PANEL_WIDTH; ++j) {
+        pData += RB_PANEL_WIDTH;
+        for(size_t j = 0; j < RB_PANEL_WIDTH; ++j) {
             --pData;
             *(pBuf++) = g_slModifiedCieTable[pData->b];
             *(pBuf++) = g_slModifiedCieTable[pData->r];
             *(pBuf++) = g_slModifiedCieTable[pData->g];
         }
-        pData += SL_PANEL_WIDTH;
+        pData += RB_PANEL_WIDTH;
     }
     
     return pBuf;
 }
 
 
-#endif // SL_USE_TARGET_HARNESS
+#endif // RB_USE_TARGET_HARNESS
 
 

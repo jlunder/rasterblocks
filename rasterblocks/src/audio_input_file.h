@@ -4,9 +4,9 @@
 #include "rasterblocks.h"
 #include <sndfile.h>
 
-SNDFILE* slSndFileOpen(char *file_name);
-void slSndFileClose();
+SNDFILE* rbSndFileOpen(char *file_name);
+void rbSndFileClose();
 /* Read from audio file and seek to beggining when file ends */
-void slSndFileReadLooping(SLRawAudio* audio_buf, int num_frames, int channels);
+void rbSndFileReadLooping(RBRawAudio* audio_buf, int num_frames, int channels);
 
 #endif

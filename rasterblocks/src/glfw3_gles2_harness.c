@@ -23,7 +23,7 @@
 //
 //========================================================================
 
-#ifdef SL_USE_GLFW3_GLES2_HARNESS
+#ifdef RB_USE_GLFW3_GLES2_HARNESS
 
 #include "gles2_harness.h"
 
@@ -32,8 +32,8 @@
 
 #include <time.h>
 
-#if defined SL_LINUX
-#elif defined SL_OSX
+#if defined RB_LINUX
+#elif defined RB_OSX
 #include <mach/mach.h>
 #include <mach/mach_time.h>
 #endif
@@ -135,12 +135,12 @@ static void key_callback(
 int main(int argc, char * argv[])
 {
     GLFWwindow* window;
-#ifdef SL_LINUX
+#ifdef RB_LINUX
     struct timespec lastts;
     
     clock_gettime(CLOCK_MONOTONIC, &lastts);
 #endif
-#ifdef SL_OSX
+#ifdef RB_OSX
     uint64_t lasttime = mach_absolute_time();
     mach_timebase_info_data_t timebase;
     
@@ -164,7 +164,7 @@ int main(int argc, char * argv[])
 
     glfwSetKeyCallback(window, key_callback);
     
-#if defined SL_LINUX
+#if defined RB_LINUX
     GLenum err = glewInit();
     if (GLEW_OK != err)
     {
@@ -178,10 +178,10 @@ int main(int argc, char * argv[])
     while (!glfwWindowShouldClose(window))
     {
         int width = 0, height = 0;
-#ifdef SL_LINUX
+#ifdef RB_LINUX
         struct timespec ts;
 #endif
-#ifdef SL_OSX
+#ifdef RB_OSX
         uint64_t time;
 #endif
         uint64_t time_ns;
@@ -190,7 +190,7 @@ int main(int argc, char * argv[])
 
         gles2_harness_reshape(width, height);
         
-#ifdef SL_LINUX
+#ifdef RB_LINUX
         clock_gettime(CLOCK_MONOTONIC, &ts);
         ts.tv_nsec -= lastts.tv_nsec;
         if(ts.tv_nsec < 0) {
@@ -202,7 +202,7 @@ int main(int argc, char * argv[])
         lastts = ts;
         time_ns = ts.tv_nsec + ts.tv_sec * 1000000000;
 #endif
-#ifdef SL_OSX
+#ifdef RB_OSX
         time = mach_absolute_time();
         time_ns = ((time - lasttime) * timebase.numer) / timebase.denom;
         lasttime = time;
@@ -223,6 +223,6 @@ int main(int argc, char * argv[])
 }
 
 
-#endif // SL_USE_GLES2_HARNESS
+#endif // RB_USE_GLES2_HARNESS
 
 

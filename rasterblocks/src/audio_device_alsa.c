@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -13,7 +12,7 @@ static snd_pcm_t *g_slAlsaCaptureHandle = NULL;
 int mode = SND_PCM_NONBLOCK;
 //int mode = SND_PCM_ASYNC;
 
-static bool slOpenStream(snd_pcm_t **handle, const char *name, int dir,
+static bool rbOpenStream(snd_pcm_t **handle, const char *name, int dir,
     unsigned int format, unsigned int channels, unsigned int rate,
     int bufferSize)
 {
@@ -106,7 +105,7 @@ static bool slOpenStream(snd_pcm_t **handle, const char *name, int dir,
     
     // This code handles all errors generated above, uniformly.
     if (err < 0) {
-        slError("%s (%s): %s (%s)\n", name,
+        rbError("%s (%s): %s (%s)\n", name,
             (dir == SND_PCM_STREAM_PLAYBACK) ? "PLAYBACK" : "CAPTURE",
             failMessage, snd_strerror(err));
         return false;
@@ -117,15 +116,15 @@ static bool slOpenStream(snd_pcm_t **handle, const char *name, int dir,
 }
 
 
-bool slAlsaCaptureInit(const char* captureDev)
+bool rbAlsaCaptureInit(const char* captureDev)
 {
     int err;
     
-    if(!slOpenStream(&g_slAlsaCaptureHandle, captureDev,
+    if(!rbOpenStream(&g_slAlsaCaptureHandle, captureDev,
             SND_PCM_STREAM_CAPTURE, SND_PCM_FORMAT_FLOAT_LE,
-            SL_AUDIO_CHANNELS, SL_AUDIO_SAMPLE_RATE,
-            SL_AUDIO_FRAMES_PER_VIDEO_FRAME)) {
-        if(slIsRestarting()) {
+            RB_AUDIO_CHANNELS, RB_AUDIO_SAMPLE_RATE,
+            RB_AUDIO_FRAMES_PER_VIDEO_FRAME)) {
+        if(rbIsRestarting()) {
             // Special case: we managed to init once before, so let's believe
             // the failure might go away if we just try again. In this case we
             // want to leave the device uninitialized and request another
@@ -140,7 +139,7 @@ bool slAlsaCaptureInit(const char* captureDev)
 
     err = snd_pcm_start(g_slAlsaCaptureHandle);
     if (err < 0) {
-        slError("cannot prepare audio interface for use(%s)\n",
+        rbError("cannot prepare audio interface for use(%s)\n",
             snd_strerror(err));
         return false;
     }
@@ -148,15 +147,15 @@ bool slAlsaCaptureInit(const char* captureDev)
     return 0;
 }
 
-void slAlsaCaptureClose() {
+void rbAlsaCaptureClose() {
     if(g_slAlsaCaptureHandle != NULL) {
-        slInfo("Closing alsa capture device\n");
+        rbInfo("Closing alsa capture device\n");
         snd_pcm_close(g_slAlsaCaptureHandle);
         g_slAlsaCaptureHandle = NULL;
     }
 }
 
-void slAlsaRead(SLRawAudio* audio) {
+void rbAlsaRead(RBRawAudio* audio) {
     snd_pcm_sframes_t framesRead;
     
     if(g_slAlsaCaptureHandle == NULL) {
@@ -165,7 +164,7 @@ void slAlsaRead(SLRawAudio* audio) {
         // restart, but it can't request one because a failed init causes
         // immediate shutdown.
         memset(audio->audio, 0, sizeof audio->audio);
-        slRequestDelayedGentleRestart();
+        rbRequestDelayedGentleRestart();
         return;
     }
     
@@ -184,18 +183,18 @@ void slAlsaRead(SLRawAudio* audio) {
     }
     
     framesRead = snd_pcm_readi(g_slAlsaCaptureHandle, audio->audio,
-        SL_AUDIO_FRAMES_PER_VIDEO_FRAME);
+        RB_AUDIO_FRAMES_PER_VIDEO_FRAME);
     if(framesRead < 0) {
-        slError("readi failed (%s)\n", snd_strerror(framesRead));
+        rbError("readi failed (%s)\n", snd_strerror(framesRead));
         memset(audio->audio, 0, sizeof audio->audio);
         if(framesRead == -ENODEV) {
             // In this circumstance, we may be recovering from an unplugged
             // audio device -- we need a pause to give time for the user to
             // plug the device back in.
-            slRequestDelayedGentleRestart();
+            rbRequestDelayedGentleRestart();
         }
         else {
-            slRequestGentleRestart();
+            rbRequestGentleRestart();
         }
     }
 }
@@ -206,28 +205,28 @@ void slAlsaRead(SLRawAudio* audio) {
 static snd_pcm_t *playback_handle;
 float* playback_buffer;
 
-void slAlsaPlaybackInit(int num_frames, int channels)
+void rbAlsaPlaybackInit(int num_frames, int channels)
 {
     int error = 0;
     
     // Ensure all structures freed to prevent memory leaks
-    slAlsaPlaybackClose();
+    rbAlsaPlaybackClose();
     
     error = snd_pcm_open(&playback_handle, "default", SND_PCM_STREAM_PLAYBACK,
         0);
 
     if (error < 0 || playback_handle == NULL) {
-        slAlsaPlaybackClose();
-        slError("Alsa playback open failed\n");
+        rbAlsaPlaybackClose();
+        rbError("Alsa playback open failed\n");
         return;
     }
 
     error =  snd_pcm_set_params(playback_handle, SND_PCM_FORMAT_FLOAT,
                            SND_PCM_ACCESS_RW_INTERLEAVED, channels,
-                           SL_AUDIO_SAMPLE_RATE, 1, 500000);
+                           RB_AUDIO_SAMPLE_RATE, 1, 500000);
     if (error < 0) {
-        slAlsaPlaybackClose();
-        slError("Alsa playback set params failed\n");
+        rbAlsaPlaybackClose();
+        rbError("Alsa playback set params failed\n");
         return;
     }
 
@@ -237,9 +236,9 @@ void slAlsaPlaybackInit(int num_frames, int channels)
     memset(playback_buffer, 0, num_frames*channels*sizeof(*playback_buffer));
 }
 
-void slAlsaPlaybackClose()
+void rbAlsaPlaybackClose()
 {
-    slInfo("Closing alsa playback device\n");
+    rbInfo("Closing alsa playback device\n");
     // Free and reset pointers
     if(playback_handle != NULL) {
         snd_pcm_close(playback_handle);
@@ -251,7 +250,7 @@ void slAlsaPlaybackClose()
     }
 }
 
-void slAlsaPlayback(SLRawAudio* audio_buf, int num_frames, int channels)
+void rbAlsaPlayback(RBRawAudio* audio_buf, int num_frames, int channels)
 {
     if(playback_buffer == NULL || playback_handle == NULL) {
         // Init must have failed -- playback is non-essential so don't fatal
@@ -271,6 +270,6 @@ void slAlsaPlayback(SLRawAudio* audio_buf, int num_frames, int channels)
         frames = snd_pcm_recover(playback_handle, frames, 0);
     }
     if (frames < 0) {
-        slError("snd_pcm_writei failed\n");
+        rbError("snd_pcm_writei failed\n");
     }
 }

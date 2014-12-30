@@ -2,9 +2,9 @@
 #define GLUS_H_INCLUDED
 
 
-#if defined SL_LINUX
+#if defined RB_LINUX
 #include <GL/glfw.h>
-#elif defined SL_OSX
+#elif defined RB_OSX
 #include <GLFW/glfw3.h>
 #endif
 

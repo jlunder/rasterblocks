@@ -1,4 +1,4 @@
-#if defined SL_USE_GLFW3_GLES2_HARNESS || defined SL_USE_SDL2_GLES2_HARNESS
+#if defined RB_USE_GLFW3_GLES2_HARNESS || defined RB_USE_SDL2_GLES2_HARNESS
 
 #include "glus.h"
 
@@ -212,5 +212,5 @@ bool glusPerspectivef(GLfloat result[16], const GLfloat fovy, const GLfloat aspe
 }
 
 
-#endif // SL_USE_GLES2_HARNESS
+#endif // RB_USE_GLES2_HARNESS
 

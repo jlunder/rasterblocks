@@ -6,10 +6,10 @@
 
 
 // Light generation subsystem
-void slLightGenerationInitialize(SLConfiguration const * config);
-void slLightGenerationShutdown(void);
-void slLightGenerationGenerate(SLAnalyzedAudio const * analysis,
-    SLLightData * lights);
+void rbLightGenerationInitialize(RBConfiguration const * config);
+void rbLightGenerationShutdown(void);
+void rbLightGenerationGenerate(RBAnalyzedAudio const * analysis,
+    RBLightData * lights);
 
 
 #endif
