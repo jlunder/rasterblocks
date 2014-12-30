@@ -212,5 +212,33 @@ bool glusPerspectivef(GLfloat result[16], const GLfloat fovy, const GLfloat aspe
 }
 
 
+bool glusOrthof(GLfloat result[16], const GLfloat left, const GLfloat right, const GLfloat bottom, const GLfloat top, const GLfloat nearVal, const GLfloat farVal)
+{
+	if ((right - left) == 0.0f || (top - bottom) == 0.0f || (farVal - nearVal) == 0.0f)
+	{
+		return false;
+	}
+
+    result[0] = 2.0f / (right - left);
+    result[1] = 0.0f;
+    result[2] = 0.0f;
+    result[3] = 0.0f;
+    result[4] = 0.0f;
+    result[5] = 2.0f / (top - bottom);
+    result[6] = 0.0f;
+    result[7] = 0.0f;
+    result[8] = 0.0f;
+    result[9] = 0.0f;
+    result[10] = -2.0f / (farVal - nearVal);
+    result[11] = 0.0f;
+    result[12] = -(right + left) / (right - left);
+    result[13] = -(top + bottom) / (top - bottom);
+    result[14] = -(farVal + nearVal) / (farVal - nearVal);
+    result[15] = 1.0f;
+
+    return true;
+}
+
+
 #endif // RB_USE_GLES2_HARNESS
 

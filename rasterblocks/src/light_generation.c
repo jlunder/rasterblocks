@@ -62,9 +62,15 @@ void rbLightGenerationGenerate(RBAnalyzedAudio const * pAnalysis,
     float leftTreble = pAnalysis->trebleEnergy * sqrtf(1.0f - pAnalysis->leftRightBalance);
     float rightTreble = pAnalysis->trebleEnergy * sqrtf(pAnalysis->leftRightBalance);
     float bass = pAnalysis->bassEnergy;
-
+    
     UNUSED(g_rbRainbowPalette);
 
+    for(size_t i = 0; i < RB_PROJECTION_HEIGHT; ++i) {
+        for(size_t j = 0; j < RB_PROJECTION_WIDTH; ++j) {
+            pFrame->proj[i][j] = color(i * 255 / (RB_PROJECTION_HEIGHT - 1), 0, j * 255 / (RB_PROJECTION_WIDTH - 1));
+        }
+    }
+    
     for(size_t i = 0; i < RB_PANEL_HEIGHT; ++i) {
         for(size_t j = 0; j < RB_PANEL_WIDTH; ++j) {
             int32_t k = i < 4 ? (int32_t)j + 3 - i: (int32_t)j - 4 + i;

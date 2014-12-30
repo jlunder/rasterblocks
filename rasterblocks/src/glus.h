@@ -26,6 +26,7 @@ extern void glusMatrix4x4Translatef(GLfloat matrix[16], const GLfloat x, const G
 extern void glusLookAtf(GLfloat result[16], const GLfloat eyeX, const GLfloat eyeY, const GLfloat eyeZ, const GLfloat centerX, const GLfloat centerY, const GLfloat centerZ, const GLfloat upX, const GLfloat upY, const GLfloat upZ);
 extern bool glusFrustumf(GLfloat result[16], const GLfloat left, const GLfloat right, const GLfloat bottom, const GLfloat top, const GLfloat nearVal, const GLfloat farVal);
 extern bool glusPerspectivef(GLfloat result[16], const GLfloat fovy, const GLfloat aspect, const GLfloat zNear, const GLfloat zFar);
+extern bool glusOrthof(GLfloat result[16], const GLfloat left, const GLfloat right, const GLfloat bottom, const GLfloat top, const GLfloat nearVal, const GLfloat farVal);
 
 
 #endif

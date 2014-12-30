@@ -510,8 +510,8 @@ void gles2_harness_draw_lights(float time)
     float overallScale = 1.0f;
     
     RBVector2 projectionOffset = vector2(
-        -lightSpacing * RB_PROJECTION_WIDTH * 0.5f,
-        lightSpacing * RB_PROJECTION_HEIGHT * 0.5f);
+        -lightSpacing * (RB_PROJECTION_WIDTH - 1) * 0.5f,
+        -lightSpacing * (RB_PROJECTION_HEIGHT - 1) * 0.5f);
     
     GLUS_UNUSED(time);
     
@@ -526,11 +526,13 @@ void gles2_harness_draw_lights(float time)
     }
     
     glusLookAtf(viewMatrix,
-        0.0f,  0.0f,  overallScale,
+        0.0f,  0.0f,  1.0f,
         0.0f,  0.0f,  0.0f,
         0.0f,  1.0f,  0.0f);
-    glusPerspectivef(viewProjectionMatrix, 45.0f, g_aspectRatio, 0.1f,
-        1000.0f);
+    glusOrthof(viewProjectionMatrix,
+        -overallScale * g_aspectRatio * 0.5f,
+        overallScale * g_aspectRatio * 0.5f,
+        overallScale * 0.5f, -overallScale * 0.5f, -10.0f, 10.0f);
     glusMatrix4x4Multiplyf(viewProjectionMatrix, viewProjectionMatrix,
         viewMatrix);
     
@@ -557,10 +559,10 @@ void gles2_harness_draw_lights(float time)
         
         for(size_t j = 0; j < RB_PANEL_HEIGHT; ++j) {
             RBVector2 pos = linePos;
+            
             for(size_t k = 0; k < RB_PANEL_WIDTH; ++k) {
                 glusMatrix4x4Identityf(modelMatrix);
-                // Positive y goes up in OpenGL land
-                glusMatrix4x4Translatef(modelMatrix, pos.x, -pos.y, 0);
+                glusMatrix4x4Translatef(modelMatrix, pos.x, pos.y, 0);
                 glusMatrix4x4Scalef(modelMatrix, lightSize, lightSize,
                     lightSize);
                 glUniformMatrix4fv(g_modelMatrixLocation, 1, GL_FALSE,

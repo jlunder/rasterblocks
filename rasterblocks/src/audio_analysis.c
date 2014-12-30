@@ -17,23 +17,11 @@ typedef float RBFSFloat;
 typedef complex double RBComplex;
 #define rbSanitizeFSFloat rbSanitizeFloat
 
-// 200Hz cutoff (For now)
-static RBFSFloat g_rbGLOW = 3.523725849e+07;
-static RBFSFloat g_rbKLOW[NPOLES] = {
-    -0.9338739884f,
-    3.7993827672f,
-    -5.7970987038f,
-    3.9315894710f,
-};
+static RBFSFloat g_rbGLOW;
+static RBFSFloat g_rbKLOW[NPOLES];
 
-// 300Hz cutoff
-static RBFSFloat g_rbGHI = 7.078510767e+06;
-static RBFSFloat g_rbKHI[NPOLES] = {
-    -0.9024653874f,
-    3.7024671485f,
-    -5.6973900039f,
-    3.8973859825f,
-};
+static RBFSFloat g_rbGHI;
+static RBFSFloat g_rbKHI[NPOLES];
 
 static bool g_rbAudioAnalysisFirstInit = false;
 
@@ -47,9 +35,9 @@ static float g_rbAgcSamples[RB_VIDEO_FRAME_RATE * RB_AGC_SAMPLE_WINDOW_S];
 static size_t g_rbAgcIndex = 0;
 static float g_rbAgcTrackingValue = 1.0f;
 
-static float g_rbAgcMax = 1e-0f;
-static float g_rbAgcMin = 1e-2f;
-static float g_rbAgcStrength = 0.5f;
+static float g_rbAgcMax;
+static float g_rbAgcMin;
+static float g_rbAgcStrength;
 
 
 static void rbAudioAnalysisLowPassFilter(RBFSFloat xv[NZEROS + 1],
@@ -245,8 +233,8 @@ static void rbAudioAnalysisGatherChannels(RBRawAudio const * audio,
 
 
 static void rbAudioAnalysisCalculatePower(
-    float* inputBuf, float* bufLow, float* bufHi,
-    float *bassPower, float *midPower, float *treblePower)
+    float * inputBuf, float * bufLow, float * bufHi,
+    float * bassPower, float * midPower, float * treblePower)
 {
     for(size_t i = 0; i < RB_AUDIO_FRAMES_PER_VIDEO_FRAME; ++i) {
         *bassPower += bufLow[i] * bufLow[i] *
@@ -262,7 +250,7 @@ static void rbAudioAnalysisCalculatePower(
     }
 }
 
-static void rbAudioAnalysisCalculateEnergy( RBAnalyzedAudio * analysis,
+static void rbAudioAnalysisCalculateEnergy(RBAnalyzedAudio * analysis,
     float bassPower, float midPower, float treblePower,
     float leftPower, float rightPower)
 {
@@ -285,6 +273,13 @@ static void rbAudioAnalysisUpdateAgc(RBAnalyzedAudio * analysis)
     float agcValue = 1.0f;
     g_rbAgcIndex = (g_rbAgcIndex + 1) % LENGTHOF(g_rbAgcSamples);
     g_rbAgcSamples[g_rbAgcIndex] = analysis->totalEnergy * RB_AGC_ROOT_2;
+    
+    if(g_rbAgcMin < 1.0e-10f || isinf(g_rbAgcMin) || isnan(g_rbAgcMin)) {
+        rbWarning("Insane configured AGC min %g", g_rbAgcMin);
+    }
+    if(g_rbAgcMax < 1.0e-10f || isinf(g_rbAgcMax) || isnan(g_rbAgcMax)) {
+        rbWarning("Insane configured AGC max %g", g_rbAgcMax);
+    }
     
     for(size_t i = 0; i < LENGTHOF(g_rbAgcSamples); ++i) {
         rbSanitizeFloat(&g_rbAgcSamples[i], 1.0f);
@@ -344,7 +339,8 @@ void rbAudioAnalysisAnalyze(RBRawAudio const * audio, RBAnalyzedAudio * analysis
     rbAudioAnalysisCalculatePower(inputBuf, bufLOW, bufHI,
         &bassPower, &midPower, &treblePower);
 
-    rbAudioAnalysisCalculateEnergy(analysis, bassPower, midPower, treblePower, leftPower, rightPower);
+    rbAudioAnalysisCalculateEnergy(analysis, bassPower, midPower, treblePower,
+        leftPower, rightPower);
 
     rbAudioAnalysisUpdateAgc(analysis);
 }

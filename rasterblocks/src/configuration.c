@@ -29,6 +29,14 @@ void rbConfigurationSetDefaults(RBConfiguration * config)
     snprintf(config->configPath, sizeof config->configPath,
         RB_DEFAULT_INPUT_CONFIG);
     
+    config->lowCutoff = 200.0f;
+    config->hiCutoff = 300.0f;
+    
+    config->agcMax = 1e-0f;
+    config->agcMin = 1e-2f;
+    config->agcStrength = 0.5f;
+
+    
     config->brightness = 1.0f;
 }
 
