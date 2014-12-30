@@ -5,7 +5,7 @@
 #include "audio_analysis.h"
 
 #define RB_AGC_SAMPLE_WINDOW_S 4
-#define M_PI 3.14159265358979323846
+#define RB_PI 3.14159265358979323846
 
 static float const RB_AGC_ROOT_2 = 1.41421356237f;
 
@@ -13,12 +13,13 @@ static float const RB_AGC_ROOT_2 = 1.41421356237f;
 #define NPOLES 4
 
 // Filter state floating point type: internally we may need extra precision
-typedef float rbFSFloat;
+typedef float RBFSFloat;
+typedef complex double RBComplex;
 #define rbSanitizeFSFloat rbSanitizeFloat
 
 // 200Hz cutoff (For now)
-static rbFSFloat g_slGLOW = 3.523725849e+07;
-static rbFSFloat g_slKLOW[NPOLES] = {
+static RBFSFloat g_rbGLOW = 3.523725849e+07;
+static RBFSFloat g_rbKLOW[NPOLES] = {
     -0.9338739884f,
     3.7993827672f,
     -5.7970987038f,
@@ -26,33 +27,33 @@ static rbFSFloat g_slKLOW[NPOLES] = {
 };
 
 // 300Hz cutoff
-static rbFSFloat g_slGHI = 7.078510767e+06;
-static rbFSFloat g_slKHI[NPOLES] = {
+static RBFSFloat g_rbGHI = 7.078510767e+06;
+static RBFSFloat g_rbKHI[NPOLES] = {
     -0.9024653874f,
     3.7024671485f,
     -5.6973900039f,
     3.8973859825f,
 };
 
-static bool g_slAudioAnalysisFirstInit = false;
+static bool g_rbAudioAnalysisFirstInit = false;
 
-static rbFSFloat g_slXVLOW[NZEROS + 1];
-static rbFSFloat g_slYVLOW[NPOLES + 1];
+static RBFSFloat g_rbXVLOW[NZEROS + 1];
+static RBFSFloat g_rbYVLOW[NPOLES + 1];
 
-static rbFSFloat g_slXVHI[NZEROS + 1];
-static rbFSFloat g_slYVHI[NPOLES + 1];
+static RBFSFloat g_rbXVHI[NZEROS + 1];
+static RBFSFloat g_rbYVHI[NPOLES + 1];
 
-static float g_slAgcSamples[RB_VIDEO_FRAME_RATE * RB_AGC_SAMPLE_WINDOW_S];
-static size_t g_slAgcIndex = 0;
-static float g_slAgcTrackingValue = 1.0f;
+static float g_rbAgcSamples[RB_VIDEO_FRAME_RATE * RB_AGC_SAMPLE_WINDOW_S];
+static size_t g_rbAgcIndex = 0;
+static float g_rbAgcTrackingValue = 1.0f;
 
-static float g_slAgcMax = 1e-0f;
-static float g_slAgcMin = 1e-2f;
-static float g_slAgcStrength = 0.5f;
+static float g_rbAgcMax = 1e-0f;
+static float g_rbAgcMin = 1e-2f;
+static float g_rbAgcStrength = 0.5f;
 
 
-static void rbAudioAnalysisLowPassFilter(rbFSFloat xv[NZEROS + 1],
-    rbFSFloat yv[NPOLES + 1], rbFSFloat g, rbFSFloat const k[NPOLES],
+static void rbAudioAnalysisLowPassFilter(RBFSFloat xv[NZEROS + 1],
+    RBFSFloat yv[NPOLES + 1], RBFSFloat g, RBFSFloat const k[NPOLES],
     float const inputBuf[RB_AUDIO_FRAMES_PER_VIDEO_FRAME],
     float outputBuf[RB_AUDIO_FRAMES_PER_VIDEO_FRAME])
 {
@@ -71,7 +72,7 @@ static void rbAudioAnalysisLowPassFilter(rbFSFloat xv[NZEROS + 1],
     }
     
     for(size_t i = 0; i < RB_AUDIO_FRAMES_PER_VIDEO_FRAME; ++i) {
-        rbFSFloat in = (rbFSFloat)inputBuf[i] / g;
+        RBFSFloat in = (RBFSFloat)inputBuf[i] / g;
         
         if(!warningThrottle) {
             if(isnan(in) || isinf(in)) {
@@ -98,28 +99,28 @@ static void rbAudioAnalysisLowPassFilter(rbFSFloat xv[NZEROS + 1],
 static double warpFrequency(double cutoffFreq)
 {
     return RB_AUDIO_SAMPLE_RATE *
-     tan(M_PI * cutoffFreq / RB_AUDIO_SAMPLE_RATE) / M_PI;
+     tan(RB_PI * cutoffFreq / RB_AUDIO_SAMPLE_RATE) / RB_PI;
 }
 
-static void butterworthPoles(complex* poles, double cutoff)
+static void butterworthPoles(RBComplex* poles, double cutoff)
 {
     double arg;
     for (int i = 0; i < NZEROS; i++) {
-        arg = M_PI * (2* i + NZEROS + 1)/2/NZEROS;
+        arg = RB_PI * (2* i + NZEROS + 1)/2/NZEROS;
         poles[i] = cos(arg) + sin(arg) * I;
-        poles[i] *= 2* M_PI * cutoff;
+        poles[i] *= 2* RB_PI * cutoff;
     }
 }
 
-static void polesToZeros(complex* poles, complex* zeros)
+static void polesToZeros(RBComplex* poles, RBComplex* zeros)
 {
-    complex defaultZero = (2*RB_AUDIO_SAMPLE_RATE + 0.0 * I);
+    RBComplex defaultZero = (2*RB_AUDIO_SAMPLE_RATE + 0.0 * I);
     for (int i = 0; i < NZEROS; i++) {
         zeros[i] = (defaultZero + poles[i]) /  (defaultZero - poles[i]);
     }
 }
 
-static void zerosToCoeffs(complex* zeros, complex* coeffs)
+static void zerosToCoeffs(RBComplex* zeros, RBComplex* coeffs)
 {
     int b[NPOLES+1];
     memset(b, 0, sizeof(int) * (NPOLES+1));
@@ -132,7 +133,7 @@ static void zerosToCoeffs(complex* zeros, complex* coeffs)
         b[i] = 1;
 
         int subsetSize = 0;
-        complex sumVal = 1.0;
+        RBComplex sumVal = 1.0;
         for (i = 0; i < NPOLES; i++) {
             if(b[i]) {
                 sumVal *= zeros[i];
@@ -144,14 +145,14 @@ static void zerosToCoeffs(complex* zeros, complex* coeffs)
     coeffs[NPOLES] = 1.0 + 0.0 * I;
 }
 
-static void butterworthZZeros(complex* zeros)
+static void butterworthZZeros(RBComplex* zeros)
 {
     for (int i = 0; i < NZEROS; i++) {
         zeros[i] = -1.0 + 0.0 * I;
     }
 }
 
-static rbFSFloat calculateGain(complex *aCoeffs, complex *bCoeffs)
+static RBFSFloat calculateGain(RBComplex *aCoeffs, RBComplex *bCoeffs)
 {
     double kNumer = 0.0f;
     double kDenom = 0.0f;
@@ -165,13 +166,13 @@ static rbFSFloat calculateGain(complex *aCoeffs, complex *bCoeffs)
 }
 
 static void rbAudioAnalysisCalculateCoefficients(double cutoffFreq,
-    rbFSFloat* gainVal, rbFSFloat* coeffs)
+    RBFSFloat* gainVal, RBFSFloat* coeffs)
 {
-    complex pPoles[NPOLES];
-    complex zPoles[NPOLES];
-    complex bCoeffs[NPOLES+1];
-    complex zZeros[NPOLES];
-    complex aCoeffs[NPOLES+1];
+    RBComplex pPoles[NPOLES];
+    RBComplex zPoles[NPOLES];
+    RBComplex bCoeffs[NPOLES+1];
+    RBComplex zZeros[NPOLES];
+    RBComplex aCoeffs[NPOLES+1];
 
     memset(pPoles, 0, sizeof pPoles);
     memset(zPoles, 0, sizeof zPoles);
@@ -197,30 +198,30 @@ static void rbAudioAnalysisCalculateCoefficients(double cutoffFreq,
     }
 
     for(int i=0; i<NZEROS; ++i){
-        coeffs[i] = (rbFSFloat)creal(bCoeffs[i]);
+        coeffs[i] = (RBFSFloat)creal(bCoeffs[i]);
     }
     *gainVal = calculateGain(aCoeffs, bCoeffs);
 }
 
 void rbAudioAnalysisInitialize(RBConfiguration const * config)
 {
-    rbAudioAnalysisCalculateCoefficients(config->lowCutoff, &g_slGLOW, g_slKLOW);
-    rbAudioAnalysisCalculateCoefficients(config->hiCutoff, &g_slGHI, g_slKHI);
-    g_slAgcMax = config->agcMax;
-    g_slAgcMin = config->agcMin;
-    g_slAgcStrength = config->agcStrength;
+    rbAudioAnalysisCalculateCoefficients(config->lowCutoff, &g_rbGLOW, g_rbKLOW);
+    rbAudioAnalysisCalculateCoefficients(config->hiCutoff, &g_rbGHI, g_rbKHI);
+    g_rbAgcMax = config->agcMax;
+    g_rbAgcMin = config->agcMin;
+    g_rbAgcStrength = config->agcStrength;
 
-    if(!g_slAudioAnalysisFirstInit) {
-        for(size_t i = 0; i < LENGTHOF(g_slAgcSamples); ++i) {
-            g_slAgcSamples[i] = 1.0f;
+    if(!g_rbAudioAnalysisFirstInit) {
+        for(size_t i = 0; i < LENGTHOF(g_rbAgcSamples); ++i) {
+            g_rbAgcSamples[i] = 1.0f;
         }
-        g_slAudioAnalysisFirstInit = true;
+        g_rbAudioAnalysisFirstInit = true;
     }
     
-    memset(g_slXVLOW, 0, sizeof g_slXVLOW);
-    memset(g_slYVLOW, 0, sizeof g_slYVLOW);
-    memset(g_slXVHI, 0, sizeof g_slXVHI);
-    memset(g_slYVHI, 0, sizeof g_slYVHI);
+    memset(g_rbXVLOW, 0, sizeof g_rbXVLOW);
+    memset(g_rbYVLOW, 0, sizeof g_rbYVLOW);
+    memset(g_rbXVHI, 0, sizeof g_rbXVHI);
+    memset(g_rbYVHI, 0, sizeof g_rbYVHI);
 }
 
 
@@ -282,34 +283,34 @@ static void rbAudioAnalysisUpdateAgc(RBAnalyzedAudio * analysis)
 {
     float agcTarget = 0.0f;
     float agcValue = 1.0f;
-    g_slAgcIndex = (g_slAgcIndex + 1) % LENGTHOF(g_slAgcSamples);
-    g_slAgcSamples[g_slAgcIndex] = analysis->totalEnergy * RB_AGC_ROOT_2;
+    g_rbAgcIndex = (g_rbAgcIndex + 1) % LENGTHOF(g_rbAgcSamples);
+    g_rbAgcSamples[g_rbAgcIndex] = analysis->totalEnergy * RB_AGC_ROOT_2;
     
-    for(size_t i = 0; i < LENGTHOF(g_slAgcSamples); ++i) {
-        rbSanitizeFloat(&g_slAgcSamples[i], 1.0f);
-        agcTarget += g_slAgcSamples[i] * (1.0f / LENGTHOF(g_slAgcSamples));
+    for(size_t i = 0; i < LENGTHOF(g_rbAgcSamples); ++i) {
+        rbSanitizeFloat(&g_rbAgcSamples[i], 1.0f);
+        agcTarget += g_rbAgcSamples[i] * (1.0f / LENGTHOF(g_rbAgcSamples));
         /*
-        if(g_slAgcSamples[i] > agcTarget) {
-            agcTarget = g_slAgcSamples[i];
+        if(g_rbAgcSamples[i] > agcTarget) {
+            agcTarget = g_rbAgcSamples[i];
         }
         */
     }
-    g_slAgcTrackingValue = expf(
-        (logf(g_slAgcMin) + logf(g_slAgcMax)) * 0.5f *
-            (1.0f - g_slAgcStrength) +
-        logf(agcTarget) * g_slAgcStrength);
-    rbSanitizeFloat(&g_slAgcTrackingValue, g_slAgcMax);
+    g_rbAgcTrackingValue = expf(
+        (logf(g_rbAgcMin) + logf(g_rbAgcMax)) * 0.5f *
+            (1.0f - g_rbAgcStrength) +
+        logf(agcTarget) * g_rbAgcStrength);
+    rbSanitizeFloat(&g_rbAgcTrackingValue, g_rbAgcMax);
     
-    if(g_slAgcTrackingValue > g_slAgcMax) {
-        g_slAgcTrackingValue = g_slAgcMax;
+    if(g_rbAgcTrackingValue > g_rbAgcMax) {
+        g_rbAgcTrackingValue = g_rbAgcMax;
     }
-    if(g_slAgcTrackingValue < g_slAgcMin) {
-        g_slAgcTrackingValue = g_slAgcMin;
+    if(g_rbAgcTrackingValue < g_rbAgcMin) {
+        g_rbAgcTrackingValue = g_rbAgcMin;
     }
     
-    rbInfo("AGC tracking %.4f from %.4f\n", g_slAgcTrackingValue, agcTarget);
+    rbInfo("AGC tracking %.4f from %.4f\n", g_rbAgcTrackingValue, agcTarget);
     
-    agcValue = 1.0f / g_slAgcTrackingValue;
+    agcValue = 1.0f / g_rbAgcTrackingValue;
     
     analysis->bassEnergy *= agcValue;
     analysis->midEnergy *= agcValue;
@@ -335,10 +336,10 @@ void rbAudioAnalysisAnalyze(RBRawAudio const * audio, RBAnalyzedAudio * analysis
     rbAssert(RB_AUDIO_CHANNELS == 2);
     rbAudioAnalysisGatherChannels(audio, &leftPower, &rightPower, inputBuf);
     
-    rbAudioAnalysisLowPassFilter(g_slXVLOW, g_slYVLOW, g_slGLOW,
-        g_slKLOW, inputBuf, bufLOW);
-    rbAudioAnalysisLowPassFilter(g_slXVHI, g_slYVHI, g_slGHI,
-        g_slKHI, inputBuf, bufHI);
+    rbAudioAnalysisLowPassFilter(g_rbXVLOW, g_rbYVLOW, g_rbGLOW,
+        g_rbKLOW, inputBuf, bufLOW);
+    rbAudioAnalysisLowPassFilter(g_rbXVHI, g_rbYVHI, g_rbGHI,
+        g_rbKHI, inputBuf, bufHI);
 
     rbAudioAnalysisCalculatePower(inputBuf, bufLOW, bufHI,
         &bassPower, &midPower, &treblePower);

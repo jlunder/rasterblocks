@@ -1,54 +1,50 @@
 ifeq ($(OS),WIN32)
 else
 	UNAME_S := $(shell uname -s)
-	UNAME_M := $(shell uname -m)
 	
 	ifeq ($(UNAME_S),Linux)
 		OS = LINUX
-		PACKAGE_BUILD = TRUE
-		ifeq ($(UNAME_M),armv7l)
-			TARGET_BUILD = TRUE
-		endif
 	endif
 	ifeq ($(UNAME_S),Darwin)
 		OS = OSX
 	endif
-	
 endif
 
 
 ifeq ($(OS), LINUX)
+	PACKAGE_BUILD = TRUE
+	TARGET_BUILD = TRUE
+	
+	UNAME_M := $(shell uname -m)
+	ifeq ($(UNAME_M),armv7l)
+		BUILD_ON_TARGET = TRUE
+	endif
+
 	CC=gcc
 	CC_TARGET=arm-linux-gnueabihf-gcc
 	CFLAGS_COMMON=-W -Wall -Werror
 	CFLAGS=-O0 $(CFLAGS_COMMON)
 	CFLAGS_TARGET=-O2 $(CFLAGS_COMMON)
 	CPPFLAGS_COMMON=--std=gnu99 -fgnu89-inline -D_POSIX_C_SOURCE=200809L -D__USE_MISC
-	CPPFLAGS=$(CPPFLAGS_COMMON) -DRB_LINUX -DGLUS_ES2 -DRB_USE_SDL2_GLES2_HARNESS -DRB_SNDFILE_SUPPORTED
-	CPPFLAGS_TARGET=$(CPPFLAGS_COMMON) -DRB_LINUX -DRB_USE_TARGET_HARNESS -Icross-dep/include -DRB_SNDFILE_SUPPORTED
+	CPPFLAGS=$(CPPFLAGS_COMMON) -DRB_LINUX -DGLUS_ES2 -DRB_USE_SDL2_GLES2_HARNESS -DRB_USE_SNDFILE_INPUT -DRB_USE_ALSA_DEVICE
+	CPPFLAGS_TARGET=$(CPPFLAGS_COMMON) -DRB_LINUX -DRB_USE_TARGET_HARNESS -DRB_USE_SNDFILE_INPUT -DRB_USE_ALSA_DEVICE -Icross-dep/include
 	LDFLAGS=-g -lSDL2 -lm -lGLESv2 -lsndfile -lasound -ljson-c
 	LDFLAGS_TARGET=-g -lm -Lcross-dep/lib -Wl,-rpath=cross-dep/lib -Wl,-rpath-link=cross-dep/lib -lsndfile -lasound -ljson -lrt
 endif
 ifeq ($(OS), OSX)
 	CC=gcc
-	CC_TARGET=arm-linux-gnueabi-gcc
-	CFLAGS_COMMON=-W -Wall -Werror --std=gnu99 -fgnu89-inline -D_POSIX_C_SOURCE=200809L
-	CFLAGS=-O0 $(CFLAGS_COMMON)
-	CFLAGS_TARGET=-O2 $(CFLAGS_COMMON)
-	CPPFLAGS=-DRB_OSX -DGLUS_ES2 -DRB_USE_GLFW3_GLES2_HARNESS
-	CPPFLAGS_TARGET=-DRB_LINUX -DRB_USE_TARGET_HARNESS
-	LDFLAGS=-g -framework OpenGL -framework Cocoa -framework QuartzCore -framework IOKit -lm -lglfw3
-	LDFLAGS_TARGET=-g -lm
+	CFLAGS=-O0 -W -Wall -Werror --std=gnu99 -fgnu89-inline -D_POSIX_C_SOURCE=200809L
+	CPPFLAGS=-DRB_OSX -DGLUS_ES2 -DRB_USE_GLFW3_GLES2_HARNESS -DRB_USE_SNDFILE_INPUT -DRB_USE_OPENAL_DEVICE
+	LDFLAGS=-g -framework OpenGL -framework Cocoa -framework QuartzCore -framework IOKit -lm -lsndfile -ljson-c -lglfw3
 endif
 ifeq ($(OS), WIN32)
 	CC=!
-	CC_TARGET=!
 	CFLAGS=
 	CPPFLAGS=
 	LDFLAGS=
 endif
 
-ifneq ($(TARGET_BUILD),)
+ifneq ($(BUILD_ON_TARGET),)
 	CC_TARGET := $(CC)
 	#CFLAGS := $(CFLAGS_TARGET)
 	CPPFLAGS := $(CPPFLAGS_TARGET)
@@ -69,7 +65,11 @@ MAKEDEPEND_TARGET=@set -e; rm -f $@; \
 
 .PHONY: all cleanall clean
 
+ifneq ($(PACKAGE_BUILD),)
 all: bin/rasterblocks-1.0_armhf.deb
+else
+all: bin/rasterblocks
+endif
 
 STAGE_LIGHTS_SRC := $(basename $(notdir $(wildcard src/*.c)))
 
@@ -79,8 +79,10 @@ STAGE_LIGHTS_D := $(addprefix build/,$(addsuffix .d, $(STAGE_LIGHTS_SRC)))
 build/%.d: src/%.c Makefile
 	@$(MAKEDEPEND)
 
-ifeq ($(MAKECMDGOALS),rasterblocks)
-	-include $(STAGE_LIGHTS_D)
+ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(MAKECMDGOALS),cleanall)
+-include $(STAGE_LIGHTS_D)
+endif
 endif
 
 build/%.o: src/%.c Makefile
@@ -92,7 +94,7 @@ bin/rasterblocks: $(STAGE_LIGHTS_O)
 	@mkdir -p bin
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-ifneq ($(CROSS_BUILD)$(TARGET_BUILD),)
+ifneq ($(CROSS_BUILD)$(BUILD_ON_TARGET),)
 
 # Either we're building on target or we're in the cross-build env -- enable
 # the cross-build target directly.
@@ -121,14 +123,16 @@ else
 
 # We're in the host build env, use the cross-build script to perform the
 # target build.
+ifneq ($(TARGET_BUILD),)
 bin/rasterblocks.target: Makefile precise-chroot
 	./target-build
+endif
 
 endif
 
 ifneq ($(PACKAGE_BUILD),)
 
-ifeq ($(CROSS_BUILD)$(TARGET_BUILD),)
+ifeq ($(CROSS_BUILD)$(BUILD_ON_TARGET),)
 # Neither the cross-build env nor the target has tools to build a host package
 bin/rasterblocks-1.0_x64.deb: $(wildcard package/DEBIAN/*) $(wildcard nodeserver/*) rasterblocks.service rasterblocks-nodeserver.service bin/rasterblocks
 	mkdir -p package/usr/lib/rasterblocks

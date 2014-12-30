@@ -9,7 +9,7 @@
 #define RB_DEFAULT_INPUT_CONFIG "/var/lib/stage-lights/config.json"
 
 
-time_t g_slConfigFileMTime = 0;
+time_t g_rbConfigFileMTime = 0;
 
 
 void rbConfigurationSetDefaults(RBConfiguration * config)
@@ -17,7 +17,7 @@ void rbConfigurationSetDefaults(RBConfiguration * config)
     config->logLevel = RBLL_WARNING;
     
 #ifdef RB_USE_TARGET_HARNESS
-    config->audioSource = RBAIS_ALSA;
+    config->audioSource = RBAIS_DEVICE;
     snprintf(config->audioSourceParam, sizeof config->audioSourceParam,
         RB_DEFAULT_INPUT_ALSA);
 #else
@@ -41,10 +41,10 @@ void rbConfigurationParseArgv(RBConfiguration * config, int argc,
             config->logLevel = RBLL_INFO;
         }
         
-        if(strcmp(argv[i], "-sa") == 0) {
+        if(strcmp(argv[i], "-sd") == 0) {
             if(i + 1 < argc) {
                 ++i;
-                config->audioSource = RBAIS_ALSA;
+                config->audioSource = RBAIS_DEVICE;
                 snprintf(config->audioSourceParam,
                     sizeof config->audioSourceParam, "%s", argv[i]);
             }
@@ -103,11 +103,11 @@ void rbHotConfigurationProcessAndUpdateConfiguration(RBConfiguration * config,
         // *pConfigurationModified indicates the caller would like to force a
         // config reload for whatever reason.
         if(*pConfigurationModified ||
-                g_slConfigFileMTime != statBuf.st_mtime) {
+                g_rbConfigFileMTime != statBuf.st_mtime) {
             if(!*pConfigurationModified) {
                 rbWarning("Config changed, rereading\n");
             }
-            g_slConfigFileMTime = statBuf.st_mtime;
+            g_rbConfigFileMTime = statBuf.st_mtime;
             rbParseJson(config, config->configPath);
             *pConfigurationModified = true;
             rbInfo("Config audio source: %d\n", config->audioSource);

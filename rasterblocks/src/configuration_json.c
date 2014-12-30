@@ -29,8 +29,8 @@ RBLogLevel getLogLevel(const char* val)
 
 RBAudioInputSource getAudioSource(const char* val)
 {
-    if(strcmp(val, "RBAIS_ALSA") == 0) {
-        return RBAIS_ALSA;
+    if(strcmp(val, "RBAIS_DEVICE") == 0) {
+        return RBAIS_DEVICE;
     }
     else if(strcmp(val, "RBAIS_FILE") == 0) {
         return RBAIS_FILE;

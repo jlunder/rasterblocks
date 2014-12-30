@@ -39,16 +39,16 @@ static uint8_t * rbLightOutputEmitPanel(uint8_t * pBuf,
     RBPanel const * pLights);
 
 
-static int g_slSpiFd = -1;
+static int g_rbSpiFd = -1;
 
-uint8_t g_slModifiedCieTable[256];
+uint8_t g_rbModifiedCieTable[256];
 
 
 // This is a CIE even intensity table for converting linear perceived
 // brightness values to PWM values (which are linear power output).
 // This is basically a correction table to correct for the way the eye
 // perceives color.
-uint8_t const g_slCieTable[256] = {
+uint8_t const g_rbCieTable[256] = {
     0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 
     1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 
     2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 
@@ -123,16 +123,16 @@ void rbLightOutputInitialize(RBConfiguration const * config)
     rbLightOutputShutdown();
     
     rbLightOutputStartSpiDevice();
-    rbVerify(g_slSpiFd >= 0);
+    rbVerify(g_rbSpiFd >= 0);
     
-    rbVerify(ioctl(g_slSpiFd, SPI_IOC_WR_MODE, &mode) >= 0);
-    rbVerify(ioctl(g_slSpiFd, SPI_IOC_WR_LSB_FIRST, &lsbFirst) >= 0);
-    rbVerify(ioctl(g_slSpiFd, SPI_IOC_WR_BITS_PER_WORD, &bitsPerWord) >= 0);
-    rbVerify(ioctl(g_slSpiFd, SPI_IOC_WR_MAX_SPEED_HZ, &maxSpeedHz) >= 0);
+    rbVerify(ioctl(g_rbSpiFd, SPI_IOC_WR_MODE, &mode) >= 0);
+    rbVerify(ioctl(g_rbSpiFd, SPI_IOC_WR_LSB_FIRST, &lsbFirst) >= 0);
+    rbVerify(ioctl(g_rbSpiFd, SPI_IOC_WR_BITS_PER_WORD, &bitsPerWord) >= 0);
+    rbVerify(ioctl(g_rbSpiFd, SPI_IOC_WR_MAX_SPEED_HZ, &maxSpeedHz) >= 0);
     
-    for(size_t i = 0; i < LENGTHOF(g_slCieTable); ++i) {
-        g_slModifiedCieTable[i] = (uint8_t)rbClampF(
-            ceilf(g_slCieTable[i] * config->brightness), 0.0f, 255.0f);
+    for(size_t i = 0; i < LENGTHOF(g_rbCieTable); ++i) {
+        g_rbModifiedCieTable[i] = (uint8_t)rbClampF(
+            ceilf(g_rbCieTable[i] * config->brightness), 0.0f, 255.0f);
     }
 }
 
@@ -142,9 +142,9 @@ void rbLightOutputStartSpiDevice(void)
     for(size_t i = 0; ; ++i) {
         struct timespec rbeepTs;
         
-        g_slSpiFd = open(RB_TARGET_SPI_DEVICE, O_RDWR);
+        g_rbSpiFd = open(RB_TARGET_SPI_DEVICE, O_RDWR);
         
-        if(g_slSpiFd >= 0) {
+        if(g_rbSpiFd >= 0) {
             // Done! Success.
             return;
         }
@@ -170,24 +170,24 @@ void rbLightOutputStartSpiDevice(void)
 
 void rbLightOutputShutdown(void)
 {
-    if(g_slSpiFd >= 0) {
-        close(g_slSpiFd);
-        g_slSpiFd = -1;
+    if(g_rbSpiFd >= 0) {
+        close(g_rbSpiFd);
+        g_rbSpiFd = -1;
     }
 }
 
 
-void rbLightOutputShowLights(RBLightData const * lights)
+void rbLightOutputShowLights(RBRawLightFrame const * pFrame)
 {
     struct spi_ioc_transfer xfer;
     int result;
     uint8_t buf[RB_NUM_LIGHTS * 3];
     uint8_t * pB = buf;
 
-    pB = rbLightOutputEmitPanel(pB, &lights->left);
-    pB = rbLightOutputEmitPanel(pB, &lights->overhead);
-    pB = rbLightOutputEmitPanel(pB, &lights->right);
-    
+    for(size_t i = 0; i < RB_NUM_PANELS; ++i) {
+        rbAssert(pB < buf + LENGTHOF(buf));
+        pB = rbLightOutputEmitPanel(pB, &pFrame->data[i];
+    }
     rbAssert(pB == buf + LENGTHOF(buf));
 
     memset(&xfer, 0, sizeof xfer);
@@ -195,7 +195,7 @@ void rbLightOutputShowLights(RBLightData const * lights)
     xfer.tx_buf = (unsigned long)buf;
     xfer.len = sizeof buf;
     
-    result = ioctl(g_slSpiFd, SPI_IOC_MESSAGE(1), &xfer);
+    result = ioctl(g_rbSpiFd, SPI_IOC_MESSAGE(1), &xfer);
     if(result < 0) {
         rbError("SPI IOCTL failed: %s", strerror(result));
     }
@@ -207,17 +207,17 @@ uint8_t * rbLightOutputEmitPanel(uint8_t * pBuf, RBPanel const * pLights)
     RBColor const * pData = pLights->data[0];
     for(size_t i = 0; i < RB_PANEL_HEIGHT; i += 2) {
         for(size_t j = 0; j < RB_PANEL_WIDTH; ++j) {
-            *(pBuf++) = g_slModifiedCieTable[pData->b];
-            *(pBuf++) = g_slModifiedCieTable[pData->r];
-            *(pBuf++) = g_slModifiedCieTable[pData->g];
+            *(pBuf++) = g_rbModifiedCieTable[pData->b];
+            *(pBuf++) = g_rbModifiedCieTable[pData->r];
+            *(pBuf++) = g_rbModifiedCieTable[pData->g];
             ++pData;
         }
         pData += RB_PANEL_WIDTH;
         for(size_t j = 0; j < RB_PANEL_WIDTH; ++j) {
             --pData;
-            *(pBuf++) = g_slModifiedCieTable[pData->b];
-            *(pBuf++) = g_slModifiedCieTable[pData->r];
-            *(pBuf++) = g_slModifiedCieTable[pData->g];
+            *(pBuf++) = g_rbModifiedCieTable[pData->b];
+            *(pBuf++) = g_rbModifiedCieTable[pData->r];
+            *(pBuf++) = g_rbModifiedCieTable[pData->g];
         }
         pData += RB_PANEL_WIDTH;
     }

@@ -1,16 +1,12 @@
 #include "audio_input.h"
 
 
-#ifdef RB_SNDFILE_SUPPORTED
-#include "audio_input_file.h"
-#endif
-
-#include "audio_alsa.h"
+#include "audio_file.h"
+#include "audio_device.h"
 
 
-static RBAudioInputSource g_slAudioSource = RBAIS_INVALID;
-static uint64_t g_slAudioVideoFrameCount = 0;
-static bool g_monitorAudio = false;
+static RBAudioInputSource g_rbAudioSource = RBAIS_INVALID;
+static uint64_t g_rbAudioVideoFrameCount = 0;
 
 
 void rbAudioInputInitialize(RBConfiguration const * config)
@@ -19,82 +15,60 @@ void rbAudioInputInitialize(RBConfiguration const * config)
     rbAudioInputShutdown();
     
     switch(config->audioSource) {
-    case RBAIS_ALSA:
-        rbAlsaCaptureInit(config->audioSourceParam);
-        g_slAudioSource = RBAIS_ALSA;
+    case RBAIS_DEVICE:
+        rbVerify(rbAudioDeviceInitialize(config->audioSourceParam,
+            config->monitorAudio ? RBADM_INPUT_TEE : RBADM_INPUT));
+        g_rbAudioSource = RBAIS_DEVICE;
         break;
     case RBAIS_FILE:
-        #ifdef RB_SNDFILE_SUPPORTED
-            rbVerify(rbSndFileOpen((char *)config->audioSourceParam) != NULL);
-            g_slAudioSource = RBAIS_FILE;
-        #else
-            g_slAudioSource = RBAIS_INVALID;
-            rbFatal("Not compiled with libsndfile support\n");
-        #endif
+        rbVerify(rbAudioFileInitialize((char *)config->audioSourceParam));
+        rbAudioDeviceInitialize(NULL, RBADM_OUTPUT);
+        g_rbAudioSource = RBAIS_FILE;
         break;
     default:
-        g_slAudioSource = RBAIS_INVALID;
+        g_rbAudioSource = RBAIS_INVALID;
     	rbFatal("Invalid audio source type %d\n", config->audioSource);
     	break;
-    }
-    
-    if(config->monitorAudio) {
-        g_monitorAudio = true;
-        rbAlsaPlaybackInit(RB_AUDIO_FRAMES_PER_VIDEO_FRAME,RB_AUDIO_CHANNELS);
     }
 }
 
 
 void rbAudioInputShutdown(void)
 {
-    switch(g_slAudioSource) {
+    switch(g_rbAudioSource) {
     case RBAIS_INVALID:
     	// Do nothing! We have already been shut down properly, or maybe we
     	// were never init'd.
     	break;
-    case RBAIS_ALSA:
-        rbAlsaCaptureClose();
+    case RBAIS_DEVICE:
+        rbAudioDeviceShutdown();
         break;
     case RBAIS_FILE:
-        #ifdef RB_SNDFILE_SUPPORTED
-            rbSndFileClose();
-        #endif
+        rbAudioDeviceShutdown();
+        rbAudioFileShutdown();
         break;
     default:
-    	rbFatal("Invalid audio source type %d\n", g_slAudioSource);
+    	rbFatal("Invalid audio source type %d\n", g_rbAudioSource);
     	break;
     }
-    if(g_monitorAudio) {
-        rbAlsaPlaybackClose();
-    }
     
-    g_slAudioSource = RBAIS_INVALID;
+    g_rbAudioSource = RBAIS_INVALID;
 }
 
 
 void rbAudioInputBlockingRead(RBRawAudio * audio)
 {
-    switch(g_slAudioSource) {
-    case RBAIS_ALSA:
-        rbAlsaRead(audio);
+    switch(g_rbAudioSource) {
+    case RBAIS_DEVICE:
+        rbAudioDeviceBlockingRead(audio);
         break;
     case RBAIS_FILE:
-        #ifdef RB_SNDFILE_SUPPORTED
-            rbSndFileReadLooping(audio, RB_AUDIO_FRAMES_PER_VIDEO_FRAME,
-                RB_AUDIO_CHANNELS);
-        #else
-            rbFatal("Not compiled with libsndfile support, exiting\n");
-        #endif
+        rbAudioFileReadLooping(audio);
         break;
     default:
     	// RBAIS_INVALID is not legal here: we must be init'd
-    	rbFatal("Invalid audio source type %d\n", g_slAudioSource);
+    	rbFatal("Invalid audio source type %d\n", g_rbAudioSource);
     	break;
-    }
-
-    if(g_monitorAudio) {
-        rbAlsaPlayback(audio, RB_AUDIO_FRAMES_PER_VIDEO_FRAME, 
-            RB_AUDIO_CHANNELS);
     }
     
     if(rbInfoEnabled()) {
@@ -111,10 +85,33 @@ void rbAudioInputBlockingRead(RBRawAudio * audio)
         }
         totalPower = sqrtf(totalPower / LENGTHOF(audio->audio));
         rbInfo("Audio for video frame %llu; peak = %.4f, power = %.4f\n",
-            g_slAudioVideoFrameCount, peak, totalPower);
+            g_rbAudioVideoFrameCount, peak, totalPower);
     }
     
-    ++g_slAudioVideoFrameCount;
+    ++g_rbAudioVideoFrameCount;
 }
 
 
+#ifndef RB_USE_SNDFILE_INPUT
+
+
+bool rbAudioFileInitialize(char const * filename)
+{
+    UNUSED(filename);
+    rbFatal("Not compiled with libsndfile support!\n");
+    return false;
+}
+
+
+void rbAudioFileShutdown(void)
+{
+}
+
+
+void rbAudioFileReadLooping(RBRawAudio * pAudio)
+{
+    UNUSED(pAudio);
+}
+
+
+#endif

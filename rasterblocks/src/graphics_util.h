@@ -13,26 +13,6 @@ typedef uint32_t RBIntAlpha;
 
 
 typedef struct {
-    float x, y;
-} RBVector2;
-
-
-typedef struct {
-    float x, y, z;
-} RBVector3;
-
-
-typedef struct {
-    float x, y, z, w;
-} RBVector4;
-
-
-typedef struct {
-    float m00, m01, m10, m11;
-} RBMatrix2;
-
-
-typedef struct {
     RBTime time;
     float frequency;
     float phase;
@@ -146,7 +126,7 @@ static inline RBVector2 rbHarmonicPathGeneratorPos(
 #define cmixi rbColorMixI
 #define cmixf rbColorMixF
 
-#define v2 rbVector2Make
+#define vector2 rbVector2Make
 #define v2add rbVector2Add
 #define v2sub rbVector2Sub
 #define v2scale rbVector2Scale

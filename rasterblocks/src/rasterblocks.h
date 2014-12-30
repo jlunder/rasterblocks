@@ -29,8 +29,11 @@
 
 #define RB_PANEL_WIDTH 8
 #define RB_PANEL_HEIGHT 8
+#define RB_NUM_PANELS 12
+#define RB_NUM_LIGHTS (RB_PANEL_WIDTH * RB_PANEL_HEIGHT * RB_NUM_PANELS)
 
-#define RB_NUM_LIGHTS (RB_PANEL_WIDTH * RB_PANEL_HEIGHT * 3)
+#define RB_PROJECTION_WIDTH (RB_PANEL_WIDTH * 2)
+#define RB_PROJECTION_HEIGHT (RB_PANEL_HEIGHT * 6)
 
 #define RB_MAX_CONSECUTIVE_GENTLE_RESTART_NS (10 * 1000000000LLU)
 #define RB_GENTLE_RESTART_DELAY_NS 500000000LLU
@@ -60,7 +63,7 @@ typedef enum {
 
 typedef enum {
     RBAIS_INVALID,
-    RBAIS_ALSA,
+    RBAIS_DEVICE,
     RBAIS_FILE,
 } RBAudioInputSource;
 
@@ -80,6 +83,30 @@ typedef struct {
 typedef struct {
     RBColor c[5];
 } RBPalette;
+
+
+typedef struct {
+    float x, y;
+} RBVector2;
+
+
+typedef struct {
+    float x, y, z, w;
+} RBVector4;
+
+
+typedef struct {
+    float m00, m01, m10, m11;
+} RBMatrix2;
+
+
+typedef struct {
+    float
+        m00, m01, m02, m03,
+        m10, m11, m12, m13,
+        m20, m21, m22, m23,
+        m30, m31, m32, m33;
+} RBMatrix4;
 
 
 typedef int32_t RBCoord;
@@ -137,15 +164,22 @@ typedef struct {
 
 
 typedef struct {
-    RBColor data[RB_PANEL_HEIGHT][RB_PANEL_WIDTH];
-} RBPanel;    
+    RBVector2 position;
+    RBVector2 orientation;
+} RBPanelConfig;
 
 
 typedef struct {
-    RBPanel left;
-    RBPanel right;
-    RBPanel overhead;
-} RBLightData;
+    RBColor proj[RB_PROJECTION_HEIGHT][RB_PROJECTION_WIDTH];
+} RBProjectionFrame;
+
+
+typedef struct {
+    RBColor data[RB_NUM_PANELS][RB_PANEL_HEIGHT][RB_PANEL_WIDTH];
+} RBRawLightFrame;
+
+
+RBPanelConfig const g_rbPanelConfigs[RB_NUM_PANELS];
 
 
 // Tell the main program which subsystem is currently running (in this thread).
@@ -296,9 +330,9 @@ void rbProcess(uint64_t nsSinceLastProcess);
 
 // Implemented in the harness!
 void rbLogOutputV(char const * format, va_list va);
-void rbLightOutputInitialize(RBConfiguration const * config);
+void rbLightOutputInitialize(RBConfiguration const * pConfig);
 void rbLightOutputShutdown(void);
-void rbLightOutputShowLights(RBLightData const * lights);
+void rbLightOutputShowLights(RBRawLightFrame const * pFrame);
 
 
 #endif // STAGE_LIGHTS_H_INCLUDED

@@ -6,10 +6,10 @@
 
 
 // Light generation subsystem
-void rbLightGenerationInitialize(RBConfiguration const * config);
+void rbLightGenerationInitialize(RBConfiguration const * pConfig);
 void rbLightGenerationShutdown(void);
-void rbLightGenerationGenerate(RBAnalyzedAudio const * analysis,
-    RBLightData * lights);
+void rbLightGenerationGenerate(RBAnalyzedAudio const * pAnalysis,
+    RBProjectionFrame * pFrame);
 
 
 #endif
