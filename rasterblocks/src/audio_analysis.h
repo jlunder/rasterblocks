@@ -2,7 +2,7 @@
 #define AUDIO_ANALYSIS_H_INCLUDED
 
 
-#include "stage_lights.h"
+#include "rasterblocks.h"
 
 
 // Audio analysis subsystem

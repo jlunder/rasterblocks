@@ -56,7 +56,7 @@
 #include "glus.h"
 
 
-#include "stage_lights.h"
+#include "rasterblocks.h"
 
 
 static void error_callback(int error, const char* description)

@@ -2,7 +2,7 @@
 #define AUDIO_INPUT_H_INCLUDED
 
 
-#include "stage_lights.h"
+#include "rasterblocks.h"
 
 
 // Audio input subsystem

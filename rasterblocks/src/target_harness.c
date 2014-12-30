@@ -24,7 +24,7 @@
 #include <string.h>
 
 
-#include "stage_lights.h"
+#include "rasterblocks.h"
 
 
 #define SL_TARGET_MAX_SPI_OPEN_RETRY 5

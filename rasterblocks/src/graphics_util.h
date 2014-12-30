@@ -2,7 +2,7 @@
 #define GRAPHICS_UTIL_H_INCLUDED
 
 
-#include "stage_lights.h"
+#include "rasterblocks.h"
 
 
 #ifdef SL_USE_NEON

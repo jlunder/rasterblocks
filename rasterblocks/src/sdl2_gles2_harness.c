@@ -36,7 +36,7 @@
 #include "glus.h"
 
 
-#include "stage_lights.h"
+#include "rasterblocks.h"
 
 
 /* A simple function that prints a message, the error code returned by SDL,

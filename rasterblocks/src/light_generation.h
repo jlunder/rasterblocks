@@ -2,7 +2,7 @@
 #define LIGHT_GENERATION_H_INCLUDED
 
 
-#include "stage_lights.h"
+#include "rasterblocks.h"
 
 
 // Light generation subsystem

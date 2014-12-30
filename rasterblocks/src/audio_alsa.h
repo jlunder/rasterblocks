@@ -1,7 +1,7 @@
 #ifndef AUDIO_INPUT_ALSA_H_INCLUDED
 #define AUDIO_INPUT_ALSA_H_INCLUDED
 
-#include "stage_lights.h"
+#include "rasterblocks.h"
 
 bool slAlsaCaptureInit(const char* captureDev);
 void slAlsaCaptureClose();

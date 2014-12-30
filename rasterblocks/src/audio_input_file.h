@@ -1,7 +1,7 @@
 #ifndef AUDIO_INPUT_FILE_H_INCLUDED
 #define AUDIO_INPUT_FILE_H_INCLUDED
 
-#include "stage_lights.h"
+#include "rasterblocks.h"
 #include <sndfile.h>
 
 SNDFILE* slSndFileOpen(char *file_name);

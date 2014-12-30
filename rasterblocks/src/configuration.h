@@ -2,7 +2,7 @@
 #define CONFIGURATION_H_INCLUDED
 
 
-#include "stage_lights.h"
+#include "rasterblocks.h"
 
 
 // Configurations subsystem

@@ -60,7 +60,7 @@
 #include "glus.h"
 
 
-#include "stage_lights.h"
+#include "rasterblocks.h"
 
 
 SLColor gles2_harness_lights_left[SL_NUM_LIGHTS_LEFT];
