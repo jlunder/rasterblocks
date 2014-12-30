@@ -46,7 +46,7 @@ endif
 
 ifneq ($(BUILD_ON_TARGET),)
 	CC_TARGET := $(CC)
-	#CFLAGS := $(CFLAGS_TARGET)
+	CFLAGS := $(CFLAGS_TARGET)
 	CPPFLAGS := $(CPPFLAGS_TARGET)
 	LDFLAGS := $(LDFLAGS_TARGET)
 	INSTALL_DIR := /usr/local/lib/rasterblocks
@@ -76,7 +76,8 @@ STAGE_LIGHTS_SRC := $(basename $(notdir $(wildcard src/*.c)))
 STAGE_LIGHTS_O := $(addprefix build/,$(addsuffix .o, $(STAGE_LIGHTS_SRC)))
 STAGE_LIGHTS_D := $(addprefix build/,$(addsuffix .d, $(STAGE_LIGHTS_SRC)))
 
-build/%.d: src/%.c Makefile
+build/%.d: src/%.c src/icons.h Makefile
+	@mkdir -p build
 	@$(MAKEDEPEND)
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -104,7 +105,8 @@ STAGE_LIGHTS_D_TARGET := $(addprefix build/,$(addsuffix .target.d, $(STAGE_LIGHT
 src/icons.h: $(wildcard icons/[0-9][0-9]*)
 	python make-icons.py $(wildcard icons/[0-9][0-9]*)
 
-build/%.target.d: src/%.c Makefile
+build/%.target.d: src/%.c src/icons.h Makefile
+	@mkdir -p build
 	@$(MAKEDEPEND_TARGET)
 
 ifeq ($(MAKECMDGOALS),rasterblocks.target)
@@ -117,6 +119,7 @@ build/%.target.o: src/%.c Makefile
 	$(CC_TARGET) -c -g $(CFLAGS_TARGET) -o $@ $(CPPFLAGS_TARGET) $<
 
 bin/rasterblocks.target: $(STAGE_LIGHTS_O_TARGET)
+	@mkdir -p bin
 	$(CC_TARGET) -o $@ $^ $(LDFLAGS_TARGET)
 
 else

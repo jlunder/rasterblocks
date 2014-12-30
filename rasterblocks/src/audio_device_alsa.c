@@ -1,6 +1,6 @@
 #ifdef RB_USE_ALSA_DEVICE
 
-#include "audio_device_alsa.h"
+#include "audio_device.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,6 +23,7 @@ static void rbAlsaRead(RBRawAudio* audio);
 
 bool rbAudioDeviceInitialize(char const * deviceName, RBAudioDeviceMode mode)
 {
+    UNUSED(mode);
     return rbAlsaCaptureInit(deviceName);
 }
 
@@ -95,7 +96,7 @@ static bool rbOpenStream(snd_pcm_t **handle, const char *name, int dir,
     
     // The first (large) stanza deals with the hardware parameters.
     if(err >= 0) {
-        err = snd_pcm_open(handle, name, dir, mode);
+        err = snd_pcm_open(handle, name, dir, SND_PCM_NONBLOCK);
         failMessage = "cannot open audio device";
     }
     if(err >= 0) {

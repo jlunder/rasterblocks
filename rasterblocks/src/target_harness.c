@@ -30,13 +30,13 @@
 #define RB_TARGET_MAX_SPI_OPEN_RETRY 5
 #define RB_TARGET_SPI_DEVICE "/dev/spidev1.0"
 #define RB_TARGET_SPI_DEVICE_STARTUP_COMMAND \
-    "echo BB-SPIDEV0 > /sys/devices/bone_capemgr.9/rbots"
+    "echo BB-SPIDEV0 > /sys/devices/bone_capemgr.9/slots"
 #define RB_TARGET_SPI_DEVICE_STARTUP_WAIT_NS 2000000000LLU
 
 
 static void rbLightOutputStartSpiDevice(void);
 static uint8_t * rbLightOutputEmitPanel(uint8_t * pBuf,
-    RBPanel const * pLights);
+    RBColor const pLights[RB_PANEL_HEIGHT][RB_PANEL_WIDTH]);
 
 
 static int g_rbSpiFd = -1;
@@ -186,7 +186,7 @@ void rbLightOutputShowLights(RBRawLightFrame const * pFrame)
 
     for(size_t i = 0; i < RB_NUM_PANELS; ++i) {
         rbAssert(pB < buf + LENGTHOF(buf));
-        pB = rbLightOutputEmitPanel(pB, &pFrame->data[i];
+        pB = rbLightOutputEmitPanel(pB, pFrame->data[i]);
     }
     rbAssert(pB == buf + LENGTHOF(buf));
 
@@ -202,9 +202,10 @@ void rbLightOutputShowLights(RBRawLightFrame const * pFrame)
 }
 
 
-uint8_t * rbLightOutputEmitPanel(uint8_t * pBuf, RBPanel const * pLights)
+uint8_t * rbLightOutputEmitPanel(uint8_t * pBuf,
+    RBColor const pLights[RB_PANEL_HEIGHT][RB_PANEL_WIDTH])
 {
-    RBColor const * pData = pLights->data[0];
+    RBColor const * pData = pLights[0];
     for(size_t i = 0; i < RB_PANEL_HEIGHT; i += 2) {
         for(size_t j = 0; j < RB_PANEL_WIDTH; ++j) {
             *(pBuf++) = g_rbModifiedCieTable[pData->b];
