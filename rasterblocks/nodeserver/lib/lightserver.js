@@ -24,7 +24,7 @@ function handleCommand(socket) {
 	socket.on('configData', function(config) {
 		console.log('received config data: ' + config);
 
-		//var outputFile = '/var/lib/stage-lights/config.json';
+		//var outputFile = '/var/lib/rasterblocks/config.json';
 		var outputFile = process.argv.slice(2)[0];
 		fs.writeFile(outputFile + "~", JSON.stringify(config, undefined, 2), function(err){
 			fs.renameSync(outputFile + "~", outputFile);

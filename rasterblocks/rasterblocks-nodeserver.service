@@ -3,9 +3,9 @@ Description=CMPT433 Stage Lights Node Configuration Server
 After=syslog.target basic.target sound.target
 
 [Service]
-ExecStart=/usr/bin/node /usr/lib/stage-lights/nodeserver/server.js /var/lib/stage-lights/config.json
+ExecStart=/usr/bin/node /usr/lib/rasterblocks/nodeserver/server.js /var/lib/rasterblocks/config.json
 Restart=on-abort
-WorkingDirectory=/usr/lib/stage-lights/nodeserver
+WorkingDirectory=/usr/lib/rasterblocks/nodeserver
 
 [Install]
 WantedBy=multi-user.target

@@ -5,8 +5,8 @@
 #include <time.h>
 
 #define RB_DEFAULT_INPUT_ALSA "plughw:1,0"
-#define RB_DEFAULT_INPUT_FILE "../test/clips/909Tom X1.wav"
-#define RB_DEFAULT_INPUT_CONFIG "/var/lib/stage-lights/config.json"
+#define RB_DEFAULT_INPUT_FILE "test/909Tom X1.wav"
+#define RB_DEFAULT_INPUT_CONFIG "/var/lib/rasterblocks/config.json"
 
 
 time_t g_rbConfigFileMTime = 0;
@@ -99,17 +99,19 @@ void rbHotConfigurationProcessAndUpdateConfiguration(RBConfiguration * config,
     if(config->configPath[0]) {
         struct stat statBuf;
         
-        stat(config->configPath, &statBuf);
+        if(stat(config->configPath, &statBuf) == 0) {
+            if(g_rbConfigFileMTime != statBuf.st_mtime) {
+                *pConfigurationModified = true;
+                g_rbConfigFileMTime = statBuf.st_mtime;
+            }
+        }
         // *pConfigurationModified indicates the caller would like to force a
         // config reload for whatever reason.
-        if(*pConfigurationModified ||
-                g_rbConfigFileMTime != statBuf.st_mtime) {
+        if(*pConfigurationModified) {
             if(!*pConfigurationModified) {
                 rbWarning("Config changed, rereading\n");
             }
-            g_rbConfigFileMTime = statBuf.st_mtime;
             rbParseJson(config, config->configPath);
-            *pConfigurationModified = true;
             rbInfo("Config audio source: %d\n", config->audioSource);
             rbInfo("Config audio source param: %s\n",
                 config->audioSourceParam);
