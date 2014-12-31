@@ -1,6 +1,6 @@
 [Unit]
-Description=CMPT433 Stage Lights
-After=syslog.target basic.target sound.target rasterblocks-nodeserver.service
+Description=Rasterblocks
+After=syslog.target basic.target sound.target #rasterblocks-nodeserver.service
 
 [Service]
 ExecStart=/usr/lib/rasterblocks/rasterblocks

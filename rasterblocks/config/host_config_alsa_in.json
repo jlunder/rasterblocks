@@ -1,7 +1,7 @@
 {
 	"logLevel": "SLLL_WARNING", 	//SLLL_INFO, SLLL_WARNING, SLLL_ERROR
 	// input
-	"audioSource": 	"SLAIS_ALSA",	//SLAIS_ALSA, SLAIS_FILE
+	"audioSource": 	"RBAIS_DEVICE",	//SLAIS_ALSA, SLAIS_FILE
 	"audioSourceParam": "plughw:1,0",
 	"monitorAudio": true
 	// analysis

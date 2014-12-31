@@ -1,7 +1,7 @@
 {
 	"logLevel": "SLLL_WARNING", 	//SLLL_INFO, SLLL_WARNING, SLLL_ERROR
 	// input
-	"audioSource": 	"SLAIS_FILE",	//SLAIS_INVALID, SLAIS_ALSA, SLAIS_FILE
+	"audioSource": 	"RBAIS_FILE",	//SLAIS_INVALID, SLAIS_ALSA, SLAIS_FILE
 	"audioSourceParam": "../test/clips/909Tom X1.wav",
 	"monitorAudio": true,
 	"lowCutoff": 200,

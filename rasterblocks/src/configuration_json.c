@@ -36,7 +36,7 @@ RBAudioInputSource getAudioSource(const char* val)
         return RBAIS_FILE;
     }
     else {
-        rbError("Invalid audio source type: %s",val);
+        rbError("Invalid audio source type: %s\n",val);
         return RBAIS_INVALID;
     }
 }
