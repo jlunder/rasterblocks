@@ -5,6 +5,7 @@
 #include <time.h>
 
 #define RB_DEFAULT_INPUT_ALSA "plughw:1,0"
+#define RB_DEFAULT_INPUT_OPENAL ""
 #define RB_DEFAULT_INPUT_FILE "test/909Tom X1.wav"
 #define RB_DEFAULT_INPUT_CONFIG "/var/lib/rasterblocks/config.json"
 
@@ -16,10 +17,14 @@ void rbConfigurationSetDefaults(RBConfiguration * config)
 {
     config->logLevel = RBLL_WARNING;
     
-#ifdef RB_USE_TARGET_HARNESS
+#if defined RB_LINUX
     config->audioSource = RBAIS_DEVICE;
     snprintf(config->audioSourceParam, sizeof config->audioSourceParam,
         RB_DEFAULT_INPUT_ALSA);
+#elif defined RB_OSX
+    config->audioSource = RBAIS_DEVICE;
+    snprintf(config->audioSourceParam, sizeof config->audioSourceParam,
+        RB_DEFAULT_INPUT_OPENAL);
 #else
     config->audioSource = RBAIS_FILE;
     snprintf(config->audioSourceParam, sizeof config->audioSourceParam,

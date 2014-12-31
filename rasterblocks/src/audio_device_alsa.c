@@ -34,15 +34,15 @@ void rbAudioDeviceShutdown(void)
 }
 
 
-void rbAudioDeviceBlockingRead(RBRawAudio * audio)
+void rbAudioDeviceBlockingRead(RBRawAudio * pAudio)
 {
-    rbAlsaRead(audio);
+    rbAlsaRead(pAudio);
 }
 
 
-void rbAudioDeviceBlockingWrite(RBRawAudio * audio)
+void rbAudioDeviceBlockingWrite(RBRawAudio * pAudio)
 {
-    UNUSED(audio);
+    UNUSED(pAudio);
 }
 
 

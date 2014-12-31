@@ -35,7 +35,7 @@ ifeq ($(OS), OSX)
 	CC=gcc
 	CFLAGS=-O0 -W -Wall -Werror --std=gnu99 -fgnu89-inline -D_POSIX_C_SOURCE=200809L
 	CPPFLAGS=-DRB_OSX -DGLUS_ES2 -DRB_USE_GLFW3_GLES2_HARNESS -DRB_USE_SNDFILE_INPUT -DRB_USE_OPENAL_DEVICE
-	LDFLAGS=-g -framework OpenGL -framework Cocoa -framework QuartzCore -framework IOKit -lm -lsndfile -ljson-c -lglfw3
+	LDFLAGS=-g -framework OpenGL -framework Cocoa -framework QuartzCore -framework IOKit -framework OpenAL -lm -lsndfile -ljson-c -lglfw3
 endif
 ifeq ($(OS), WIN32)
 	CC=!

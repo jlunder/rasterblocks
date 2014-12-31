@@ -116,6 +116,17 @@ RBTime rbGetTime(void)
 }
 
 
+void rbSleep(RBTime x)
+{
+    struct timespec ts;
+    
+    ts.tv_sec = x / 1000;
+    ts.tv_nsec = (x % 1000) * 1000000;
+    
+    nanosleep(&ts, NULL);
+}
+
+
 void rbStartTimer(RBTimer * pTimer, RBTime period)
 {
     pTimer->time = rbGetTime();

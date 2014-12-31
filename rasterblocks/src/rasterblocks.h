@@ -217,6 +217,8 @@ static inline RBTime rbGetTimeSince(RBTime x)
     return rbDiffTime(rbGetTime(), x);
 }
 
+void rbSleep(RBTime x);
+
 void rbStartTimer(RBTimer * pTimer, RBTime period);
 
 static inline void rbStopTimer(RBTimer * pTimer)
