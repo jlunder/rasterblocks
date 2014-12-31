@@ -54,12 +54,12 @@ endif
 
 MAKEDEPEND=@set -e; rm -f $@; \
 	$(CC) -M $(CPPFLAGS) $< > $@.$$$$; \
-	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+	sed 's,\($*\)\.o[ :]*,build/\1.o $@ : ,g' < $@.$$$$ > $@; \
 	rm -f $@.$$$$
 
 MAKEDEPEND_TARGET=@set -e; rm -f $@; \
 	$(CC_TARGET) -M $(CPPFLAGS_TARGET) $< > $@.$$$$; \
-	sed 's,\($*\)\.o[ :]*,\1.target.o $@ : ,g' < $@.$$$$ > $@; \
+	sed 's,\($*\)\.o[ :]*,build/\1.target.o $@ : ,g' < $@.$$$$ > $@; \
 	rm -f $@.$$$$
 
 

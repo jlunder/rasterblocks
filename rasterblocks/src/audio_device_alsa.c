@@ -96,7 +96,7 @@ static bool rbOpenStream(snd_pcm_t **handle, const char *name, int dir,
     
     // The first (large) stanza deals with the hardware parameters.
     if(err >= 0) {
-        err = snd_pcm_open(handle, name, dir, SND_PCM_NONBLOCK);
+        err = snd_pcm_open(handle, name, dir, 0);
         failMessage = "cannot open audio device";
     }
     if(err >= 0) {

@@ -36,7 +36,7 @@ void rbConfigurationSetDefaults(RBConfiguration * config)
     config->agcMin = 1e-2f;
     config->agcStrength = 0.5f;
 
-    config->brightness = 1.0f;
+    config->brightness = 1.0f / 16;
 }
 
 
