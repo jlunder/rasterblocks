@@ -34,8 +34,8 @@ endif
 ifeq ($(OS), OSX)
 	CC=gcc
 	CFLAGS=-O0 -W -Wall -Werror --std=gnu99 -fgnu89-inline -D_POSIX_C_SOURCE=200809L
-	CPPFLAGS=-DRB_OSX -DGLUS_ES2 -DRB_USE_GLFW3_GLES2_HARNESS -DRB_USE_SNDFILE_INPUT -DRB_USE_OPENAL_DEVICE
-	LDFLAGS=-g -framework OpenGL -framework Cocoa -framework QuartzCore -framework IOKit -framework OpenAL -lm -lsndfile -ljson-c -lglfw3
+	CPPFLAGS=-DRB_OSX -DGLUS_ES2 -DRB_USE_GLFW3_GLES2_HARNESS -DRB_USE_SNDFILE_INPUT -DRB_USE_OPENAL_DEVICE -I/usr/local/include
+	LDFLAGS=-g -framework OpenGL -framework Cocoa -framework QuartzCore -framework IOKit -framework OpenAL -L/usr/local/lib -lm -lsndfile -ljson-c -lglfw3
 endif
 ifeq ($(OS), WIN32)
 	CC=!
@@ -76,6 +76,9 @@ STAGE_LIGHTS_SRC := $(basename $(notdir $(wildcard src/*.c)))
 STAGE_LIGHTS_O := $(addprefix build/,$(addsuffix .o, $(STAGE_LIGHTS_SRC)))
 STAGE_LIGHTS_D := $(addprefix build/,$(addsuffix .d, $(STAGE_LIGHTS_SRC)))
 
+src/icons.h: $(wildcard icons/[0-9][0-9]*)
+	python make-icons.py $(wildcard icons/[0-9][0-9]*)
+
 build/%.d: src/%.c src/icons.h Makefile
 	@mkdir -p build
 	@$(MAKEDEPEND)
@@ -101,9 +104,6 @@ ifneq ($(CROSS_BUILD)$(BUILD_ON_TARGET),)
 # the cross-build target directly.
 STAGE_LIGHTS_O_TARGET := $(addprefix build/,$(addsuffix .target.o, $(STAGE_LIGHTS_SRC)))
 STAGE_LIGHTS_D_TARGET := $(addprefix build/,$(addsuffix .target.d, $(STAGE_LIGHTS_SRC)))
-
-src/icons.h: $(wildcard icons/[0-9][0-9]*)
-	python make-icons.py $(wildcard icons/[0-9][0-9]*)
 
 build/%.target.d: src/%.c src/icons.h Makefile
 	@mkdir -p build
