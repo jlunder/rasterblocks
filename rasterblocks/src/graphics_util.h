@@ -225,7 +225,7 @@ static inline void rbTexture1SetTexel(RBTexture1 * pTex, size_t u, RBColor c)
 }
 
 void rbTexture1FillFromPiecewiseLinear(RBTexture1 * pTex,
-    RBPiecewiseLinearColorSegment * pSegments, size_t count);
+    RBPiecewiseLinearColorSegment * pSegments, size_t count, bool repeat);
 void rbTexture1PrepareForSampling(RBTexture1 * pTex);
 RBColorTemp rbTexture1SampleNearestRepeat(RBTexture1 * pTex, float tc);
 RBColorTemp rbTexture1SampleNearestClamp(RBTexture1 * pTex, float tc);

@@ -4,11 +4,13 @@
 
 
 static RBPiecewiseLinearColorSegment g_rbWarmPalette[] = {
-    {{  0,   0,   0, 0}, 1},
-    {{127,   0,   0, 0}, 1},
-    {{127,  95,   0, 0}, 1},
-    {{255, 191,   0, 0}, 1},
-    {{255, 255,  63, 0}, 0},
+    {{  0,   0,   0, 0}, 2},
+    {{ 63,   0,   0, 0}, 2},
+    {{127,  15,   0, 0}, 2},
+    {{255,  63,   0, 0}, 1},
+    {{255, 127,   0, 0}, 1},
+    {{255, 255,   0, 0}, 1},
+    {{255, 255,  255, 0}, 0},
 };
 
 static RBPiecewiseLinearColorSegment g_rbColdPalette[] = {
@@ -33,8 +35,9 @@ static uint8_t g_rbIcons[][8] = {
 static RBTime g_rbIconDebounceTime;
 static RBTime g_rbIconDisplayTime;
 
-static RBTexture1 * g_rbPWarmPaletteTex = NULL;
-static RBTexture1 * g_rbPColdPaletteTex = NULL;
+static RBTexture1 * g_rbPWarmTex = NULL;
+static RBTexture1 * g_rbPColdTex = NULL;
+static RBTexture1 * g_rbPRainbowTex = NULL;
 
 //static size_t g_rbNextIcon = 0;
 //static RBTimer g_rbDebounce;
@@ -53,26 +56,32 @@ void rbLightGenerationInitialize(RBConfiguration const * config)
     g_rbIconDebounceTime = rbTimeFromMs(50);
     g_rbIconDisplayTime = rbTimeFromMs(500);
     
-    g_rbPWarmPaletteTex = rbTexture1Alloc(256);
-    rbTexture1FillFromPiecewiseLinear(g_rbPWarmPaletteTex, g_rbWarmPalette,
-        LENGTHOF(g_rbWarmPalette));
-    rbTexture1PrepareForSampling(g_rbPWarmPaletteTex);
-    g_rbPColdPaletteTex = rbTexture1Alloc(256);
-    rbTexture1FillFromPiecewiseLinear(g_rbPColdPaletteTex, g_rbColdPalette,
-        LENGTHOF(g_rbColdPalette));
-    rbTexture1PrepareForSampling(g_rbPColdPaletteTex);
+    g_rbPWarmTex = rbTexture1Alloc(256);
+    rbTexture1FillFromPiecewiseLinear(g_rbPWarmTex, g_rbWarmPalette,
+        LENGTHOF(g_rbWarmPalette), false);
+    rbTexture1PrepareForSampling(g_rbPWarmTex);
+    
+    g_rbPColdTex = rbTexture1Alloc(256);
+    rbTexture1FillFromPiecewiseLinear(g_rbPColdTex, g_rbColdPalette,
+        LENGTHOF(g_rbColdPalette), false);
+    rbTexture1PrepareForSampling(g_rbPColdTex);
+    
+    g_rbPRainbowTex = rbTexture1Alloc(3);
+    rbTexture1FillFromPiecewiseLinear(g_rbPRainbowTex, g_rbRainbowPalette,
+        LENGTHOF(g_rbRainbowPalette), true);
+    rbTexture1PrepareForSampling(g_rbPRainbowTex);
 }
 
 
 void rbLightGenerationShutdown(void)
 {
-    if(g_rbPWarmPaletteTex != NULL) {
-        rbTexture1Free(g_rbPWarmPaletteTex);
-        g_rbPWarmPaletteTex = NULL;
+    if(g_rbPWarmTex != NULL) {
+        rbTexture1Free(g_rbPWarmTex);
+        g_rbPWarmTex = NULL;
     }
-    if(g_rbPColdPaletteTex != NULL) {
-        rbTexture1Free(g_rbPColdPaletteTex);
-        g_rbPColdPaletteTex = NULL;
+    if(g_rbPColdTex != NULL) {
+        rbTexture1Free(g_rbPColdTex);
+        g_rbPColdTex = NULL;
     }
 }
 
@@ -100,16 +109,16 @@ void rbLightGenerationGenerate(RBAnalyzedAudio const * pAnalysis,
         for(size_t j = 0; j < RB_PANEL_WIDTH / 2; ++j) {
             pFrame->proj[i][j] =
                 rbColorMakeCT(
-                    rbTexture1SampleNearestClamp(g_rbPWarmPaletteTex,
-                        ((float)i + 0.5f) / (float)(RB_PANEL_HEIGHT * 6)));
+                    rbTexture1SampleLinearClamp(g_rbPWarmTex,
+                        ((float)i) / (float)(RB_PANEL_HEIGHT * 6)));
         }
     }
     for(size_t i = 0; i < RB_PANEL_HEIGHT * 6; ++i) {
         for(size_t j = 0; j < RB_PANEL_WIDTH / 2; ++j) {
             pFrame->proj[i][j + RB_PANEL_WIDTH / 2] =
                 rbColorMakeCT(
-                    rbTexture1SampleNearestClamp(g_rbPColdPaletteTex,
-                        ((float)i + 0.5f) / (float)(RB_PANEL_HEIGHT * 6)));
+                    rbTexture1SampleLinearRepeat(g_rbPRainbowTex,
+                        ((float)i) / (float)(RB_PANEL_HEIGHT * 3)));
         }
     }
     */
@@ -119,7 +128,7 @@ void rbLightGenerationGenerate(RBAnalyzedAudio const * pAnalysis,
             int32_t k = i < 4 ? (int32_t)j + 3 - i: (int32_t)j - 4 + i;
             pFrame->proj[i][RB_PANEL_WIDTH - 1 - j] =
                 rbColorMakeCT(
-                    rbTexture1SampleNearestClamp(g_rbPColdPaletteTex,
+                    rbTexture1SampleNearestClamp(g_rbPColdTex,
                         leftTreble - k * (2.0f / RB_PANEL_WIDTH)));
         }
     }
@@ -129,7 +138,7 @@ void rbLightGenerationGenerate(RBAnalyzedAudio const * pAnalysis,
             int32_t k = i < 4 ? (int32_t)j + 3 - i: (int32_t)j - 4 + i;
             pFrame->proj[i][j + RB_PANEL_WIDTH] =
                 rbColorMakeCT(
-                    rbTexture1SampleNearestClamp(g_rbPColdPaletteTex,
+                    rbTexture1SampleNearestClamp(g_rbPColdTex,
                         rightTreble - k * (2.0f / RB_PANEL_WIDTH)));
         }
     }
@@ -138,7 +147,7 @@ void rbLightGenerationGenerate(RBAnalyzedAudio const * pAnalysis,
         for(size_t j = 0; j < RB_PANEL_WIDTH * 2; ++j) {
             pFrame->proj[RB_PROJECTION_HEIGHT - 1 - i][j] =
                 rbColorMakeCT(
-                    rbTexture1SampleNearestClamp(g_rbPWarmPaletteTex,
+                    rbTexture1SampleNearestClamp(g_rbPWarmTex,
                         bass - i * (2.0f / (RB_PANEL_HEIGHT * 5))));
         }
     }

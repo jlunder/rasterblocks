@@ -154,9 +154,10 @@ void rbTexture1Free(RBTexture1 * pTex)
 
 
 void rbTexture1FillFromPiecewiseLinear(RBTexture1 * pTex,
-    RBPiecewiseLinearColorSegment * pSegments, size_t count)
+    RBPiecewiseLinearColorSegment * pSegments, size_t count, bool repeat)
 {
     size_t width = pTex->width;
+    size_t divWidth = repeat ? width : width - 1;
     size_t totalLength = 0;
     size_t seg;
     size_t rem;
@@ -170,7 +171,7 @@ void rbTexture1FillFromPiecewiseLinear(RBTexture1 * pTex,
         rbAssert(totalLength <= RB_MAX_REASONABLE_SIZE);
     }
     
-    seg = pSegments[0].length * (width - 1);
+    seg = pSegments[0].length * divWidth;
     rem = 0;
     ca = rbColorTempMakeC(pSegments[0].color);
     cb = rbColorTempMakeC(pSegments[1].color);
@@ -184,7 +185,7 @@ void rbTexture1FillFromPiecewiseLinear(RBTexture1 * pTex,
             rbAssert(j < count);
             ca = cb;
             cb = rbColorTempMakeC(pSegments[j + 1].color);
-            seg = pSegments[j].length * (width - 1);
+            seg = pSegments[j].length * divWidth;
         }
         
         alpha = (float)rem / (float)seg;
