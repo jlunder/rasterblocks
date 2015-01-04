@@ -503,7 +503,7 @@ void gles2_harness_draw_lights(float time)
     GLfloat modelMatrix[16];
     
     // Lights are about 1" wide, in meters, and our boxes are 2u wide
-    GLfloat const lightSize = 0.025f / 2.0f;
+    GLfloat const lightSize = 0.050 / 2.0f; //0.025f / 2.0f;
     float const lightSpacing = 0.0254f * 3.0f; // 3 inch spacing, in meters
     float const projectionAspect =
         (float)RB_PROJECTION_WIDTH / (float)RB_PROJECTION_HEIGHT;

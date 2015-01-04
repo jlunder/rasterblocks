@@ -9,6 +9,9 @@
 #endif
 
 
+typedef RBVector4 RBColorTemp;
+
+
 typedef uint32_t RBIntAlpha;
 
 
@@ -22,23 +25,27 @@ typedef struct {
 } RBHarmonicPathGenerator;
 
 
-RBColor rbPaletteLookupI(RBPalette const * pPal, RBIntAlpha alpha);
-RBColor rbPaletteLookupF(RBPalette const * pPal, float alpha);
-void rbPaletteMixF(RBPalette * pOut, RBPalette const * pA, float aAlpha,
-    RBPalette const * pB, float bAlpha);
+typedef struct {
+    size_t width;
+    size_t size;
+    RBColor data[0];
+} RBTexture1;
 
-static inline RBColor rbColorMake(uint8_t r, uint8_t g, uint8_t b)
-{
-    RBColor res = {r, g, b, 0};
-    return res;
-}
 
-RBColor rbColorMakeF(float r, float g, float b);
-RBColor rbColorScaleI(RBColor a, RBIntAlpha alpha);
-RBColor rbColorScaleF(RBColor a, float alpha);
-RBColor rbColorMixI(RBColor a, RBIntAlpha aAlpha, RBColor b,
-    RBIntAlpha bAlpha);
-RBColor rbColorMixF(RBColor a, float aAlpha, RBColor b, float bAlpha);
+typedef struct {
+    size_t width;
+    size_t height;
+    size_t stride;
+    size_t size;
+    RBColor data[0];
+} RBTexture2;
+
+
+typedef struct {
+    RBColor color;
+    size_t length;
+} RBPiecewiseLinearColorSegment;
+
 
 static inline RBVector2 rbVector2Make(float x, float y)
 {
@@ -54,7 +61,7 @@ static inline RBVector2 rbVector2Add(RBVector2 a, RBVector2 b)
 
 static inline RBVector2 rbVector2Sub(RBVector2 a, RBVector2 b)
 {
-    RBVector2 res = {a.x + b.x, a.y + b.y};
+    RBVector2 res = {a.x - b.x, a.y - b.y};
     return res;
 }
 
@@ -75,6 +82,11 @@ static inline float rbVector2Length(RBVector2 a)
 }
 
 RBVector2 rbVector2Normalize(RBVector2 a);
+
+static inline float rbVector2Dot(RBVector2 a, RBVector2 b)
+{
+    return a.x * b.x + a.y * b.y;
+}
 
 static inline RBVector2 rbVector2Cross(RBVector2 a)
 {
@@ -98,12 +110,157 @@ static inline RBVector2 rbVector2RotateScale(RBVector2 a, RBVector2 rs)
 
 RBVector2 rbVector2RotateScale(RBVector2 a, RBVector2 rs);
 
+static inline RBVector4 rbVector4Make(float x, float y, float z, float w)
+{
+    RBVector4 res = {x, y, z, w};
+    return res;
+}
+
+static inline RBVector4 rbVector4Add(RBVector4 a, RBVector4 b)
+{
+    RBVector4 res = {a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w};
+    return res;
+}
+
+static inline RBVector4 rbVector4Sub(RBVector4 a, RBVector4 b)
+{
+    RBVector4 res = {a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w};
+    return res;
+}
+
+static inline RBVector4 rbVector4Scale(RBVector4 a, float scale)
+{
+    RBVector4 res = {a.x * scale, a.y * scale, a.z * scale, a.w * scale};
+    return res;
+}
+
+static inline float rbVector4LengthSqr(RBVector4 a)
+{
+    return a.x * a.x + a.y * a.y + a.z * a.z + a.w * a.w;
+}
+
+static inline float rbVector4Length(RBVector4 a)
+{
+    return sqrtf(rbVector4LengthSqr(a));
+}
+
+static inline float rbVector4Dot(RBVector4 a, RBVector4 b)
+{
+    return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
+}
+
+RBVector4 rbVector4Normalize(RBVector4 a);
+
 RBMatrix2 rbMatrix2Identity(void);
 RBMatrix2 rbMatrix2Scale(RBVector2 s);
 RBMatrix2 rbMatrix2Rotate(float r);
 RBMatrix2 rbMatrix2RotateScale(RBVector2 rs);
 RBMatrix2 rbMatrix2Multiply(RBMatrix2 a, RBMatrix2 b);
 RBVector2 rbMatrix2Transform(RBMatrix2 m, RBVector2 v);
+
+static inline RBColor rbColorMakeI(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+{
+    RBColor res = {r, g, b, a};
+    return res;
+}
+
+RBColor rbColorMakeF(float r, float g, float b, float a);
+RBColor rbColorMakeCT(RBColorTemp ct);
+RBColor rbColorScaleI(RBColor a, RBIntAlpha alpha);
+RBColor rbColorScaleF(RBColor a, float alpha);
+RBColor rbColorMixI(RBColor a, RBIntAlpha aAlpha, RBColor b,
+    RBIntAlpha bAlpha);
+RBColor rbColorMixF(RBColor a, float aAlpha, RBColor b, float bAlpha);
+
+static inline RBColorTemp rbColorTempMakeI(uint8_t r, uint8_t g, uint8_t b,
+    uint8_t a)
+{
+    return rbVector4Make(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
+}
+
+#define rbColorTempMakeF rbVector4Make
+
+static inline RBColorTemp rbColorTempMakeC(RBColor c)
+{
+    return rbColorTempMakeF(c.r / 255.0f, c.g / 255.0f, c.b / 255.0f,
+        c.a / 255.0f);
+}
+
+static inline RBColorTemp rbColorTempSetA(RBColorTemp c, float a)
+{
+    return rbColorTempMakeF(c.x, c.y, c.z, a);
+}
+
+static inline float rbColorTempGetR(RBColorTemp c) { return c.x; }
+static inline float rbColorTempGetG(RBColorTemp c) { return c.y; }
+static inline float rbColorTempGetB(RBColorTemp c) { return c.z; }
+static inline float rbColorTempGetA(RBColorTemp c) { return c.w; }
+
+static inline RBColorTemp rbColorTempPremultiplyAlpha(RBColorTemp c)
+{
+    return rbVector4Scale(rbColorTempSetA(c, 1.0f), rbColorTempGetA(c));
+}
+
+static inline RBColorTemp rbColorTempMix(RBColorTemp a, float aAlpha,
+    RBColorTemp b, float bAlpha)
+{
+    return rbVector4Add(rbVector4Scale(a, aAlpha), rbVector4Scale(b, bAlpha));
+}
+
+RBTexture1 * rbTexture1Alloc(size_t width);
+void rbTexture1Free(RBTexture1 * pTex);
+static inline size_t rbTexture1GetWidth(RBTexture1 * pTex)
+    { return pTex->width; }
+
+static inline RBColor rbTexture1GetTexel(RBTexture1 * pTex, size_t u)
+{
+    rbAssert(u < pTex->width);
+    return pTex->data[u];
+}
+
+static inline void rbTexture1SetTexel(RBTexture1 * pTex, size_t u, RBColor c)
+{
+    rbAssert(u < pTex->width);
+    pTex->data[u] = c;
+}
+
+void rbTexture1FillFromPiecewiseLinear(RBTexture1 * pTex,
+    RBPiecewiseLinearColorSegment * pSegments, size_t count);
+void rbTexture1PrepareForSampling(RBTexture1 * pTex);
+RBColorTemp rbTexture1SampleNearestRepeat(RBTexture1 * pTex, float tc);
+RBColorTemp rbTexture1SampleNearestClamp(RBTexture1 * pTex, float tc);
+RBColorTemp rbTexture1SampleLinearRepeat(RBTexture1 * pTex, float tc);
+RBColorTemp rbTexture1SampleLinearClamp(RBTexture1 * pTex, float tc);
+
+RBTexture2 * rbTexture2Alloc(size_t width, size_t height);
+void rbTexture2Free(RBTexture2 * pTex);
+static inline size_t rbTexture2GetWidth(RBTexture2 * pTex)
+    { return pTex->width; }
+static inline size_t rbTexture2GetHeight(RBTexture2 * pTex)
+    { return pTex->height; }
+
+static inline RBColor rbTexture2GetTexel(RBTexture2 * pTex, size_t u, size_t v)
+{
+    rbAssert(pTex->stride >= pTex->width);
+    rbAssert(u < pTex->width);
+    rbAssert(v < pTex->height);
+    return pTex->data[u + pTex->stride * v];
+}
+
+static inline void rbTexture2SetTexel(RBTexture2 * pTex, size_t u, size_t v,
+    RBColor c)
+{
+    rbAssert(pTex->stride >= pTex->width);
+    rbAssert(u < pTex->width);
+    rbAssert(v < pTex->height);
+    pTex->data[u + pTex->stride * v] = c;
+}
+
+void rbTexture2PrepareForSampling(RBTexture2 * pTex);
+RBColorTemp rbTexture2SampleNearestRepeat(RBTexture2 * pTex, RBVector2 tc);
+RBColorTemp rbTexture2SampleNearestClamp(RBTexture2 * pTex, RBVector2 tc);
+RBColorTemp rbTexture2SampleLinearRepeat(RBTexture2 * pTex, RBVector2 tc);
+RBColorTemp rbTexture2SampleLinearClamp(RBTexture2 * pTex, RBVector2 tc);
 
 void rbHarmonicPathGeneratorInitialize(RBHarmonicPathGenerator * pPathGen,
     float frequency, RBVector2 orientation,
@@ -117,10 +274,8 @@ static inline RBVector2 rbHarmonicPathGeneratorPos(
 }
 
 
-#define plooki rbPaletteLookupI
-#define plookf rbPaletteLookupF
-
-#define color rbColorMake
+#define colori rbColorMakeI
+#define colorf rbColorMakeI
 #define cscalei rbColorScaleI
 #define cscalef rbColorScaleF
 #define cmixi rbColorMixI

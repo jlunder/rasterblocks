@@ -75,14 +75,9 @@ typedef struct {
     uint8_t r;
     uint8_t g;
     uint8_t b;
-    uint8_t x;
+    uint8_t a;
 } RBColor;
 #endif
-
-
-typedef struct {
-    RBColor c[5];
-} RBPalette;
 
 
 typedef struct {
