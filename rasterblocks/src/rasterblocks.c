@@ -70,7 +70,7 @@ static RBTime g_rbClockMs = 0;
 
 
 static void rbProcessSubsystems(bool * pCoslClockNsnfigChanged);
-static void rbProjectLightData(RBProjectionFrame * pProjFrame,
+static void rbProjectLightData(RBTexture2 * pProjFrame,
     RBRawLightFrame * pRawFrame);
 static void rbProcessConfigChanged(void);
 static void rbProcessGentleRestart(void);
@@ -386,7 +386,8 @@ void rbProcessSubsystems(bool * pConfigChanged)
     RBSubsystem lastSubsystem = rbChangeSubsystem(RBS_MAIN);
     RBRawAudio rawAudio;
     RBAnalyzedAudio analysis;
-    RBProjectionFrame frame;
+    RBTexture2 * pFrame =
+        rbTexture2Alloc(RB_PROJECTION_WIDTH, RB_PROJECTION_HEIGHT);
     
     rbChangeSubsystem(RBS_AUDIO_INPUT);
     rbAudioInputBlockingRead(&rawAudio);
@@ -398,10 +399,12 @@ void rbProcessSubsystems(bool * pConfigChanged)
     rbAudioAnalysisAnalyze(&rawAudio, &analysis);
     
     rbChangeSubsystem(RBS_LIGHT_GENERATION);
-    rbLightGenerationGenerate(&analysis, &frame);
+    rbLightGenerationGenerate(&analysis, pFrame);
     
     rbChangeSubsystem(RBS_MAIN);
-    rbProjectLightData(&frame, &g_rbLastFrameLightData);
+    rbProjectLightData(pFrame, &g_rbLastFrameLightData);
+    
+    rbTexture2Free(pFrame);
     
     // Don't output yet, even though we have a frame of good data now --
     // output will happen right after the next audio read, to minimize jitter.
@@ -414,7 +417,7 @@ void rbProcessSubsystems(bool * pConfigChanged)
 }
 
 
-void rbProjectLightData(RBProjectionFrame * pProjFrame,
+void rbProjectLightData(RBTexture2 * pProjFrame,
     RBRawLightFrame * pRawFrame)
 {
     for(size_t i = 0; i < RB_NUM_PANELS; ++i) {
@@ -422,18 +425,18 @@ void rbProjectLightData(RBProjectionFrame * pProjFrame,
         RBVector2 xinc = g_rbPanelConfigs[i].orientation;
         RBVector2 yinc = v2cross(xinc);
         
+        scanPos = vector2(scanPos.x / (t2getw(pProjFrame) - 1),
+            scanPos.y / (t2geth(pProjFrame) - 1));
+        xinc = vector2(xinc.x / (t2getw(pProjFrame) - 1),
+            xinc.y / (t2geth(pProjFrame) - 1));
+        yinc = vector2(yinc.x / (t2getw(pProjFrame) - 1),
+            yinc.y / (t2geth(pProjFrame) - 1));
+        
         for(size_t j = 0; j < RB_PANEL_HEIGHT; ++j) {
-            // Offset 0.5,0.5 to sample center of texel
-            RBVector2 pos = v2add(scanPos, vector2(0.5f, 0.5f));
+            RBVector2 pos = scanPos;
             
             for(size_t k = 0; k < RB_PANEL_WIDTH; ++k) {
-                // Check we are within the backing texture
-                rbAssert(pos.x >= 0 && pos.y >= 0 &&
-                    pos.x < RB_PROJECTION_WIDTH &&
-                    pos.y < RB_PROJECTION_HEIGHT);
-                // Nearest-neighbor sampling
-                pRawFrame->data[i][j][k] =
-                    pProjFrame->proj[(size_t)pos.y][(size_t)pos.x];
+                pRawFrame->data[i][j][k] = colorct(t2samplc(pProjFrame, pos));
                 pos = v2add(pos, xinc);
             }
             scanPos = v2add(scanPos, yinc);

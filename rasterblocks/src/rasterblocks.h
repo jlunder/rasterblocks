@@ -165,11 +165,6 @@ typedef struct {
 
 
 typedef struct {
-    RBColor proj[RB_PROJECTION_HEIGHT][RB_PROJECTION_WIDTH];
-} RBProjectionFrame;
-
-
-typedef struct {
     RBColor data[RB_NUM_PANELS][RB_PANEL_HEIGHT][RB_PANEL_WIDTH];
 } RBRawLightFrame;
 

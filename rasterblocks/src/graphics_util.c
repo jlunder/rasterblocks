@@ -107,13 +107,43 @@ RBColor rbColorMakeCT(RBColorTemp ct)
 }
 
 
+RBColor rbColorScaleI(RBColor a, uint8_t alpha)
+{
+    uint32_t rr = (uint32_t)a.r * (uint32_t)alpha + 127;
+    uint32_t rg = (uint32_t)a.g * (uint32_t)alpha + 127;
+    uint32_t rb = (uint32_t)a.b * (uint32_t)alpha + 127;
+    uint32_t ra = (uint32_t)a.a * (uint32_t)alpha + 127;
+    
+    return rbColorMakeI(
+        (uint8_t)(rr >= (255 * 255) ? 255 : rr / 255),
+        (uint8_t)(rg >= (255 * 255) ? 255 : rg / 255),
+        (uint8_t)(rb >= (255 * 255) ? 255 : rb / 255),
+        (uint8_t)(ra >= (255 * 255) ? 255 : ra / 255));
+}
+
+
 RBColor rbColorScaleF(RBColor a, float alpha)
 {
     return rbColorMakeI(
         (uint8_t)rbClampF(roundf(a.r * alpha), 0.0f, 255.0f),
         (uint8_t)rbClampF(roundf(a.g * alpha), 0.0f, 255.0f),
         (uint8_t)rbClampF(roundf(a.b * alpha), 0.0f, 255.0f),
-        0);
+        (uint8_t)rbClampF(roundf(a.a * alpha), 0.0f, 255.0f));
+}
+
+
+RBColor rbColorAdd(RBColor a, RBColor b)
+{
+    uint32_t rr = (uint32_t)a.r + (uint32_t)b.r;
+    uint32_t rg = (uint32_t)a.g + (uint32_t)b.g;
+    uint32_t rb = (uint32_t)a.b + (uint32_t)b.b;
+    uint32_t ra = (uint32_t)a.a + (uint32_t)b.a;
+    
+    return rbColorMakeI(
+        (uint8_t)(rr >= 255 ? 255 : rr),
+        (uint8_t)(rg >= 255 ? 255 : rg),
+        (uint8_t)(rb >= 255 ? 255 : rb),
+        (uint8_t)(ra >= 255 ? 255 : ra));
 }
 
 
@@ -123,7 +153,7 @@ RBColor rbColorMixF(RBColor a, float aAlpha, RBColor b, float bAlpha)
         (uint8_t)rbClampF(roundf(a.r * aAlpha + b.r * bAlpha), 0.0f, 255.0f),
         (uint8_t)rbClampF(roundf(a.g * aAlpha + b.g * bAlpha), 0.0f, 255.0f),
         (uint8_t)rbClampF(roundf(a.b * aAlpha + b.b * bAlpha), 0.0f, 255.0f),
-        0);
+        (uint8_t)rbClampF(roundf(a.a * aAlpha + b.a * bAlpha), 0.0f, 255.0f));
 }
 
 
@@ -490,6 +520,71 @@ RBColorTemp rbTexture2SampleLinearClamp(RBTexture2 * pTex, RBVector2 tc)
             rbColorTempMakeC(pTex->data[(sampleIndexU + 1) +
                 pTex->stride * (sampleIndexV + 1)]), alphaU),
         alphaV);
+}
+
+
+void rbTexture2Blt(RBTexture2 * pDestTex, int32_t du, int32_t dv, int32_t dw,
+    int32_t dh, RBTexture2 * pSrcTex, int32_t su, int32_t sv)
+{
+    size_t const dStride = pDestTex->stride;
+    size_t const sStride = pSrcTex->stride;
+    int32_t const sWidth = pSrcTex->width;
+    int32_t const sHeight = pSrcTex->height;
+    
+    // The double negation works for 0x80000000, naive thing doesn't
+    rbAssert(-abs(du) > -RB_MAX_REASONABLE_SIZE);
+    rbAssert(-abs(dv) > -RB_MAX_REASONABLE_SIZE);
+    rbAssert(-abs(dw) > -RB_MAX_REASONABLE_SIZE);
+    rbAssert(-abs(dh) > -RB_MAX_REASONABLE_SIZE);
+    
+    if(du < 0) {
+        dw += du;
+        su -= du;
+        du = 0;
+    }
+    if(dv < 0) {
+        dh += dv;
+        sv -= dv;
+        dv = 0;
+    }
+    
+    if(du + dw > (int32_t)pDestTex->width) {
+        dw = pDestTex->width - du;
+    }
+    if(dv + dh > (int32_t)pDestTex->height) {
+        dv = pDestTex->height - dv;
+    }
+    
+    if(dw <= 0 || dh <= 0) {
+        return;
+    }
+    
+    su %= pSrcTex->width;
+    sv %= pSrcTex->height;
+    
+    if(su < 0) {
+        su += pSrcTex->width;
+    }
+    if(sv < 0) {
+        sv += pSrcTex->height;
+    }
+    
+    for(size_t i = 0; i < (size_t)dh; ++i) {
+        for(size_t j = 0; j < (size_t)dw; ++j) {
+            size_t dIndex = (j + du) + (i + dv) * dStride;
+            RBColor c = pSrcTex->data[su + sv * sStride];
+            pDestTex->data[dIndex] = rbColorAdd(
+                rbColorScaleI(pDestTex->data[dIndex], 255 - c.a), c);
+            ++su;
+            if(su >= sWidth) {
+                su -= sWidth;
+            }
+        }
+        ++sv;
+        if(sv >= sHeight) {
+            sv -= sHeight;
+        }
+    }
 }
 
 

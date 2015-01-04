@@ -12,9 +12,6 @@
 typedef RBVector4 RBColorTemp;
 
 
-typedef uint32_t RBIntAlpha;
-
-
 typedef struct {
     RBTime time;
     float frequency;
@@ -166,10 +163,10 @@ static inline RBColor rbColorMakeI(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 
 RBColor rbColorMakeF(float r, float g, float b, float a);
 RBColor rbColorMakeCT(RBColorTemp ct);
-RBColor rbColorScaleI(RBColor a, RBIntAlpha alpha);
+RBColor rbColorScaleI(RBColor a, uint8_t alpha);
 RBColor rbColorScaleF(RBColor a, float alpha);
-RBColor rbColorMixI(RBColor a, RBIntAlpha aAlpha, RBColor b,
-    RBIntAlpha bAlpha);
+RBColor rbColorAdd(RBColor a, RBColor b);
+RBColor rbColorMixI(RBColor a, uint8_t aAlpha, RBColor b, uint8_t bAlpha);
 RBColor rbColorMixF(RBColor a, float aAlpha, RBColor b, float bAlpha);
 
 static inline RBColorTemp rbColorTempMakeI(uint8_t r, uint8_t g, uint8_t b,
@@ -272,6 +269,9 @@ RBColorTemp rbTexture2SampleNearestClamp(RBTexture2 * pTex, RBVector2 tc);
 RBColorTemp rbTexture2SampleLinearRepeat(RBTexture2 * pTex, RBVector2 tc);
 RBColorTemp rbTexture2SampleLinearClamp(RBTexture2 * pTex, RBVector2 tc);
 
+void rbTexture2Blt(RBTexture2 * pDestTex, int32_t du, int32_t dv, int32_t dw,
+    int32_t dh, RBTexture2 * pSrcTex, int32_t su, int32_t sv);
+
 void rbHarmonicPathGeneratorInitialize(RBHarmonicPathGenerator * pPathGen,
     float frequency, RBVector2 orientation,
     RBVector2 scale0, RBVector2 scale1, RBVector2 scale2, RBVector2 scale3);
@@ -322,6 +322,25 @@ static inline RBVector2 rbHarmonicPathGeneratorPos(
 #define m2rotscale rbMatrix2RotateScale
 #define m2mul rbMatrix2Multiply
 #define m2xform rbMatrix2Transform
+
+#define t1getw rbTexture1GetWidth
+#define t1gett rbTexture1GetTexel
+#define t1sett rbTexture1SetTexel
+#define t1sampnr rbTexture1SampleNearestRepeat
+#define t1sampnc rbTexture1SampleNearestClamp
+#define t1samplr rbTexture1SampleLinearRepeat
+#define t1samplc rbTexture1SampleLinearClamp
+
+#define t2getw rbTexture2GetWidth
+#define t2geth rbTexture2GetHeight
+#define t2gett rbTexture2GetTexel
+#define t2sett rbTexture2SetTexel
+#define t2sampnr rbTexture2SampleNearestRepeat
+#define t2sampnc rbTexture2SampleNearestClamp
+#define t2samplr rbTexture2SampleLinearRepeat
+#define t2samplc rbTexture2SampleLinearClamp
+
+#define t2blt rbTexture2Blt
 
 
 #endif // GRAPHICS_UTIL_H_INCLUDED

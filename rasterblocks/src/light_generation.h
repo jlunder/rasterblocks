@@ -4,12 +4,14 @@
 
 #include "rasterblocks.h"
 
+#include "graphics_util.h"
+
 
 // Light generation subsystem
 void rbLightGenerationInitialize(RBConfiguration const * pConfig);
 void rbLightGenerationShutdown(void);
 void rbLightGenerationGenerate(RBAnalyzedAudio const * pAnalysis,
-    RBProjectionFrame * pFrame);
+    RBTexture2 * pFrame);
 
 
 #endif

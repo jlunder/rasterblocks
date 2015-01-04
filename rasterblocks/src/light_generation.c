@@ -73,17 +73,15 @@ void rbLightGenerationInitialize(RBConfiguration const * config)
         LENGTHOF(g_rbRainbowPalette), true);
     rbTexture1PrepareForSampling(g_rbPRainbowTex);
     
-    /*
     g_rbPTestTex = rbTexture2Alloc(8, 8);
     for(size_t i = 0; i < 8; ++i) {
         for(size_t j = 0; j < 8; ++j) {
             rbTexture2SetTexel(g_rbPTestTex, j, i,
-                (g_rbIcons[0][i] >> j) & 1 ? colori(127, 63, 0, 255) :
+                (g_rbIcons[2][i] >> j) & 1 ? colori(31, 31, 31, 0) :
                     colori(0, 0, 0, 0));
         }
     }
     rbTexture2PrepareForSampling(g_rbPTestTex);
-    */
 }
 
 
@@ -109,7 +107,7 @@ void rbLightGenerationShutdown(void)
 
 
 void rbLightGenerationGenerate(RBAnalyzedAudio const * pAnalysis,
-    RBProjectionFrame * pFrame)
+    RBTexture2 * pFrame)
 {
     float leftTreble = pAnalysis->trebleEnergy * sqrtf(1.0f - pAnalysis->leftRightBalance);
     float rightTreble = pAnalysis->trebleEnergy * sqrtf(pAnalysis->leftRightBalance);
@@ -117,73 +115,36 @@ void rbLightGenerationGenerate(RBAnalyzedAudio const * pAnalysis,
     
     UNUSED(g_rbRainbowPalette);
 
-    for(size_t i = 0; i < RB_PROJECTION_HEIGHT; ++i) {
-        for(size_t j = 0; j < RB_PROJECTION_WIDTH; ++j) {
-            pFrame->proj[i][j] = colori(i * 255 / (RB_PROJECTION_HEIGHT - 1), 0, j * 255 / (RB_PROJECTION_WIDTH - 1), 0);
-        }
-    }
-    
-    /*
-    UNUSED(bass);
-    UNUSED(leftTreble);
-    UNUSED(rightTreble);
-    for(size_t i = 0; i < RB_PANEL_HEIGHT * 6; ++i) {
-        for(size_t j = 0; j < RB_PANEL_WIDTH / 2; ++j) {
-            pFrame->proj[i][j] =
-                rbColorMakeCT(
-                    rbTexture1SampleLinearClamp(g_rbPWarmTex,
-                        ((float)i) / (float)(RB_PANEL_HEIGHT * 6)));
-        }
-    }
-    for(size_t i = 0; i < RB_PANEL_HEIGHT * 6; ++i) {
-        for(size_t j = 0; j < RB_PANEL_WIDTH / 2; ++j) {
-            pFrame->proj[i][j + RB_PANEL_WIDTH / 2] =
-                rbColorMakeCT(
-                    rbTexture1SampleLinearRepeat(g_rbPRainbowTex,
-                        ((float)i) / (float)(RB_PANEL_HEIGHT * 3)));
-        }
-    }
-    */
-    
     for(size_t i = 0; i < RB_PANEL_HEIGHT; ++i) {
         for(size_t j = 0; j < RB_PANEL_WIDTH; ++j) {
             int32_t k = i < 4 ? (int32_t)j + 3 - i: (int32_t)j - 4 + i;
-            pFrame->proj[i][RB_PANEL_WIDTH - 1 - j] =
-                rbColorMakeCT(
-                    rbTexture1SampleNearestClamp(g_rbPColdTex,
-                        leftTreble - k * (2.0f / RB_PANEL_WIDTH)));
+            t2sett(pFrame, RB_PANEL_WIDTH - 1 - j, i,
+                colorct(
+                    t1sampnc(g_rbPColdTex,
+                        leftTreble - k * (2.0f / RB_PANEL_WIDTH))));
         }
     }
     
     for(size_t i = 0; i < RB_PANEL_HEIGHT; ++i) {
         for(size_t j = 0; j < RB_PANEL_WIDTH; ++j) {
             int32_t k = i < 4 ? (int32_t)j + 3 - i: (int32_t)j - 4 + i;
-            pFrame->proj[i][j + RB_PANEL_WIDTH] =
-                rbColorMakeCT(
-                    rbTexture1SampleNearestClamp(g_rbPColdTex,
-                        rightTreble - k * (2.0f / RB_PANEL_WIDTH)));
+            t2sett(pFrame, j + RB_PANEL_WIDTH, i,
+                colorct(
+                    t1sampnc(g_rbPColdTex,
+                        rightTreble - k * (2.0f / RB_PANEL_WIDTH))));
         }
     }
     
     for(size_t i = 0; i < RB_PANEL_HEIGHT * 5; ++i) {
         for(size_t j = 0; j < RB_PANEL_WIDTH * 2; ++j) {
-            pFrame->proj[RB_PROJECTION_HEIGHT - 1 - i][j] =
-                rbColorMakeCT(
-                    rbTexture1SampleNearestClamp(g_rbPWarmTex,
-                        bass - i * (2.0f / (RB_PANEL_HEIGHT * 5))));
+            t2sett(pFrame, j, RB_PROJECTION_HEIGHT - 1 - i,
+                colorct(
+                    t1sampnc(g_rbPWarmTex,
+                        bass - i * (2.0f / (RB_PANEL_HEIGHT * 5)))));
         }
     }
-    /*
-    for(size_t i = 0; i < RB_PANEL_HEIGHT * 6; ++i) {
-        for(size_t j = 0; j < RB_PANEL_WIDTH * 2; ++j) {
-            RBColorTemp sample = 
-                rbTexture2SampleLinearRepeat(g_rbPTestTex,
-                    vector2((j + 0.5f) / 8, (i + 0.5f) / 8 - 3.0f));
-            pFrame->proj[i][j] = cmixf(pFrame->proj[i][j],
-                1.0f - ctgeta(sample), rbColorMakeCT(sample), ctgeta(sample));
-        }
-    }
-    */
+    
+    t2blt(pFrame, 0, 8, 8, 8, g_rbPTestTex, 0, 0);
     
     //rbLightGenerationCompositeIcon(&lights->overhead, 2, 15);
     UNUSED(g_rbIcons);
