@@ -207,6 +207,16 @@ static inline RBColorTemp rbColorTempMix(RBColorTemp a, float aAlpha,
     return rbVector4Add(rbVector4Scale(a, aAlpha), rbVector4Scale(b, bAlpha));
 }
 
+#define rbColorTempScale rbVector4Scale
+#define rbColorTempAdd rbVector4Add
+
+static inline RBColorTemp rbColorTempClamp(RBColorTemp c)
+{
+    return rbColorTempMakeF(
+        rbClampF(c.x, 0.0f, 1.0f), rbClampF(c.y, 0.0f, 1.0f),
+        rbClampF(c.z, 0.0f, 1.0f), rbClampF(c.w, 0.0f, 1.0f));
+}
+
 RBTexture1 * rbTexture1Alloc(size_t width);
 void rbTexture1Free(RBTexture1 * pTex);
 static inline size_t rbTexture1GetWidth(RBTexture1 * pTex)
@@ -275,11 +285,24 @@ static inline RBVector2 rbHarmonicPathGeneratorPos(
 
 
 #define colori rbColorMakeI
-#define colorf rbColorMakeI
+#define colorf rbColorMakeF
+#define colorct rbColorMakeCT
 #define cscalei rbColorScaleI
 #define cscalef rbColorScaleF
 #define cmixi rbColorMixI
 #define cmixf rbColorMixF
+
+#define colortempf rbColorTempMakeF
+#define colortempc rbColorTempMakeC
+#define ctseta rbColorTempSetA
+#define ctgetr rbColorTempGetR
+#define ctgetg rbColorTempGetG
+#define ctgetb rbColorTempGetB
+#define ctgeta rbColorTempGetA
+#define ctmix rbColorTempMix
+#define ctscale rbColorTempScale
+#define ctadd rbColorTempAdd
+#define ctclamp rbColorTempClamp
 
 #define vector2 rbVector2Make
 #define v2add rbVector2Add

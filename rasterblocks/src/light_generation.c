@@ -39,6 +39,8 @@ static RBTexture1 * g_rbPWarmTex = NULL;
 static RBTexture1 * g_rbPColdTex = NULL;
 static RBTexture1 * g_rbPRainbowTex = NULL;
 
+static RBTexture2 * g_rbPTestTex = NULL;
+
 //static size_t g_rbNextIcon = 0;
 //static RBTimer g_rbDebounce;
 //static RBTimer g_rbIconDisplayTimer;
@@ -70,6 +72,18 @@ void rbLightGenerationInitialize(RBConfiguration const * config)
     rbTexture1FillFromPiecewiseLinear(g_rbPRainbowTex, g_rbRainbowPalette,
         LENGTHOF(g_rbRainbowPalette), true);
     rbTexture1PrepareForSampling(g_rbPRainbowTex);
+    
+    /*
+    g_rbPTestTex = rbTexture2Alloc(8, 8);
+    for(size_t i = 0; i < 8; ++i) {
+        for(size_t j = 0; j < 8; ++j) {
+            rbTexture2SetTexel(g_rbPTestTex, j, i,
+                (g_rbIcons[0][i] >> j) & 1 ? colori(127, 63, 0, 255) :
+                    colori(0, 0, 0, 0));
+        }
+    }
+    rbTexture2PrepareForSampling(g_rbPTestTex);
+    */
 }
 
 
@@ -82,6 +96,14 @@ void rbLightGenerationShutdown(void)
     if(g_rbPColdTex != NULL) {
         rbTexture1Free(g_rbPColdTex);
         g_rbPColdTex = NULL;
+    }
+    if(g_rbPRainbowTex != NULL) {
+        rbTexture1Free(g_rbPRainbowTex);
+        g_rbPRainbowTex = NULL;
+    }
+    if(g_rbPTestTex != NULL) {
+        rbTexture2Free(g_rbPTestTex);
+        g_rbPTestTex = NULL;
     }
 }
 
@@ -151,6 +173,17 @@ void rbLightGenerationGenerate(RBAnalyzedAudio const * pAnalysis,
                         bass - i * (2.0f / (RB_PANEL_HEIGHT * 5))));
         }
     }
+    /*
+    for(size_t i = 0; i < RB_PANEL_HEIGHT * 6; ++i) {
+        for(size_t j = 0; j < RB_PANEL_WIDTH * 2; ++j) {
+            RBColorTemp sample = 
+                rbTexture2SampleLinearRepeat(g_rbPTestTex,
+                    vector2((j + 0.5f) / 8, (i + 0.5f) / 8 - 3.0f));
+            pFrame->proj[i][j] = cmixf(pFrame->proj[i][j],
+                1.0f - ctgeta(sample), rbColorMakeCT(sample), ctgeta(sample));
+        }
+    }
+    */
     
     //rbLightGenerationCompositeIcon(&lights->overhead, 2, 15);
     UNUSED(g_rbIcons);

@@ -291,7 +291,7 @@ RBTexture2 * rbTexture2Alloc(size_t width, size_t height)
 {
     size_t stride = (width + 1 + 3) & (~3);
     size_t size = sizeof (RBTexture2) +
-        (width + 1) * (height + 1) * sizeof (RBColor);
+        (stride) * (height + 1) * sizeof (RBColor);
     RBTexture2 * pTex = malloc(size);
     
     rbAssert(width <= RB_MAX_REASONABLE_SIZE);
@@ -302,7 +302,7 @@ RBTexture2 * rbTexture2Alloc(size_t width, size_t height)
     pTex->width = width;
     pTex->height = height;
     pTex->stride = stride;
-    pTex->size = width + 1;
+    pTex->size = stride * (height + 1);
     memset(pTex->data, 0, pTex->size * sizeof (RBColor));
     
     return pTex;
@@ -402,8 +402,8 @@ RBColorTemp rbTexture2SampleNearestClamp(RBTexture2 * pTex, RBVector2 tc)
 
 RBColorTemp rbTexture2SampleLinearRepeat(RBTexture2 * pTex, RBVector2 tc)
 {
-    float sampleIndexUF = tc.x - floorf(tc.x);
-    float sampleIndexVF = tc.y - floorf(tc.y);
+    float sampleIndexUF = pTex->width * (tc.x - floorf(tc.x));
+    float sampleIndexVF = pTex->height * (tc.y - floorf(tc.y));
     size_t sampleIndexU = (size_t)sampleIndexUF;
     size_t sampleIndexV = (size_t)sampleIndexVF;
     float alphaU = sampleIndexUF - floorf(sampleIndexUF);
