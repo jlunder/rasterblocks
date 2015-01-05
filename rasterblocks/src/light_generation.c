@@ -61,17 +61,14 @@ void rbLightGenerationInitialize(RBConfiguration const * config)
     g_rbPWarmTex = rbTexture1Alloc(256);
     rbTexture1FillFromPiecewiseLinear(g_rbPWarmTex, g_rbWarmPalette,
         LENGTHOF(g_rbWarmPalette), false);
-    rbTexture1PrepareForSampling(g_rbPWarmTex);
     
     g_rbPColdTex = rbTexture1Alloc(256);
     rbTexture1FillFromPiecewiseLinear(g_rbPColdTex, g_rbColdPalette,
         LENGTHOF(g_rbColdPalette), false);
-    rbTexture1PrepareForSampling(g_rbPColdTex);
     
     g_rbPRainbowTex = rbTexture1Alloc(3);
     rbTexture1FillFromPiecewiseLinear(g_rbPRainbowTex, g_rbRainbowPalette,
         LENGTHOF(g_rbRainbowPalette), true);
-    rbTexture1PrepareForSampling(g_rbPRainbowTex);
     
     g_rbPTestTex = rbTexture2Alloc(8, 8);
     for(size_t i = 0; i < 8; ++i) {
@@ -81,7 +78,6 @@ void rbLightGenerationInitialize(RBConfiguration const * config)
                     colori(0, 0, 0, 0));
         }
     }
-    rbTexture2PrepareForSampling(g_rbPTestTex);
 }
 
 
@@ -144,7 +140,7 @@ void rbLightGenerationGenerate(RBAnalyzedAudio const * pAnalysis,
         }
     }
     
-    t2blt(pFrame, 0, 8, 8, 8, g_rbPTestTex, 0, 0);
+    t2bltsa(pFrame, 0, 8, 8, 8, g_rbPTestTex, 0, 0);
     
     //rbLightGenerationCompositeIcon(&lights->overhead, 2, 15);
     UNUSED(g_rbIcons);

@@ -233,7 +233,6 @@ static inline void rbTexture1SetTexel(RBTexture1 * pTex, size_t u, RBColor c)
 
 void rbTexture1FillFromPiecewiseLinear(RBTexture1 * pTex,
     RBPiecewiseLinearColorSegment * pSegments, size_t count, bool repeat);
-void rbTexture1PrepareForSampling(RBTexture1 * pTex);
 RBColorTemp rbTexture1SampleNearestRepeat(RBTexture1 * pTex, float tc);
 RBColorTemp rbTexture1SampleNearestClamp(RBTexture1 * pTex, float tc);
 RBColorTemp rbTexture1SampleLinearRepeat(RBTexture1 * pTex, float tc);
@@ -263,7 +262,6 @@ static inline void rbTexture2SetTexel(RBTexture2 * pTex, size_t u, size_t v,
     pTex->data[u + pTex->stride * v] = c;
 }
 
-void rbTexture2PrepareForSampling(RBTexture2 * pTex);
 RBColorTemp rbTexture2SampleNearestRepeat(RBTexture2 * pTex, RBVector2 tc);
 RBColorTemp rbTexture2SampleNearestClamp(RBTexture2 * pTex, RBVector2 tc);
 RBColorTemp rbTexture2SampleLinearRepeat(RBTexture2 * pTex, RBVector2 tc);
@@ -271,6 +269,8 @@ RBColorTemp rbTexture2SampleLinearClamp(RBTexture2 * pTex, RBVector2 tc);
 
 void rbTexture2Blt(RBTexture2 * pDestTex, int32_t du, int32_t dv, int32_t dw,
     int32_t dh, RBTexture2 * pSrcTex, int32_t su, int32_t sv);
+void rbTexture2BltSrcAlpha(RBTexture2 * pDestTex, int32_t du, int32_t dv,
+    int32_t dw, int32_t dh, RBTexture2 * pSrcTex, int32_t su, int32_t sv);
 
 void rbHarmonicPathGeneratorInitialize(RBHarmonicPathGenerator * pPathGen,
     float frequency, RBVector2 orientation,
@@ -341,6 +341,7 @@ static inline RBVector2 rbHarmonicPathGeneratorPos(
 #define t2samplc rbTexture2SampleLinearClamp
 
 #define t2blt rbTexture2Blt
+#define t2bltsa rbTexture2BltSrcAlpha
 
 
 #endif // GRAPHICS_UTIL_H_INCLUDED
