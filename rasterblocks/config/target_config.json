@@ -1,5 +1,5 @@
 {
-	"logLevel": "SLLL_WARNING",
+	"logLevel": "RBLL_WARNING",
 	"audioSource": 	"RBAIS_DEVICE",
 	"audioSourceParam": "plughw:1",
 	"monitorAudio": false,

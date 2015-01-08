@@ -266,9 +266,11 @@ void rbInitialize(int argc, char * argv[])
     rbConfigurationParseArgv(&g_rbConfiguration, argc, argv);
     
     if(reinitFrameData) {
-        memset(&g_rbLastFrameLightData, 0, sizeof g_rbLastFrameLightData);
+        rbZero(&g_rbLastFrameLightData, sizeof g_rbLastFrameLightData);
     }
     
+    rbChangeSubsystem(RBS_MAIN);
+    rbInfo("Reading config file\n");
     rbChangeSubsystem(RBS_CONFIGURATION);
     rbConfigurationLoad(&g_rbConfiguration);
     // Command-line params should override config file
@@ -278,18 +280,28 @@ void rbInitialize(int argc, char * argv[])
         g_rbSubsystemLogLevels[i] = g_rbConfiguration.logLevel;
     }
     
+    rbChangeSubsystem(RBS_MAIN);
+    rbInfo("Initializing audio input\n");
     rbChangeSubsystem(RBS_AUDIO_INPUT);
     rbAudioInputInitialize(&g_rbConfiguration);
     
+    rbChangeSubsystem(RBS_MAIN);
+    rbInfo("Initializing audio analysis\n");
     rbChangeSubsystem(RBS_AUDIO_ANALYSIS);
     rbAudioAnalysisInitialize(&g_rbConfiguration);
     
+    rbChangeSubsystem(RBS_MAIN);
+    rbInfo("Initializing light generation\n");
     rbChangeSubsystem(RBS_LIGHT_GENERATION);
     rbLightGenerationInitialize(&g_rbConfiguration);
     
+    rbChangeSubsystem(RBS_MAIN);
+    rbInfo("Initializing light output\n");
     rbChangeSubsystem(RBS_LIGHT_OUTPUT);
     rbLightOutputInitialize(&g_rbConfiguration);
     
+    rbChangeSubsystem(RBS_MAIN);
+    rbInfo("Initializing hot configuration system\n");
     rbChangeSubsystem(RBS_HOT_CONFIGURATION);
     rbHotConfigurationInitialize(&g_rbConfiguration);
     
@@ -340,7 +352,7 @@ void rbProcess(uint64_t nsSinceLastProcess)
         msSinceLastProcess * 1000000;
     g_rbClockMs += msSinceLastProcess;
     
-    rbInfo("Frame time: %lluns\n", msSinceLastProcess);
+    rbInfo("Frame time: %dms\n", msSinceLastProcess);
     
     rbAssert(lastSubsystem == RBS_MAIN);
     

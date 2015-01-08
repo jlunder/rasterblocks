@@ -91,8 +91,6 @@ void rbLightOutputInitialize(RBConfiguration const * config)
     uint8_t bitsPerWord = 8;
     uint32_t maxSpeedHz = 500000;
     
-    UNUSED(config);
-    
     // Just in case this is a reinit
     rbLightOutputShutdown();
     

@@ -21,9 +21,9 @@
 #define RB_AUDIO_CHANNELS 2
 #define RB_AUDIO_SAMPLE_RATE 48000
 #if defined RB_USE_TARGET_HARNESS
-#define RB_VIDEO_FRAME_RATE 50
+#define RB_VIDEO_FRAME_RATE 240
 #else
-#define RB_VIDEO_FRAME_RATE 50
+#define RB_VIDEO_FRAME_RATE 60
 #endif
 #define RB_AUDIO_FRAMES_PER_VIDEO_FRAME ((RB_AUDIO_SAMPLE_RATE / RB_VIDEO_FRAME_RATE)*2)
 
@@ -318,9 +318,8 @@ static inline float rbClampF(float f, float fMin, float fMax)
 #define rbError(...) rbLog(RBLL_ERROR, __FILE__, __LINE__, __VA_ARGS__)
 
 #define rbInfoEnabled() rbLogShouldLog(RBLL_INFO, __FILE__, __LINE__)
-#define rbInfoWarningEnabled() \
-    rbLogShouldLog(RBLL_WARNING, __FILE__, __LINE__)
-#define rbInfoErrorEnabled() rbLogShouldLog(RBLL_ERROR, __FILE__, __LINE__)
+#define rbWarningEnabled() rbLogShouldLog(RBLL_WARNING, __FILE__, __LINE__)
+#define rbErrorEnabled() rbLogShouldLog(RBLL_ERROR, __FILE__, __LINE__)
 
 
 // Framework: coordinates all the other subsystems
