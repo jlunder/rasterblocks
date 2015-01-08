@@ -44,6 +44,13 @@ typedef struct {
 } RBPiecewiseLinearColorSegment;
 
 
+// This is a CIE even intensity table for converting linear perceived
+// brightness values to PWM values (which are linear power output).
+// This is basically a correction table to correct for the way the eye
+// perceives color.
+uint8_t const g_rbCieTable[256];
+
+
 static inline RBVector2 rbVector2Make(float x, float y)
 {
     RBVector2 res = {x, y};

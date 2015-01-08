@@ -1,20 +1,6 @@
 
 #ifdef RB_USE_TARGET_HARNESS
 
-#include <time.h>
-
-#include <errno.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/unistd.h>
-#include <termios.h>
-#include <unistd.h>
-
-#include <linux/types.h>
-#include <linux/spi/spidev.h>
-
 #include <math.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -22,9 +8,27 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <time.h>
+
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/unistd.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <termios.h>
+#include <unistd.h>
+
+#include <linux/types.h>
+#include <linux/spi/spidev.h>
 
 
 #include "rasterblocks.h"
+
+#include "graphics_util.h"
 
 
 #define RB_TARGET_MAX_SPI_OPEN_RETRY 5
@@ -41,41 +45,11 @@ static uint8_t * rbLightOutputEmitPanel(uint8_t * pBuf,
 
 static int g_rbSpiFd = -1;
 
-uint8_t g_rbModifiedCieTable[256];
+static int g_rbPpSocket = -1;
+static struct sockaddr_in g_rbPpAddress;
+static uint32_t g_rbPpSeqNumber = 0;
 
-
-// This is a CIE even intensity table for converting linear perceived
-// brightness values to PWM values (which are linear power output).
-// This is basically a correction table to correct for the way the eye
-// perceives color.
-uint8_t const g_rbCieTable[256] = {
-    0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 
-    1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 
-    2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 
-    3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 
-    5, 5, 6, 6, 6, 6, 6, 7, 7, 7, 
-    7, 8, 8, 8, 8, 9, 9, 9, 10, 10, 
-    10, 10, 11, 11, 11, 12, 12, 12, 13, 13, 
-    13, 14, 14, 15, 15, 15, 16, 16, 17, 17, 
-    17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 
-    22, 23, 23, 24, 24, 25, 25, 26, 26, 27, 
-    28, 28, 29, 29, 30, 31, 31, 32, 32, 33, 
-    34, 34, 35, 36, 37, 37, 38, 39, 39, 40, 
-    41, 42, 43, 43, 44, 45, 46, 47, 47, 48, 
-    49, 50, 51, 52, 53, 54, 54, 55, 56, 57, 
-    58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 
-    68, 70, 71, 72, 73, 74, 75, 76, 77, 79, 
-    80, 81, 82, 83, 85, 86, 87, 88, 90, 91, 
-    92, 94, 95, 96, 98, 99, 100, 102, 103, 105, 
-    106, 108, 109, 110, 112, 113, 115, 116, 118, 120, 
-    121, 123, 124, 126, 128, 129, 131, 132, 134, 136, 
-    138, 139, 141, 143, 145, 146, 148, 150, 152, 154, 
-    155, 157, 159, 161, 163, 165, 167, 169, 171, 173, 
-    175, 177, 179, 181, 183, 185, 187, 189, 191, 193, 
-    196, 198, 200, 202, 204, 207, 209, 211, 214, 216, 
-    218, 220, 223, 225, 228, 230, 232, 235, 237, 240, 
-    242, 245, 247, 250, 252, 255, 
-};
+static uint8_t g_rbModifiedCieTable[256];
 
 
 int main(int argc, char * argv[])
@@ -134,6 +108,15 @@ void rbLightOutputInitialize(RBConfiguration const * config)
         g_rbModifiedCieTable[i] = (uint8_t)rbClampF(
             ceilf(g_rbCieTable[i] * config->brightness), 0.0f, 255.0f);
     }
+    
+    g_rbPpSocket = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    rbVerify(g_rbPpSocket >= 0);
+    
+    rbZero(&g_rbPpAddress, sizeof g_rbPpAddress);
+    
+    g_rbPpAddress.sin_family = AF_INET;
+    g_rbPpAddress.sin_addr.s_addr = inet_addr("192.168.2.4");
+    g_rbPpAddress.sin_port = htons(5005);
 }
 
 
@@ -174,9 +157,15 @@ void rbLightOutputShutdown(void)
         close(g_rbSpiFd);
         g_rbSpiFd = -1;
     }
+    
+    if(g_rbPpSocket >= 0) {
+        close(g_rbPpSocket);
+        g_rbPpSocket = -1;
+    }
 }
 
 
+/*
 void rbLightOutputShowLights(RBRawLightFrame const * pFrame)
 {
     struct spi_ioc_transfer xfer;
@@ -219,6 +208,63 @@ uint8_t * rbLightOutputEmitPanel(uint8_t * pBuf,
             *(pBuf++) = g_rbModifiedCieTable[pData->b];
             *(pBuf++) = g_rbModifiedCieTable[pData->r];
             *(pBuf++) = g_rbModifiedCieTable[pData->g];
+        }
+        pData += RB_PANEL_WIDTH;
+    }
+    
+    return pBuf;
+}
+*/
+
+
+void rbLightOutputShowLights(RBRawLightFrame const * pFrame)
+{
+    uint8_t buf[4 + 1 + (RB_PANEL_WIDTH * RB_PANEL_HEIGHT) *
+        RB_NUM_PANELS_PER_STRING * 3];
+    uint8_t * pB;
+    
+    for(size_t j = 0; j < RB_NUM_STRINGS; ++j) {
+        buf[0] = (g_rbPpSeqNumber >> 24) & 0xFF;
+        buf[1] = (g_rbPpSeqNumber >> 16) & 0xFF;
+        buf[2] = (g_rbPpSeqNumber >> 8) & 0xFF;
+        buf[3] = (g_rbPpSeqNumber >> 0) & 0xFF;
+        ++g_rbPpSeqNumber;
+        buf[4] = (uint8_t)j;
+        pB = buf + 5;
+        for(size_t i = 0; i < RB_NUM_PANELS_PER_STRING; ++i) {
+            rbAssert(pB < buf + LENGTHOF(buf));
+            pB = rbLightOutputEmitPanel(pB,
+                pFrame->data[j * RB_NUM_PANELS_PER_STRING + i]);
+        }
+        rbAssert(pB == buf + LENGTHOF(buf));
+        
+        rbInfo("%02X %02X %02X %02X:%02X:%02X %02X %02X\n",
+            buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7]);
+        
+        rbVerify(sendto(g_rbPpSocket, buf, sizeof buf, 0,
+                (struct sockaddr *)&g_rbPpAddress, sizeof g_rbPpAddress) ==
+            sizeof buf);
+    }
+}
+
+
+uint8_t * rbLightOutputEmitPanel(uint8_t * pBuf,
+    RBColor const pLights[RB_PANEL_HEIGHT][RB_PANEL_WIDTH])
+{
+    RBColor const * pData = pLights[0];
+    for(size_t i = 0; i < RB_PANEL_HEIGHT; i += 2) {
+        for(size_t j = 0; j < RB_PANEL_WIDTH; ++j) {
+            *(pBuf++) = g_rbModifiedCieTable[pData->b];
+            *(pBuf++) = g_rbModifiedCieTable[pData->g];
+            *(pBuf++) = g_rbModifiedCieTable[pData->r];
+            ++pData;
+        }
+        pData += RB_PANEL_WIDTH;
+        for(size_t j = 0; j < RB_PANEL_WIDTH; ++j) {
+            --pData;
+            *(pBuf++) = g_rbModifiedCieTable[pData->b];
+            *(pBuf++) = g_rbModifiedCieTable[pData->g];
+            *(pBuf++) = g_rbModifiedCieTable[pData->r];
         }
         pData += RB_PANEL_WIDTH;
     }
