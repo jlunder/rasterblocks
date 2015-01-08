@@ -212,8 +212,8 @@ RBTexture1 * rbTexture1Alloc(size_t width)
     rbAssert(width > 0);
     
     pTex->width = width;
-    pTex->size = width + 1;
-    memset(pTex->data, 0, pTex->size * sizeof (RBColor));
+    pTex->size = width;
+    rbZero(pTex->data, pTex->size * sizeof (RBColor));
     
     return pTex;
 }
@@ -378,8 +378,8 @@ RBTexture2 * rbTexture2Alloc(size_t width, size_t height)
     pTex->width = width;
     pTex->height = height;
     pTex->stride = stride;
-    pTex->size = stride * (height + 1);
-    memset(pTex->data, 0, pTex->size * sizeof (RBColor));
+    pTex->size = stride * height;
+    rbZero(pTex->data, pTex->size * sizeof (RBColor));
     
     return pTex;
 }
