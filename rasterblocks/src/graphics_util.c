@@ -575,6 +575,9 @@ void rbTexture2Blt(RBTexture2 * pDestTex, int32_t du, int32_t dv, int32_t dw,
     int32_t const sWidth = pSrcTex->width;
     int32_t const sHeight = pSrcTex->height;
     
+    RB_ASSERT_TEXTURE2_VALID(pDestTex);
+    RB_ASSERT_TEXTURE2_VALID(pSrcTex);
+    
     // The double negation works for 0x80000000, naive thing doesn't
     rbAssert(-abs(du) > -RB_MAX_REASONABLE_SIZE);
     rbAssert(-abs(dv) > -RB_MAX_REASONABLE_SIZE);
@@ -644,6 +647,9 @@ void rbTexture2BltSrcAlpha(RBTexture2 * pDestTex, int32_t du, int32_t dv,
     int32_t const sWidth = pSrcTex->width;
     int32_t const sHeight = pSrcTex->height;
     
+    RB_ASSERT_TEXTURE2_VALID(pDestTex);
+    RB_ASSERT_TEXTURE2_VALID(pSrcTex);
+    
     // The double negation works for 0x80000000, naive thing doesn't
     rbAssert(-abs(du) > -RB_MAX_REASONABLE_SIZE);
     rbAssert(-abs(dv) > -RB_MAX_REASONABLE_SIZE);
@@ -697,6 +703,34 @@ void rbTexture2BltSrcAlpha(RBTexture2 * pDestTex, int32_t du, int32_t dv,
         ++sv;
         if(sv >= sHeight) {
             sv -= sHeight;
+        }
+    }
+}
+
+
+void rbTexture2Mix(RBTexture2 * pDestTex, RBTexture2 * pSrcTexA,
+    uint8_t alphaA, RBTexture2 * pSrcTexB, uint8_t alphaB)
+{
+    size_t const width = pDestTex->width;
+    size_t const height = pDestTex->height;
+    size_t const stride = pDestTex->stride;
+    
+    RB_ASSERT_TEXTURE2_VALID(pDestTex);
+    RB_ASSERT_TEXTURE2_VALID(pSrcTexA);
+    RB_ASSERT_TEXTURE2_VALID(pSrcTexB);
+    
+    rbAssert(pSrcTexA->width == width);
+    rbAssert(pSrcTexB->width == width);
+    rbAssert(pSrcTexA->height == height);
+    rbAssert(pSrcTexB->height == height);
+    rbAssert(pSrcTexA->stride == stride);
+    rbAssert(pSrcTexB->stride == stride);
+    
+    for(size_t j = 0; j < height; ++j) {
+        for(size_t i = 0; i < width; ++i) {
+            size_t o = j * stride + i;
+            pDestTex->data[o] = rbColorMixI(pSrcTexA->data[o], alphaA,
+                pSrcTexB->data[o], alphaB);
         }
     }
 }

@@ -279,6 +279,9 @@ void rbTexture2Blt(RBTexture2 * pDestTex, int32_t du, int32_t dv, int32_t dw,
 void rbTexture2BltSrcAlpha(RBTexture2 * pDestTex, int32_t du, int32_t dv,
     int32_t dw, int32_t dh, RBTexture2 * pSrcTex, int32_t su, int32_t sv);
 
+void rbTexture2Mix(RBTexture2 * pDestTex, RBTexture2 * pSrcTexA,
+    uint8_t alphaA, RBTexture2 * pSrcTexB, uint8_t alphaB);
+
 void rbHarmonicPathGeneratorInitialize(RBHarmonicPathGenerator * pPathGen,
     float frequency, RBVector2 orientation,
     RBVector2 scale0, RBVector2 scale1, RBVector2 scale2, RBVector2 scale3);
@@ -349,6 +352,8 @@ static inline RBVector2 rbHarmonicPathGeneratorPos(
 
 #define t2blt rbTexture2Blt
 #define t2bltsa rbTexture2BltSrcAlpha
+
+#define t2mix rbTexture2Mix
 
 
 #endif // GRAPHICS_UTIL_H_INCLUDED
