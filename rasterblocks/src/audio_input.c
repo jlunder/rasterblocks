@@ -96,12 +96,10 @@ void rbAudioInputBlockingRead(RBRawAudio * audio)
 
 
 #ifndef RB_USE_SNDFILE_INPUT
-
-
 bool rbAudioFileInitialize(char const * filename)
 {
     UNUSED(filename);
-    rbFatal("Not compiled with libsndfile support!\n");
+    rbFatal("libsndfile input not included in this build!\n");
     return false;
 }
 
@@ -115,6 +113,4 @@ void rbAudioFileReadLooping(RBRawAudio * pAudio)
 {
     UNUSED(pAudio);
 }
-
-
 #endif

@@ -1,14 +1,8 @@
-
 #ifdef RB_USE_TARGET_HARNESS
 
-#include <math.h>
-#include <assert.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <string.h>
-#include <time.h>
+#include "rasterblocks.h"
+
+#include "graphics_util.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -21,35 +15,6 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <unistd.h>
-
-#include <linux/types.h>
-#include <linux/spi/spidev.h>
-
-
-#include "rasterblocks.h"
-
-#include "graphics_util.h"
-
-
-#define RB_TARGET_MAX_SPI_OPEN_RETRY 5
-#define RB_TARGET_SPI_DEVICE "/dev/spidev1.0"
-#define RB_TARGET_SPI_DEVICE_STARTUP_COMMAND \
-    "echo BB-SPIDEV0 > /sys/devices/bone_capemgr.9/slots"
-#define RB_TARGET_SPI_DEVICE_STARTUP_WAIT_NS 2000000000LLU
-
-
-static void rbLightOutputStartSpiDevice(void);
-static uint8_t * rbLightOutputEmitPanel(uint8_t * pBuf,
-    RBColor const pLights[RB_PANEL_HEIGHT][RB_PANEL_WIDTH]);
-
-
-static int g_rbSpiFd = -1;
-
-static int g_rbPpSocket = -1;
-static struct sockaddr_in g_rbPpAddress;
-static uint32_t g_rbPpSeqNumber = 0;
-
-static uint8_t g_rbModifiedCieTable[256];
 
 
 int main(int argc, char * argv[])

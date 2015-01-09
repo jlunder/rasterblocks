@@ -20,7 +20,7 @@ bool rbAudioDeviceInitialize(char const * deviceName, RBAudioDeviceMode mode)
         deviceName = NULL;
     }
     g_rbPOpenALDevice = alcCaptureOpenDevice(deviceName, RB_AUDIO_SAMPLE_RATE,
-        AL_FORMAT_STEREO16, RB_AUDIO_FRAMES_PER_VIDEO_FRAME * 2);
+        AL_FORMAT_STEREO16, RB_AUDIO_FRAMES_PER_VIDEO_FRAME * 4);
     if (alGetError() != AL_NO_ERROR) {
         rbAudioDeviceShutdown();
         return false;

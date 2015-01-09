@@ -53,7 +53,7 @@ bool rbAlsaCaptureInit(const char * captureDev)
     if(!rbOpenStream(&g_rbAlsaCaptureHandle, captureDev,
             SND_PCM_STREAM_CAPTURE, SND_PCM_FORMAT_FLOAT_LE,
             RB_AUDIO_CHANNELS, RB_AUDIO_SAMPLE_RATE,
-            RB_AUDIO_FRAMES_PER_VIDEO_FRAME)) {
+            RB_AUDIO_FRAMES_PER_VIDEO_FRAME * RB_AUDIO_CHANNELS)) {
         if(rbIsRestarting()) {
             // Special case: we managed to init once before, so let's believe
             // the failure might go away if we just try again. In this case we
@@ -219,7 +219,7 @@ void rbAlsaRead(RBRawAudio * pAudio) {
     }
     
     framesRead = snd_pcm_readi(g_rbAlsaCaptureHandle, pAudio->audio,
-        RB_AUDIO_FRAMES_PER_VIDEO_FRAME);
+        RB_AUDIO_FRAMES_PER_VIDEO_FRAME * RB_AUDIO_CHANNELS);
     if(framesRead < 0) {
         rbError("readi failed (%s)\n", snd_strerror(framesRead));
         memset(pAudio->audio, 0, sizeof pAudio->audio);

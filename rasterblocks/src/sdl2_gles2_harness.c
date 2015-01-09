@@ -1,5 +1,7 @@
 #ifdef RB_USE_SDL2_GLES2_HARNESS
 
+#include "rasterblocks.h"
+
 #include "gles2_harness.h"
 
 #include <GLES2/gl2.h>
@@ -22,21 +24,8 @@
 #include <termios.h>
 #include <unistd.h>
 
-#include <assert.h>
-#include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
-
-#include <stdbool.h>
-
-#include <string.h>
-
 
 #include "glus.h"
-
-
-#include "rasterblocks.h"
 
 
 /* A simple function that prints a message, the error code returned by SDL,

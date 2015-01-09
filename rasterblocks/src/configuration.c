@@ -4,45 +4,62 @@
 #include <sys/stat.h>
 #include <time.h>
 
+#define RB_DEFAULT_CONFIG_PATH "/var/lib/rasterblocks/config.json"
+
 #define RB_DEFAULT_INPUT_ALSA "plughw:1,0"
 #define RB_DEFAULT_INPUT_OPENAL ""
 #define RB_DEFAULT_INPUT_FILE "test/909Tom X1.wav"
 
-#define RB_DEFAULT_CONFIG_PATH "/var/lib/rasterblocks/config.json"
+#define RB_DEFAULT_OUTPUT_PIXELPUSHER "192.168.2.4"
+#define RB_DEFAULT_OUTPUT_SPIDEV ""
 
 
 time_t g_rbConfigFileMTime = 0;
 
 
-void rbConfigurationSetDefaults(RBConfiguration * config)
+void rbConfigurationSetDefaults(RBConfiguration * pConfig)
 {
-    config->logLevel = RBLL_WARNING;
+    pConfig->logLevel = RBLL_WARNING;
     
-#if defined RB_LINUX
-    config->audioInput = RBAI_ALSA;
-    snprintf(config->audioInputParam, sizeof config->audioInputParam,
-        RB_DEFAULT_INPUT_ALSA);
-#elif defined RB_OSX
-    config->audioInput = RBAI_OPENAL;
-    snprintf(config->audioInputParam, sizeof config->audioInputParam,
-        RB_DEFAULT_INPUT_OPENAL);
+    //pConfig->pConfigPath[0] = 0;
+    rbStrlcpy(pConfig->configPath, RB_DEFAULT_CONFIG_PATH,
+        sizeof pConfig->configPath);
+    
+#if defined RB_USE_ALSA_DEVICE
+    pConfig->audioInput = RBAI_ALSA;
+    rbStrlcpy(pConfig->audioInputParam, RB_DEFAULT_INPUT_ALSA,
+        sizeof pConfig->audioInputParam);
+#elif defined RB_USE_OPENAL_DEVICE
+    pConfig->audioInput = RBAI_OPENAL;
+    rbStrlcpy(pConfig->audioInputParam, RB_DEFAULT_INPUT_OPENAL,
+        sizeof pConfig->audioInputParam);
 #else
-    config->audioInput = RBAI_FILE;
-    snprintf(config->audioInputParam, sizeof config->audioInputParam,
-        RB_DEFAULT_INPUT_FILE);
+    pConfig->audioInput = RBAI_FILE;
+    rbStrlcpy(pConfig->audioInputParam, RB_DEFAULT_INPUT_FILE,
+        sizeof pConfig->audioInputParam);
 #endif
-    //config->configPath[0] = 0;
-    snprintf(config->configPath, sizeof config->configPath,
-        RB_DEFAULT_CONFIG_PATH);
     
-    config->lowCutoff = 200.0f;
-    config->hiCutoff = 300.0f;
+#if defined RB_USE_PIXELPUSHER_OUTPUT
+    pConfig->lightOutput = RBLO_PIXELPUSHER;
+    rbStrlcpy(pConfig->lightOutputParam, RB_DEFAULT_OUTPUT_PIXELPUSHER,
+        sizeof pConfig->lightOutputParam);
+#elif defined RB_USE_SPIDEV_OUTPUT
+    pConfig->lightOutput = RBLO_SPIDEV;
+    rbStrlcpy(pConfig->lightOutputParam, RB_DEFAULT_OUTPUT_SPIDEV,
+        sizeof pConfig->lightOutputParam);
+#else
+    pConfig->lightOutput = RBLO_OPENGL;
+    rbStrlcpy(pConfig->lightOutputParam, "", sizeof pConfig->lightOutputParam);
+#endif
     
-    config->agcMax = 1e-0f;
-    config->agcMin = 1e-2f;
-    config->agcStrength = 0.5f;
+    pConfig->lowCutoff = 200.0f;
+    pConfig->hiCutoff = 300.0f;
+    
+    pConfig->agcMax = 1e-0f;
+    pConfig->agcMin = 1e-2f;
+    pConfig->agcStrength = 0.5f;
 
-    config->brightness = 1.0f / 16;
+    pConfig->brightness = 1.0f / 16;
 }
 
 
@@ -54,36 +71,52 @@ void rbConfigurationParseArgv(RBConfiguration * config, int argc,
             config->logLevel = RBLL_INFO;
         }
         
-        if(strcmp(argv[i], "-sa") == 0) {
-            if(i + 1 < argc) {
-                ++i;
-                config->audioInput = RBAI_ALSA;
-                snprintf(config->audioInputParam,
-                    sizeof config->audioInputParam, "%s", argv[i]);
-            }
-        }
-        if(strcmp(argv[i], "-so") == 0) {
-            if(i + 1 < argc) {
-                ++i;
-                config->audioInput = RBAI_OPENAL;
-                snprintf(config->audioInputParam,
-                    sizeof config->audioInputParam, "%s", argv[i]);
-            }
-        }
-        if(strcmp(argv[i], "-sf") == 0) {
-            if(i + 1 < argc) {
-                ++i;
-                config->audioInput = RBAI_FILE;
-                snprintf(config->audioInputParam,
-                    sizeof config->audioInputParam, "%s", argv[i]);
-            }
-        }
         if(strcmp(argv[i], "-c") == 0) {
             if(i + 1 < argc) {
                 ++i;
                 snprintf(config->configPath,
                     sizeof config->configPath, "%s", argv[i]);
             }
+        }
+        
+        if(strcmp(argv[i], "-ia") == 0) {
+            if(i + 1 < argc) {
+                ++i;
+                config->audioInput = RBAI_ALSA;
+                rbStrlcpy(config->audioInputParam, argv[i],
+                    sizeof config->audioInputParam);
+            }
+        }
+        if(strcmp(argv[i], "-io") == 0) {
+            if(i + 1 < argc) {
+                ++i;
+                config->audioInput = RBAI_OPENAL;
+                rbStrlcpy(config->audioInputParam, argv[i],
+                    sizeof config->audioInputParam);
+            }
+        }
+        if(strcmp(argv[i], "-if") == 0) {
+            if(i + 1 < argc) {
+                ++i;
+                config->audioInput = RBAI_FILE;
+                rbStrlcpy(config->audioInputParam, argv[i],
+                    sizeof config->audioInputParam);
+            }
+        }
+        
+        if(strcmp(argv[i], "-og") == 0) {
+            config->lightOutput = RBLO_OPENGL;
+        }
+        if(strcmp(argv[i], "-op") == 0) {
+            if(i + 1 < argc) {
+                ++i;
+                config->lightOutput = RBLO_PIXELPUSHER;
+                rbStrlcpy(config->lightOutputParam, argv[i],
+                    sizeof config->lightOutputParam);
+            }
+        }
+        if(strcmp(argv[i], "-os") == 0) {
+            config->lightOutput = RBLO_SPIDEV;
         }
     }
 }

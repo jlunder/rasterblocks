@@ -1,12 +1,11 @@
 #include "rasterblocks.h"
 
-#include <time.h>
-
 #include "audio_input.h"
 #include "audio_analysis.h"
 #include "configuration.h"
 #include "graphics_util.h"
 #include "light_generation.h"
+#include "light_output.h"
 
 
 RBPanelConfig const g_rbPanelConfigs[RB_NUM_PANELS] = {

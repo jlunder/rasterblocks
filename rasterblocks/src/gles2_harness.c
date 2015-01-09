@@ -612,18 +612,18 @@ void rbLogOutputV(char const * format, va_list args)
 }
 
 
-void rbLightOutputInitialize(RBConfiguration const * config)
+void rbLightOutputOpenGlInitialize(RBConfiguration const * config)
 {
     UNUSED(config);
 }
 
 
-void rbLightOutputShutdown(void)
+void rbLightOutputOpenGlShutdown(void)
 {
 }
 
 
-void rbLightOutputShowLights(RBRawLightFrame const * pFrame)
+void rbLightOutputOpenGlShowLights(RBRawLightFrame const * pFrame)
 {
     memcpy(&gles2_harness_frame, pFrame, sizeof gles2_harness_frame);
 }

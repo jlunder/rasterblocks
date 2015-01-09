@@ -1,15 +1,15 @@
 {
-	"logLevel": "RBLL_WARNING", 	//SLLL_INFO, SLLL_WARNING, SLLL_ERROR
-	// input
-	"audioSource": 	"RBAIS_FILE",	//SLAIS_INVALID, SLAIS_ALSA, SLAIS_FILE
-	"audioSourceParam": "../test/clips/909Tom X1.wav",
-	"monitorAudio": true,
+	"logLevel": "warning", // info, warning, error
+	"audioInput": "file", // alsa, openal, file
+	"audioInputParam": "../test/clips/909Tom X1.wav",
+	"lightOutput": "opengl", // opengl, pixelpusher, spidev
+	"lightOutputParam": "",
+
 	"lowCutoff": 200,
 	"hiCutoff": 300,
-	//"agcMax": 1,
-	//"agcMin": 0.001,
-	//"agcStrength": 0.5,
-	// analysis
-	// light gen
-	// output
+	"agcMax": 1,
+	"agcMin": 0.001,
+	"agcStrength": 0.5,
+
+	"brightness": 0.0625
 }

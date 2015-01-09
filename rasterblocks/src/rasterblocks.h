@@ -1,7 +1,8 @@
-#ifndef STAGE_LIGHTS_H_INCLUDED
-#define STAGE_LIGHTS_H_INCLUDED
+#ifndef RASTERBLOCKS_H_INCLUDED
+#define RASTERBLOCKS_H_INCLUDED
 
 
+#include <assert.h>
 #include <ctype.h>
 #include <limits.h>
 #include <math.h>
@@ -11,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 
 #define UNUSED(x) (void)(x)
@@ -24,7 +26,8 @@
 #else
 #define RB_VIDEO_FRAME_RATE 60
 #endif
-#define RB_AUDIO_FRAMES_PER_VIDEO_FRAME ((RB_AUDIO_SAMPLE_RATE / RB_VIDEO_FRAME_RATE)*2)
+#define RB_AUDIO_FRAMES_PER_VIDEO_FRAME \
+    (RB_AUDIO_SAMPLE_RATE / RB_VIDEO_FRAME_RATE)
 
 #define RB_PANEL_WIDTH 8
 #define RB_PANEL_HEIGHT 8
@@ -277,6 +280,11 @@ static inline int rbStricmp(char const * pa, char const * pb)
 static inline void rbStrlcpy(char * dest, char const * src, size_t destSize)
 {
     size_t srcSize = strlen(src) + 1;
+    
+    if(destSize <= 0) {
+        return;
+    }
+    
     if(srcSize >= destSize) {
         memcpy(dest, src, destSize - 1);
         dest[destSize - 1] = '\0';
@@ -374,10 +382,7 @@ void rbProcess(uint64_t nsSinceLastProcess);
 
 // Implemented in the harness!
 void rbLogOutputV(char const * format, va_list va);
-void rbLightOutputInitialize(RBConfiguration const * pConfig);
-void rbLightOutputShutdown(void);
-void rbLightOutputShowLights(RBRawLightFrame const * pFrame);
 
 
-#endif // STAGE_LIGHTS_H_INCLUDED
+#endif // RASTERBLOCKS_H_INCLUDED
 

@@ -1,8 +1,9 @@
 {
-	"logLevel": "RBLL_WARNING",
-	"audioSource": 	"RBAIS_DEVICE",
-	"audioSourceParam": "plughw:1",
-	"monitorAudio": false,
+	"logLevel": "warning", // info, warning, error
+	"audioInput": "alsa", // alsa, openal, file
+	"audioInputParam": "plughw:1",
+	"lightOutput": "pixelpusher", // opengl, pixelpusher, spidev
+	"lightOutputParam": "192.168.2.4",
 
 	"lowCutoff": 200,
 	"hiCutoff": 300,
