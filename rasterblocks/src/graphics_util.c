@@ -193,6 +193,21 @@ RBColor rbColorAdd(RBColor a, RBColor b)
 }
 
 
+RBColor rbColorMixI(RBColor a, uint8_t aAlpha, RBColor b, uint8_t bAlpha)
+{
+    uint32_t rr = (uint32_t)a.r * aAlpha +  (uint32_t)b.r * bAlpha + 127;
+    uint32_t rg = (uint32_t)a.g * aAlpha +  (uint32_t)b.g * bAlpha + 127;
+    uint32_t rb = (uint32_t)a.b * aAlpha +  (uint32_t)b.b * bAlpha + 127;
+    uint32_t ra = (uint32_t)a.a * aAlpha +  (uint32_t)b.a * bAlpha + 127;
+    
+    return rbColorMakeI(
+        (uint8_t)(rr >= (255 * 255) ? 255 : rr / 255),
+        (uint8_t)(rg >= (255 * 255) ? 255 : rg / 255),
+        (uint8_t)(rb >= (255 * 255) ? 255 : rb / 255),
+        (uint8_t)(ra >= (255 * 255) ? 255 : ra / 255));
+}
+
+
 RBColor rbColorMixF(RBColor a, float aAlpha, RBColor b, float bAlpha)
 {
     return rbColorMakeI(
