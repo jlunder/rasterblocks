@@ -7,7 +7,8 @@
 #define RB_DEFAULT_INPUT_ALSA "plughw:1,0"
 #define RB_DEFAULT_INPUT_OPENAL ""
 #define RB_DEFAULT_INPUT_FILE "test/909Tom X1.wav"
-#define RB_DEFAULT_INPUT_CONFIG "/var/lib/rasterblocks/config.json"
+
+#define RB_DEFAULT_CONFIG_PATH "/var/lib/rasterblocks/config.json"
 
 
 time_t g_rbConfigFileMTime = 0;
@@ -18,21 +19,21 @@ void rbConfigurationSetDefaults(RBConfiguration * config)
     config->logLevel = RBLL_WARNING;
     
 #if defined RB_LINUX
-    config->audioSource = RBAIS_DEVICE;
-    snprintf(config->audioSourceParam, sizeof config->audioSourceParam,
+    config->audioInput = RBAI_ALSA;
+    snprintf(config->audioInputParam, sizeof config->audioInputParam,
         RB_DEFAULT_INPUT_ALSA);
 #elif defined RB_OSX
-    config->audioSource = RBAIS_DEVICE;
-    snprintf(config->audioSourceParam, sizeof config->audioSourceParam,
+    config->audioInput = RBAI_OPENAL;
+    snprintf(config->audioInputParam, sizeof config->audioInputParam,
         RB_DEFAULT_INPUT_OPENAL);
 #else
-    config->audioSource = RBAIS_FILE;
-    snprintf(config->audioSourceParam, sizeof config->audioSourceParam,
+    config->audioInput = RBAI_FILE;
+    snprintf(config->audioInputParam, sizeof config->audioInputParam,
         RB_DEFAULT_INPUT_FILE);
 #endif
     //config->configPath[0] = 0;
     snprintf(config->configPath, sizeof config->configPath,
-        RB_DEFAULT_INPUT_CONFIG);
+        RB_DEFAULT_CONFIG_PATH);
     
     config->lowCutoff = 200.0f;
     config->hiCutoff = 300.0f;
@@ -53,20 +54,28 @@ void rbConfigurationParseArgv(RBConfiguration * config, int argc,
             config->logLevel = RBLL_INFO;
         }
         
-        if(strcmp(argv[i], "-sd") == 0) {
+        if(strcmp(argv[i], "-sa") == 0) {
             if(i + 1 < argc) {
                 ++i;
-                config->audioSource = RBAIS_DEVICE;
-                snprintf(config->audioSourceParam,
-                    sizeof config->audioSourceParam, "%s", argv[i]);
+                config->audioInput = RBAI_ALSA;
+                snprintf(config->audioInputParam,
+                    sizeof config->audioInputParam, "%s", argv[i]);
+            }
+        }
+        if(strcmp(argv[i], "-so") == 0) {
+            if(i + 1 < argc) {
+                ++i;
+                config->audioInput = RBAI_OPENAL;
+                snprintf(config->audioInputParam,
+                    sizeof config->audioInputParam, "%s", argv[i]);
             }
         }
         if(strcmp(argv[i], "-sf") == 0) {
             if(i + 1 < argc) {
                 ++i;
-                config->audioSource = RBAIS_FILE;
-                snprintf(config->audioSourceParam,
-                    sizeof config->audioSourceParam, "%s", argv[i]);
+                config->audioInput = RBAI_FILE;
+                snprintf(config->audioInputParam,
+                    sizeof config->audioInputParam, "%s", argv[i]);
             }
         }
         if(strcmp(argv[i], "-c") == 0) {
@@ -124,11 +133,9 @@ void rbHotConfigurationProcessAndUpdateConfiguration(RBConfiguration * config,
                 rbWarning("Config changed, rereading\n");
             }
             rbParseJson(config, config->configPath);
-            rbInfo("Config audio source: %d\n", config->audioSource);
-            rbInfo("Config audio source param: %s\n",
-                config->audioSourceParam);
-            rbInfo("Config audio playback enabled: %s\n",
-                config->monitorAudio ? "true" : "false");
+            rbInfo("Config audio input: %d\n", config->audioInput);
+            rbInfo("Config audio input param: %s\n",
+                config->audioInputParam);
         }
     }
 }

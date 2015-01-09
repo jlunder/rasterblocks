@@ -6,10 +6,8 @@
 
 
 typedef enum {
-    // Open for read
+    // Open for input only
     RBADM_INPUT,
-    // Open for read, but also output audio as it is read
-    RBADM_INPUT_TEE,
     // Open for output only
     RBADM_OUTPUT,
 } RBAudioDeviceMode;

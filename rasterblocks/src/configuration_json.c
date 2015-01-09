@@ -10,15 +10,15 @@
 
 // see http://linuxprograms.wordpress.com/2010/08/19/json_parser_json-c/
 
-RBLogLevel getLogLevel(const char* val)
+static RBLogLevel getLogLevel(const char* val)
 {
-    if(strcmp(val, "RBLL_INFO") == 0) {
+    if(rbStricmp(val, "INFO") == 0) {
         return RBLL_INFO;
     }
-    else if(strcmp(val, "RBLL_WARNING") == 0) {
+    else if(rbStricmp(val, "WARNING") == 0) {
         return RBLL_WARNING;
     }
-    else if(strcmp(val, "RBLL_ERROR") == 0) {
+    else if(rbStricmp(val, "ERROR") == 0) {
         return RBLL_ERROR;
     } 
     else {
@@ -27,35 +27,60 @@ RBLogLevel getLogLevel(const char* val)
     }
 }
 
-RBAudioInputSource getAudioSource(const char* val)
+static RBAudioInput getAudioInput(const char* val)
 {
-    if(strcmp(val, "RBAIS_DEVICE") == 0) {
-        return RBAIS_DEVICE;
+    if(rbStricmp(val, "FILE") == 0) {
+        return RBAI_FILE;
     }
-    else if(strcmp(val, "RBAIS_FILE") == 0) {
-        return RBAIS_FILE;
+    else if(rbStricmp(val, "OPENAL") == 0) {
+        return RBAI_OPENAL;
+    }
+    else if(rbStricmp(val, "ALSA") == 0) {
+        return RBAI_ALSA;
     }
     else {
         rbError("Invalid audio source type: %s\n",val);
-        return RBAIS_INVALID;
+        return RBAI_INVALID;
     }
 }
 
-void parseJsonObject(RBConfiguration * config,json_object * jobj)
+static RBLightOutput getLightOutput(const char* val)
+{
+    if(rbStricmp(val, "OPENGL") == 0) {
+        return RBLO_OPENGL;
+    }
+    else if(rbStricmp(val, "PIXELPUSHER") == 0) {
+        return RBLO_PIXELPUSHER;
+    }
+    else if(rbStricmp(val, "SPIDEV") == 0) {
+        return RBLO_SPIDEV;
+    }
+    else {
+        rbError("Invalid audio source type: %s\n",val);
+        return RBLO_INVALID;
+    }
+}
+
+static void parseJsonObject(RBConfiguration * config,json_object * jobj)
 {
     json_object_object_foreach(jobj, key, val) {
         const char* s_val = json_object_get_string(val);
         if(strcmp(key, "logLevel") == 0) {
             config->logLevel = getLogLevel(s_val);
         }
-        else if(strcmp(key, "audioSource") == 0) {
-            config->audioSource = getAudioSource(s_val);
+        else if(strcmp(key, "audioInput") == 0) {
+            config->audioInput = getAudioInput(s_val);
         }
-        else if(strcmp(key, "audioSourceParam") == 0) {
-            strcpy(config->audioSourceParam,s_val);
+        else if(strcmp(key, "audioInputParam") == 0) {
+            rbStrlcpy(config->audioInputParam, s_val,
+                sizeof config->audioInputParam);
         }
-        else if(strcmp(key, "monitorAudio") == 0) {
-            config->monitorAudio = json_object_get_boolean(val);
+        else if(strcmp(key, "lightOutput") == 0) {
+            config->lightOutput = getLightOutput(s_val);
+        }
+        else if(strcmp(key, "lightOutputParam") == 0) {
+            rbStrlcpy(config->lightOutputParam, s_val,
+                sizeof config->lightOutputParam);
         }
         else if (strcmp(key, "lowCutoff") == 0) {
             config->lowCutoff = atof(json_object_get_string(val));

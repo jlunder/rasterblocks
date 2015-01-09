@@ -2,10 +2,9 @@
 #define STAGE_LIGHTS_H_INCLUDED
 
 
+#include <ctype.h>
 #include <limits.h>
-
 #include <math.h>
-
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -64,10 +63,19 @@ typedef enum {
 
 
 typedef enum {
-    RBAIS_INVALID,
-    RBAIS_DEVICE,
-    RBAIS_FILE,
-} RBAudioInputSource;
+    RBAI_INVALID,
+    RBAI_FILE,
+    RBAI_ALSA,
+    RBAI_OPENAL,
+} RBAudioInput;
+
+
+typedef enum {
+    RBLO_INVALID,
+    RBLO_OPENGL,
+    RBLO_PIXELPUSHER,
+    RBLO_SPIDEV,
+} RBLightOutput;
 
 
 #ifdef RB_USE_NEON
@@ -126,14 +134,15 @@ typedef struct {
     char configPath[PATH_MAX];
     
     //
-    RBAudioInputSource audioSource;
-    char audioSourceParam[PATH_MAX];
+    RBAudioInput audioInput;
+    char audioInputParam[PATH_MAX];
     
-    bool monitorAudio;
-
+    RBLightOutput lightOutput;
+    char lightOutputParam[PATH_MAX];
+    
     float lowCutoff;
     float hiCutoff;
-
+    
     float agcMax;
     float agcMin;
     float agcStrength;
@@ -240,6 +249,41 @@ void rbLogOutput(char const * format, ...);
 static inline void rbZero(void * p, size_t size)
 {
     memset(p, 0, size);
+}
+
+static inline int rbStricmp(char const * pa, char const * pb)
+{
+    for(; ; ++pa, ++pb) {
+        char ca = tolower(*pa);
+        char cb = tolower(*pb);
+        
+        if(ca == cb) {
+            if(ca != '\0') {
+                continue;
+            }
+            else {
+                return 0;
+            }
+        }
+        if(ca < cb) {
+            return -1;
+        }
+        else {
+            return 1;
+        }
+    }
+}
+
+static inline void rbStrlcpy(char * dest, char const * src, size_t destSize)
+{
+    size_t srcSize = strlen(src) + 1;
+    if(srcSize >= destSize) {
+        memcpy(dest, src, destSize - 1);
+        dest[destSize - 1] = '\0';
+    }
+    else {
+        memcpy(dest, src, srcSize);
+    }
 }
 
 

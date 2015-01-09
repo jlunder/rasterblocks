@@ -17,7 +17,7 @@ RBPanelConfig const g_rbPanelConfigs[RB_NUM_PANELS] = {
     {{0.0f, 16.0f}, {1.0f, 0.0f}},
     {{0.0f,  8.0f}, {1.0f, 0.0f}},
     {{0.0f,  0.0f}, {1.0f, 0.0f}},
-/*    
+    
     // Right column -- sequenced top to bottom:
     {{8.0f,  0.0f}, {1.0f, 0.0f}},
     {{8.0f,  8.0f}, {1.0f, 0.0f}},
@@ -25,7 +25,6 @@ RBPanelConfig const g_rbPanelConfigs[RB_NUM_PANELS] = {
     {{8.0f, 24.0f}, {1.0f, 0.0f}},
     {{8.0f, 32.0f}, {1.0f, 0.0f}},
     {{8.0f, 40.0f}, {1.0f, 0.0f}},
-*/
 };
 
 
