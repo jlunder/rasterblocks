@@ -83,9 +83,11 @@ build/%.d: src/%.c src/icons.h Makefile
 	@mkdir -p build
 	@$(MAKEDEPEND)
 
+ifeq ($(CROSS_BUILD)$(BUILD_ON_TARGET),)
 ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(MAKECMDGOALS),cleanall)
 -include $(STAGE_LIGHTS_D)
+endif
 endif
 endif
 
@@ -109,8 +111,12 @@ build/%.target.d: src/%.c src/icons.h Makefile
 	@mkdir -p build
 	@$(MAKEDEPEND_TARGET)
 
-ifeq ($(MAKECMDGOALS),rasterblocks.target)
-	-include $(STAGE_LIGHTS_D_TARGET)
+ifneq ($(CROSS_BUILD)$(BUILD_ON_TARGET),)
+ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(MAKECMDGOALS),cleanall)
+-include $(STAGE_LIGHTS_D_TARGET)
+endif
+endif
 endif
 
 build/%.target.o: src/%.c Makefile
