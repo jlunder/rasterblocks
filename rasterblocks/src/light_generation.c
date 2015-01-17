@@ -39,7 +39,27 @@ static RBTexture1 * g_rbPWarmTex = NULL;
 static RBTexture1 * g_rbPColdTex = NULL;
 static RBTexture1 * g_rbPRainbowTex = NULL;
 
-static RBTexture2 * g_rbPTestTex = NULL;
+static RBTexture2 * g_rbFlagTex = NULL;
+
+
+static char const * g_rbFlagData =
+    "wbbbwbbbwbbbrrrrrrrrrrrrrrrrrrrr"
+    "bbwbbbwbbbwbwwwwwwwwwwwwwwwwwwww"
+    "wbbbwbbbwbbbrrrrrrrrrrrrrrrrrrrr"
+    "bbwbbbwbbbwbwwwwwwwwwwwwwwwwwwww"
+    "wbbbwbbbwbbbrrrrrrrrrrrrrrrrrrrr"
+    "bbwbbbwbbbwbwwwwwwwwwwwwwwwwwwww"
+    "wbbbwbbbwbbbrrrrrrrrrrrrrrrrrrrr"
+    "bbbbbbbbbbbbwwwwwwwwwwwwwwwwwwww"
+    "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
+    "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"
+    "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
+    "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"
+    "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
+    "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"
+    "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
+    "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww";
+
 
 //static size_t g_rbNextIcon = 0;
 //static RBTimer g_rbDebounce;
@@ -70,12 +90,16 @@ void rbLightGenerationInitialize(RBConfiguration const * config)
     rbTexture1FillFromPiecewiseLinear(g_rbPRainbowTex, g_rbRainbowPalette,
         LENGTHOF(g_rbRainbowPalette), true);
     
-    g_rbPTestTex = rbTexture2Alloc(8, 8);
-    for(size_t i = 0; i < 8; ++i) {
-        for(size_t j = 0; j < 8; ++j) {
-            rbTexture2SetTexel(g_rbPTestTex, j, i,
-                (g_rbIcons[2][i] >> j) & 1 ? colori(31, 31, 31, 0) :
-                    colori(0, 0, 0, 0));
+    g_rbFlagTex = rbTexture2Alloc(32, 16);
+    for(size_t j = 0; j < 16; ++j) {
+        for(size_t i = 0; i < 32; ++i) {
+            RBColor c;
+            switch(g_rbFlagData[j * 32 + i]) {
+            case 'r': c = colori(255, 0, 0, 255); break;
+            case 'w': c = colori(255, 255, 255, 255); break;
+            case 'b': c = colori(0, 0, 255, 255); break;
+            }
+            rbTexture2SetTexel(g_rbFlagTex, i, j, c);
         }
     }
 }
@@ -95,9 +119,9 @@ void rbLightGenerationShutdown(void)
         rbTexture1Free(g_rbPRainbowTex);
         g_rbPRainbowTex = NULL;
     }
-    if(g_rbPTestTex != NULL) {
-        rbTexture2Free(g_rbPTestTex);
-        g_rbPTestTex = NULL;
+    if(g_rbFlagTex != NULL) {
+        rbTexture2Free(g_rbFlagTex);
+        g_rbFlagTex = NULL;
     }
 }
 
@@ -111,6 +135,7 @@ void rbLightGenerationGenerate(RBAnalyzedAudio const * pAnalysis,
     
     UNUSED(g_rbRainbowPalette);
 
+/*
     for(size_t i = 0; i < RB_PANEL_HEIGHT; ++i) {
         for(size_t j = 0; j < RB_PANEL_WIDTH; ++j) {
             int32_t k = i < 4 ? (int32_t)j + 3 - i: (int32_t)j - 4 + i;
@@ -130,17 +155,23 @@ void rbLightGenerationGenerate(RBAnalyzedAudio const * pAnalysis,
                         rightTreble - k * (2.0f / RB_PANEL_WIDTH))));
         }
     }
+    */
     
-    for(size_t i = 0; i < RB_PANEL_HEIGHT * 5; ++i) {
-        for(size_t j = 0; j < RB_PANEL_WIDTH * 2; ++j) {
-            t2sett(pFrame, j, RB_PROJECTION_HEIGHT - 1 - i,
-                colorct(
-                    t1sampnc(g_rbPWarmTex,
-                        bass - i * (2.0f / (RB_PANEL_HEIGHT * 5)))));
+    UNUSED(leftTreble);
+    UNUSED(rightTreble);
+    UNUSED(bass);
+    
+    //t2bltsa(pFrame, 0, 0, 32, 16, g_rbFlagTex, 0, 0);
+    
+    for(size_t j = 0; j < RB_PROJECTION_HEIGHT; ++j) {
+        for(size_t i = 0; i < RB_PROJECTION_WIDTH; ++i) {
+            t2sett(pFrame, i, j,
+                colorct(ctscale(
+                    t2sampnc(g_rbFlagTex,
+                        vector2((i + 0.5f) / RB_PROJECTION_WIDTH,
+                            (j + 0.5f) / RB_PROJECTION_HEIGHT)), bass + 0.25f)));
         }
     }
-    
-    t2bltsa(pFrame, 0, 8, 8, 8, g_rbPTestTex, 0, 0);
     
     //rbLightGenerationCompositeIcon(&lights->overhead, 2, 15);
     UNUSED(g_rbIcons);
