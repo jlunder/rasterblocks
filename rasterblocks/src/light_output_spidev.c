@@ -44,7 +44,9 @@ void rbLightOutputSpiDevInitialize(RBConfiguration const * pConfig)
     // rbLightOutputInitialize() guarantees no double-init, but...
     rbLightOutputSpiDevShutdown();
     
-    rbLightOutputStartSpiDevice();
+    UNUSED(pConfig);
+    
+    rbLightOutputSpiDevStartSpiDevice();
     rbVerify(g_rbSpiFd >= 0);
     
     rbVerify(ioctl(g_rbSpiFd, SPI_IOC_WR_MODE, &mode) >= 0);

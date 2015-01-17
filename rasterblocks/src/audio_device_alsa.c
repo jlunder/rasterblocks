@@ -219,7 +219,7 @@ void rbAlsaRead(RBRawAudio * pAudio) {
     }
     
     framesRead = snd_pcm_readi(g_rbAlsaCaptureHandle, pAudio->audio,
-        RB_AUDIO_FRAMES_PER_VIDEO_FRAME * RB_AUDIO_CHANNELS);
+        RB_AUDIO_FRAMES_PER_VIDEO_FRAME);
     if(framesRead < 0) {
         rbError("readi failed (%s)\n", snd_strerror(framesRead));
         memset(pAudio->audio, 0, sizeof pAudio->audio);
