@@ -43,6 +43,7 @@ static RBTexture2 * g_rbFlagTex = NULL;
 
 
 static char const * g_rbFlagData =
+    "                                "
     "wbbbwbbbwbbbrrrrrrrrrrrrrrrrrrrr"
     "bbwbbbwbbbwbwwwwwwwwwwwwwwwwwwww"
     "wbbbwbbbwbbbrrrrrrrrrrrrrrrrrrrr"
@@ -50,15 +51,15 @@ static char const * g_rbFlagData =
     "wbbbwbbbwbbbrrrrrrrrrrrrrrrrrrrr"
     "bbwbbbwbbbwbwwwwwwwwwwwwwwwwwwww"
     "wbbbwbbbwbbbrrrrrrrrrrrrrrrrrrrr"
-    "bbbbbbbbbbbbwwwwwwwwwwwwwwwwwwww"
-    "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
     "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"
     "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
     "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"
     "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
     "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"
     "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
-    "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww";
+    "                                "
+    "                                "
+    ;
 
 
 //static size_t g_rbNextIcon = 0;
@@ -98,6 +99,7 @@ void rbLightGenerationInitialize(RBConfiguration const * config)
             case 'r': c = colori(255, 0, 0, 255); break;
             case 'w': c = colori(255, 255, 255, 255); break;
             case 'b': c = colori(0, 0, 255, 255); break;
+            default: c = colori(0, 0, 0, 255); break;
             }
             rbTexture2SetTexel(g_rbFlagTex, i, j, c);
         }
@@ -124,6 +126,9 @@ void rbLightGenerationShutdown(void)
         g_rbFlagTex = NULL;
     }
 }
+
+
+static float g_rbFlagWave[RB_PROJECTION_WIDTH];
 
 
 void rbLightGenerationGenerate(RBAnalyzedAudio const * pAnalysis,
@@ -163,13 +168,20 @@ void rbLightGenerationGenerate(RBAnalyzedAudio const * pAnalysis,
     
     //t2bltsa(pFrame, 0, 0, 32, 16, g_rbFlagTex, 0, 0);
     
+    for(size_t i = 1; i < RB_PROJECTION_WIDTH; ++i) {
+        g_rbFlagWave[RB_PROJECTION_WIDTH - i] =
+            g_rbFlagWave[RB_PROJECTION_WIDTH - i - 1];
+    }
+    g_rbFlagWave[0] = bass;
+    
     for(size_t j = 0; j < RB_PROJECTION_HEIGHT; ++j) {
         for(size_t i = 0; i < RB_PROJECTION_WIDTH; ++i) {
             t2sett(pFrame, i, j,
                 colorct(ctscale(
                     t2sampnc(g_rbFlagTex,
                         vector2((i + 0.5f) / RB_PROJECTION_WIDTH,
-                            (j + 0.5f) / RB_PROJECTION_HEIGHT)), bass + 0.25f)));
+                            (j + 0.5f) / RB_PROJECTION_HEIGHT)),
+                    g_rbFlagWave[i])));
         }
     }
     
