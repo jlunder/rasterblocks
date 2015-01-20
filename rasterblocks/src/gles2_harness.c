@@ -103,6 +103,8 @@ float gles2_harness_dist = 1.0f;
 float gles2_harness_horizontal_pos = 0.0f;
 float gles2_harness_vertical_pos = 0.0f;
 
+float gles2_harness_brightness = 1.0f;
+
 
 static char const * light_frag =
 #ifdef RB_USE_GLFW3_GLES2_HARNESS
@@ -570,11 +572,11 @@ void gles2_harness_draw_lights(float time)
 
                 glUniform4f(g_colorLocation,
                     gles2_harness_red_transform(
-                        gles2_harness_frame.data[i][j][k].r * (1.0f / 255.0f)),
+                        gles2_harness_frame.data[i][j][k].r * (gles2_harness_brightness / 255.0f)),
                     gles2_harness_green_transform(
-                        gles2_harness_frame.data[i][j][k].g * (1.0f / 255.0f)),
+                        gles2_harness_frame.data[i][j][k].g * (gles2_harness_brightness / 255.0f)),
                     gles2_harness_blue_transform(
-                        gles2_harness_frame.data[i][j][k].b * (1.0f / 255.0f)),
+                        gles2_harness_frame.data[i][j][k].b * (gles2_harness_brightness / 255.0f)),
                     0.0f);
 
                 glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -612,9 +614,9 @@ void rbLogOutputV(char const * format, va_list args)
 }
 
 
-void rbLightOutputOpenGlInitialize(RBConfiguration const * config)
+void rbLightOutputOpenGlInitialize(RBConfiguration const * pConfig)
 {
-    UNUSED(config);
+    gles2_harness_brightness = 1.0f / pConfig->brightness;
 }
 
 

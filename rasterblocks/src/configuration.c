@@ -118,6 +118,13 @@ void rbConfigurationParseArgv(RBConfiguration * config, int argc,
         if(strcmp(argv[i], "-os") == 0) {
             config->lightOutput = RBLO_SPIDEV;
         }
+        
+        if(strcmp(argv[i], "-b") == 0) {
+            if(i + 1 < argc) {
+                ++i;
+                config->brightness = atof(argv[i]);
+            }
+        }
     }
 }
 

@@ -34,9 +34,7 @@ void rbLightOutputInitialize(RBConfiguration const * pConfig)
     	break;
     }
     
-    if(g_rbLightOutput != RBLO_OPENGL) {
-        brightness = pConfig->brightness;
-    }
+    brightness = pConfig->brightness;
     
     rbInfo("Generating color table for brightness %g\n", brightness);
     for(size_t i = 0; i < LENGTHOF(g_rbCieTable); ++i) {
