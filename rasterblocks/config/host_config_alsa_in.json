@@ -3,7 +3,7 @@
 	"audioInput": "alsa", // alsa, openal, file
 	"audioInputParam": "plughw:1",
 	"lightOutput": "pixelpusher", // opengl, pixelpusher, spidev
-	"lightOutputParam": "192.168.2.4",
+	"lightOutputParam": "192.168.0.4",
 
 	"lowCutoff": 200,
 	"hiCutoff": 300,
