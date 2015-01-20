@@ -223,10 +223,10 @@ static inline RBColorTemp rbColorTempClamp(RBColorTemp c)
 
 RBTexture1 * rbTexture1Alloc(size_t width);
 void rbTexture1Free(RBTexture1 * pTex);
-static inline size_t rbTexture1GetWidth(RBTexture1 * pTex)
+static inline size_t rbTexture1GetWidth(RBTexture1 const * pTex)
     { return pTex->width; }
 
-static inline RBColor rbTexture1GetTexel(RBTexture1 * pTex, size_t u)
+static inline RBColor rbTexture1GetTexel(RBTexture1 const * pTex, size_t u)
 {
     rbAssert(u < pTex->width);
     return pTex->data[u];
@@ -238,21 +238,23 @@ static inline void rbTexture1SetTexel(RBTexture1 * pTex, size_t u, RBColor c)
     pTex->data[u] = c;
 }
 
+RBColorTemp rbTexture1SampleNearestRepeat(RBTexture1 const * pTex, float tc);
+RBColorTemp rbTexture1SampleNearestClamp(RBTexture1 const * pTex, float tc);
+RBColorTemp rbTexture1SampleLinearRepeat(RBTexture1 const * pTex, float tc);
+RBColorTemp rbTexture1SampleLinearClamp(RBTexture1 const * pTex, float tc);
+
 void rbTexture1FillFromPiecewiseLinear(RBTexture1 * pTex,
     RBPiecewiseLinearColorSegment * pSegments, size_t count, bool repeat);
-RBColorTemp rbTexture1SampleNearestRepeat(RBTexture1 * pTex, float tc);
-RBColorTemp rbTexture1SampleNearestClamp(RBTexture1 * pTex, float tc);
-RBColorTemp rbTexture1SampleLinearRepeat(RBTexture1 * pTex, float tc);
-RBColorTemp rbTexture1SampleLinearClamp(RBTexture1 * pTex, float tc);
 
 RBTexture2 * rbTexture2Alloc(size_t width, size_t height);
 void rbTexture2Free(RBTexture2 * pTex);
-static inline size_t rbTexture2GetWidth(RBTexture2 * pTex)
+static inline size_t rbTexture2GetWidth(RBTexture2 const * pTex)
     { return pTex->width; }
-static inline size_t rbTexture2GetHeight(RBTexture2 * pTex)
+static inline size_t rbTexture2GetHeight(RBTexture2 const * pTex)
     { return pTex->height; }
 
-static inline RBColor rbTexture2GetTexel(RBTexture2 * pTex, size_t u, size_t v)
+static inline RBColor rbTexture2GetTexel(RBTexture2 const * pTex, size_t u,
+    size_t v)
 {
     rbAssert(pTex->stride >= pTex->width);
     rbAssert(u < pTex->width);
@@ -269,18 +271,23 @@ static inline void rbTexture2SetTexel(RBTexture2 * pTex, size_t u, size_t v,
     pTex->data[u + pTex->stride * v] = c;
 }
 
-RBColorTemp rbTexture2SampleNearestRepeat(RBTexture2 * pTex, RBVector2 tc);
-RBColorTemp rbTexture2SampleNearestClamp(RBTexture2 * pTex, RBVector2 tc);
-RBColorTemp rbTexture2SampleLinearRepeat(RBTexture2 * pTex, RBVector2 tc);
-RBColorTemp rbTexture2SampleLinearClamp(RBTexture2 * pTex, RBVector2 tc);
+RBColorTemp rbTexture2SampleNearestRepeat(RBTexture2 const * pTex,
+    RBVector2 tc);
+RBColorTemp rbTexture2SampleNearestClamp(RBTexture2 const * pTex,
+    RBVector2 tc);
+RBColorTemp rbTexture2SampleLinearRepeat(RBTexture2 const * pTex,
+    RBVector2 tc);
+RBColorTemp rbTexture2SampleLinearClamp(RBTexture2 const * pTex, RBVector2 tc);
 
 void rbTexture2Blt(RBTexture2 * pDestTex, int32_t du, int32_t dv, int32_t dw,
-    int32_t dh, RBTexture2 * pSrcTex, int32_t su, int32_t sv);
+    int32_t dh, RBTexture2 const * pSrcTex, int32_t su, int32_t sv);
 void rbTexture2BltSrcAlpha(RBTexture2 * pDestTex, int32_t du, int32_t dv,
-    int32_t dw, int32_t dh, RBTexture2 * pSrcTex, int32_t su, int32_t sv);
+    int32_t dw, int32_t dh, RBTexture2 const * pSrcTex, int32_t su,
+    int32_t sv);
 
-void rbTexture2Mix(RBTexture2 * pDestTex, RBTexture2 * pSrcTexA,
-    uint8_t alphaA, RBTexture2 * pSrcTexB, uint8_t alphaB);
+void rbTexture2Mix(RBTexture2 * pDestTex, RBTexture2 const * pSrcTexA,
+    uint8_t alphaA, RBTexture2 const * pSrcTexB, uint8_t alphaB);
+void rbTexture2Rescale(RBTexture2 * pDestTex, RBTexture2 const * pSrcTex);
 
 void rbHarmonicPathGeneratorInitialize(RBHarmonicPathGenerator * pPathGen,
     float frequency, RBVector2 orientation,

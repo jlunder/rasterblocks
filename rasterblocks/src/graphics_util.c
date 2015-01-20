@@ -244,6 +244,96 @@ void rbTexture1Free(RBTexture1 * pTex)
 }
 
 
+RBColorTemp rbTexture1SampleNearestRepeat(RBTexture1 const * pTex, float tc)
+{
+    size_t sampleIndex = (size_t)(pTex->width * (tc - floorf(tc)));
+    
+    RB_ASSERT_TEXTURE1_VALID(pTex);
+    rbAssert(!isnan(tc));
+    rbAssert(sampleIndex < pTex->width);
+    
+    return rbColorTempMakeC(pTex->data[sampleIndex]);
+}
+
+
+RBColorTemp rbTexture1SampleNearestClamp(RBTexture1 const * pTex, float tc)
+{
+    size_t sampleIndex;
+    
+    RB_ASSERT_TEXTURE1_VALID(pTex);
+    rbAssert(!isnan(tc));
+    
+    if(tc >= 0.0f) {
+        if(tc < 1.0f) {
+            sampleIndex = (size_t)(pTex->width * tc);
+            
+            rbAssert(sampleIndex < pTex->width);
+        }
+        else {
+            sampleIndex = pTex->width - 1;
+        }
+    }
+    else {
+        sampleIndex = 0;
+    }
+    
+    return rbColorTempMakeC(pTex->data[sampleIndex]);
+}
+
+
+RBColorTemp rbTexture1SampleLinearRepeat(RBTexture1 const * pTex, float tc)
+{
+    float sampleIndexF = pTex->width * (tc - floorf(tc));
+    size_t sampleIndex0 = (size_t)sampleIndexF;
+    size_t sampleIndex1 = sampleIndex0 + 1;
+    float alpha = sampleIndexF - floorf(sampleIndexF);
+    
+    RB_ASSERT_TEXTURE1_VALID(pTex);
+    rbAssert(!isnan(tc));
+    rbAssert(sampleIndex0 < pTex->width);
+    
+    if(sampleIndex1 >= pTex->width) {
+        sampleIndex1 -= pTex->width;
+    }
+    
+    
+    return rbColorTempMix(rbColorTempMakeC(pTex->data[sampleIndex0]),
+        1.0f - alpha, rbColorTempMakeC(pTex->data[sampleIndex1]), alpha);
+}
+
+
+RBColorTemp rbTexture1SampleLinearClamp(RBTexture1 const * pTex, float tc)
+{
+    RB_ASSERT_TEXTURE1_VALID(pTex);
+    rbAssert(!isnan(tc));
+    
+    if(tc > 0) {
+        if(tc < 1.0f) {
+            float sampleIndexF = (pTex->width - 1) * (tc - floorf(tc));
+            size_t sampleIndex0 = (size_t)sampleIndexF;
+            size_t sampleIndex1 = sampleIndex0 + 1;
+            float alpha = sampleIndexF - floorf(sampleIndexF);
+            
+            rbAssert(sampleIndex0 < pTex->width);
+            
+            if(sampleIndex1 >= pTex->width) {
+                sampleIndex1 = pTex->width - 1;
+            }
+            
+            return rbColorTempMix(rbColorTempMakeC(pTex->data[sampleIndex0]),
+                1.0f - alpha, rbColorTempMakeC(pTex->data[sampleIndex1]),
+                alpha);
+        }
+        else {
+            return rbColorTempMakeC(pTex->data[pTex->width - 1]);
+        }
+    }
+    else {
+        return rbColorTempMakeC(pTex->data[0]);
+    }
+}
+
+
 void rbTexture1FillFromPiecewiseLinear(RBTexture1 * pTex,
     RBPiecewiseLinearColorSegment * pSegments, size_t count, bool repeat)
 {
@@ -288,96 +378,6 @@ void rbTexture1FillFromPiecewiseLinear(RBTexture1 * pTex,
 }
 
 
-RBColorTemp rbTexture1SampleNearestRepeat(RBTexture1 * pTex, float tc)
-{
-    size_t sampleIndex = (size_t)(pTex->width * (tc - floorf(tc)));
-    
-    RB_ASSERT_TEXTURE1_VALID(pTex);
-    rbAssert(!isnan(tc));
-    rbAssert(sampleIndex < pTex->width);
-    
-    return rbColorTempMakeC(pTex->data[sampleIndex]);
-}
-
-
-RBColorTemp rbTexture1SampleNearestClamp(RBTexture1 * pTex, float tc)
-{
-    size_t sampleIndex;
-    
-    RB_ASSERT_TEXTURE1_VALID(pTex);
-    rbAssert(!isnan(tc));
-    
-    if(tc >= 0.0f) {
-        if(tc < 1.0f) {
-            sampleIndex = (size_t)(pTex->width * tc);
-            
-            rbAssert(sampleIndex < pTex->width);
-        }
-        else {
-            sampleIndex = pTex->width - 1;
-        }
-    }
-    else {
-        sampleIndex = 0;
-    }
-    
-    return rbColorTempMakeC(pTex->data[sampleIndex]);
-}
-
-
-RBColorTemp rbTexture1SampleLinearRepeat(RBTexture1 * pTex, float tc)
-{
-    float sampleIndexF = pTex->width * (tc - floorf(tc));
-    size_t sampleIndex0 = (size_t)sampleIndexF;
-    size_t sampleIndex1 = sampleIndex0 + 1;
-    float alpha = sampleIndexF - floorf(sampleIndexF);
-    
-    RB_ASSERT_TEXTURE1_VALID(pTex);
-    rbAssert(!isnan(tc));
-    rbAssert(sampleIndex0 < pTex->width);
-    
-    if(sampleIndex1 >= pTex->width) {
-        sampleIndex1 -= pTex->width;
-    }
-    
-    
-    return rbColorTempMix(rbColorTempMakeC(pTex->data[sampleIndex0]),
-        1.0f - alpha, rbColorTempMakeC(pTex->data[sampleIndex1]), alpha);
-}
-
-
-RBColorTemp rbTexture1SampleLinearClamp(RBTexture1 * pTex, float tc)
-{
-    RB_ASSERT_TEXTURE1_VALID(pTex);
-    rbAssert(!isnan(tc));
-    
-    if(tc > 0) {
-        if(tc < 1.0f) {
-            float sampleIndexF = (pTex->width - 1) * (tc - floorf(tc));
-            size_t sampleIndex0 = (size_t)sampleIndexF;
-            size_t sampleIndex1 = sampleIndex0 + 1;
-            float alpha = sampleIndexF - floorf(sampleIndexF);
-            
-            rbAssert(sampleIndex0 < pTex->width);
-            
-            if(sampleIndex1 >= pTex->width) {
-                sampleIndex1 = pTex->width - 1;
-            }
-            
-            return rbColorTempMix(rbColorTempMakeC(pTex->data[sampleIndex0]),
-                1.0f - alpha, rbColorTempMakeC(pTex->data[sampleIndex1]),
-                alpha);
-        }
-        else {
-            return rbColorTempMakeC(pTex->data[pTex->width - 1]);
-        }
-    }
-    else {
-        return rbColorTempMakeC(pTex->data[0]);
-    }
-}
-
-
 RBTexture2 * rbTexture2Alloc(size_t width, size_t height)
 {
     size_t stride = (width + 1 + 3) & (~3);
@@ -410,7 +410,8 @@ void rbTexture2Free(RBTexture2 * pTex)
 }
 
 
-RBColorTemp rbTexture2SampleNearestRepeat(RBTexture2 * pTex, RBVector2 tc)
+RBColorTemp rbTexture2SampleNearestRepeat(RBTexture2 const * pTex,
+    RBVector2 tc)
 {
     size_t sampleIndexU = (size_t)(pTex->width * (tc.x - floorf(tc.x)));
     size_t sampleIndexV = (size_t)(pTex->height * (tc.y - floorf(tc.y)));
@@ -426,7 +427,7 @@ RBColorTemp rbTexture2SampleNearestRepeat(RBTexture2 * pTex, RBVector2 tc)
 }
 
 
-RBColorTemp rbTexture2SampleNearestClamp(RBTexture2 * pTex, RBVector2 tc)
+RBColorTemp rbTexture2SampleNearestClamp(RBTexture2 const * pTex, RBVector2 tc)
 {
     size_t sampleIndexU;
     size_t sampleIndexV;
@@ -467,7 +468,7 @@ RBColorTemp rbTexture2SampleNearestClamp(RBTexture2 * pTex, RBVector2 tc)
 }
 
 
-RBColorTemp rbTexture2SampleLinearRepeat(RBTexture2 * pTex, RBVector2 tc)
+RBColorTemp rbTexture2SampleLinearRepeat(RBTexture2 const * pTex, RBVector2 tc)
 {
     size_t const width = pTex->width;
     size_t const stride = pTex->stride;
@@ -509,7 +510,7 @@ RBColorTemp rbTexture2SampleLinearRepeat(RBTexture2 * pTex, RBVector2 tc)
 }
 
 
-RBColorTemp rbTexture2SampleLinearClamp(RBTexture2 * pTex, RBVector2 tc)
+RBColorTemp rbTexture2SampleLinearClamp(RBTexture2 const * pTex, RBVector2 tc)
 {
     size_t const width = pTex->width;
     size_t const stride = pTex->stride;
@@ -583,7 +584,7 @@ RBColorTemp rbTexture2SampleLinearClamp(RBTexture2 * pTex, RBVector2 tc)
 
 
 void rbTexture2Blt(RBTexture2 * pDestTex, int32_t du, int32_t dv, int32_t dw,
-    int32_t dh, RBTexture2 * pSrcTex, int32_t su, int32_t sv)
+    int32_t dh, RBTexture2 const * pSrcTex, int32_t su, int32_t sv)
 {
     size_t const dStride = pDestTex->stride;
     size_t const sStride = pSrcTex->stride;
@@ -614,7 +615,7 @@ void rbTexture2Blt(RBTexture2 * pDestTex, int32_t du, int32_t dv, int32_t dw,
         dw = pDestTex->width - du;
     }
     if(dv + dh > (int32_t)pDestTex->height) {
-        dv = pDestTex->height - dv;
+        dh = pDestTex->height - dv;
     }
     
     if(dw <= 0 || dh <= 0) {
@@ -641,6 +642,9 @@ void rbTexture2Blt(RBTexture2 * pDestTex, int32_t du, int32_t dv, int32_t dw,
             else {
                 chunkSize = sWidth - tsu;
             }
+            rbAssert((j + du) + (i + dv) * dStride + chunkSize <=
+                pDestTex->size);
+            rbAssert(tsu + sv * sStride + chunkSize <= pSrcTex->size);
             memcpy(pDestTex->data + (j + du) + (i + dv) * dStride,
                 pSrcTex->data + tsu + sv * sStride,
                 chunkSize * sizeof (RBColor));
@@ -655,7 +659,7 @@ void rbTexture2Blt(RBTexture2 * pDestTex, int32_t du, int32_t dv, int32_t dw,
 
 
 void rbTexture2BltSrcAlpha(RBTexture2 * pDestTex, int32_t du, int32_t dv,
-    int32_t dw, int32_t dh, RBTexture2 * pSrcTex, int32_t su, int32_t sv)
+    int32_t dw, int32_t dh, RBTexture2 const * pSrcTex, int32_t su, int32_t sv)
 {
     size_t const dStride = pDestTex->stride;
     size_t const sStride = pSrcTex->stride;
@@ -686,7 +690,7 @@ void rbTexture2BltSrcAlpha(RBTexture2 * pDestTex, int32_t du, int32_t dv,
         dw = pDestTex->width - du;
     }
     if(dv + dh > (int32_t)pDestTex->height) {
-        dv = pDestTex->height - dv;
+        dh = pDestTex->height - dv;
     }
     
     if(dw <= 0 || dh <= 0) {
@@ -723,8 +727,8 @@ void rbTexture2BltSrcAlpha(RBTexture2 * pDestTex, int32_t du, int32_t dv,
 }
 
 
-void rbTexture2Mix(RBTexture2 * pDestTex, RBTexture2 * pSrcTexA,
-    uint8_t alphaA, RBTexture2 * pSrcTexB, uint8_t alphaB)
+void rbTexture2Mix(RBTexture2 * pDestTex, RBTexture2 const * pSrcTexA,
+    uint8_t alphaA, RBTexture2 const * pSrcTexB, uint8_t alphaB)
 {
     size_t const width = pDestTex->width;
     size_t const height = pDestTex->height;
@@ -749,6 +753,40 @@ void rbTexture2Mix(RBTexture2 * pDestTex, RBTexture2 * pSrcTexA,
         }
     }
 }
+
+
+void rbTexture2Rescale(RBTexture2 * pDestTex, RBTexture2 const * pSrcTex)
+{
+    // This algorithm is very inefficient
+    
+    size_t const dWidth = pDestTex->width;
+    size_t const dHeight = pDestTex->height;
+    size_t const dStride = pDestTex->stride;
+    size_t const oversample = 8;
+    float const swmul = 1.0f / (dWidth * oversample);
+    float const shmul = 1.0f / (dHeight * oversample);
+    float const cs = 1.0f / (oversample * oversample);
+    
+    RB_ASSERT_TEXTURE2_VALID(pDestTex);
+    RB_ASSERT_TEXTURE2_VALID(pSrcTex);
+    
+    for(size_t j = 0; j < dHeight; ++j) {
+        for(size_t i = 0; i < dWidth; ++i) {
+            RBColorTemp ct = colortempf(0.0f, 0.0f, 0.0f, 0.0f);
+            
+            for(size_t v = 0; v < oversample; ++v) {
+                for(size_t u = 0; u < oversample; ++u) {
+                    ct = ctadd(ct, ctscale(t2sampnc(pSrcTex,
+                        vector2((float)((i * oversample + u) + 0.5f) * swmul,
+                            (float)((j * oversample + v) + 0.5f) * shmul)),
+                        cs));
+                }
+            }
+            pDestTex->data[j * dStride + i] = colorct(ct);
+        }
+    }
+}
+
 
 
 void rbHarmonicPathGeneratorInitialize(RBHarmonicPathGenerator * pPathGen,
