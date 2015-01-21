@@ -219,8 +219,8 @@ void rbAudioAnalysisInitialize(RBConfiguration const * config)
     memset(g_rbYVHI, 0, sizeof g_rbYVHI);
 
     g_rbPeakDebounceTime = rbTimeFromMs(100);
-    g_rbPeakDetectThreshold = 1.0f;
-    g_rbPeakResetThreshold = 0.5f;
+    g_rbPeakDetectThreshold = 1.5f;
+    g_rbPeakResetThreshold = 0.75f;
     
     rbStopTimer(&g_rbPeakDebounceTimer);
     g_rbPeakDetected = false;
@@ -358,18 +358,22 @@ void rbAudioAnalysisAnalyze(RBRawAudio const * audio, RBAnalyzedAudio * pAnalysi
 
     rbAudioAnalysisUpdateAgc(pAnalysis);
     
+    pAnalysis->peakDetected = false;
     if(g_rbPeakDetected) {
         if(pAnalysis->bassEnergy < g_rbPeakResetThreshold &&
+//                pAnalysis->trebleEnergy < g_rbPeakResetThreshold &&
                 rbTimerElapsed(&g_rbPeakDebounceTimer)) {
             g_rbPeakDetected = false;
             rbStopTimer(&g_rbPeakDebounceTimer);
         }
     }
     else if(pAnalysis->bassEnergy > g_rbPeakDetectThreshold) {
+//    else if(pAnalysis->bassEnergy > g_rbPeakDetectThreshold &&
+//            pAnalysis->trebleEnergy > g_rbPeakDetectThreshold) {
         g_rbPeakDetected = true;
         rbStartTimer(&g_rbPeakDebounceTimer, g_rbPeakDebounceTime);
+        pAnalysis->peakDetected = true;
     }
-    pAnalysis->peakDetected = g_rbPeakDetected;
 }
 
 
