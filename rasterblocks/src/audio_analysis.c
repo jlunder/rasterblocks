@@ -368,9 +368,8 @@ void rbAudioAnalysisAnalyze(RBRawAudio const * audio, RBAnalyzedAudio * pAnalysi
     else if(pAnalysis->bassEnergy > g_rbPeakDetectThreshold) {
         g_rbPeakDetected = true;
         rbStartTimer(&g_rbPeakDebounceTimer, g_rbPeakDebounceTime);
-        
-        pAnalysis->peakDetected = true;
     }
+    pAnalysis->peakDetected = g_rbPeakDetected;
 }
 
 

@@ -313,6 +313,7 @@ static inline RBVector2 rbHarmonicPathGeneratorPos(
 #define colorct rbColorMakeCT
 #define cscalei rbColorScaleI
 #define cscalef rbColorScaleF
+#define cadd rbColorAdd
 #define cmixi rbColorMixI
 #define cmixf rbColorMixF
 

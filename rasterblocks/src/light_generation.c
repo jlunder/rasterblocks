@@ -219,7 +219,11 @@ void rbLightGenerationInitialize(RBConfiguration const * config)
     rbTexture2Rescale(g_rbPSeqCircLogoTex32x16, g_rbPSeqCircLogoTex);
     
     rbLightGenerationSetGenerator(
-        rbLightGenerationStaticImageAlloc(g_rbPSeqCircLogoTex32x16));
+        rbLightGenerationCompositor2Alloc(
+            rbLightGenerationPulseGridAlloc(colori(255, 0, 0, 255),
+                colori(0, 0, 255, 255)),
+            rbLightGenerationBeatFlashAlloc(g_rbPGrayscalePalAlphaTex)
+        ));
 }
 
 
@@ -370,7 +374,7 @@ void rbLightGenerationCompositorGenerate(void * pData,
             rbLightGenerationGeneratorGenerate(pCompositor->pGenerators[i],
                 pAnalysis, pFrame);
         }
-        else {
+        else if(pCompositor->pGenerators[i] != NULL) {
             rbLightGenerationGeneratorGenerate(pCompositor->pGenerators[i],
                 pAnalysis, pTempTex);
             rbTexture2BltSrcAlpha(pFrame, 0, 0, fWidth, fHeight, pTempTex,
@@ -666,6 +670,81 @@ void rbLightGenerationTimedRotationGenerate(void * pData,
 
 
 ///////////////////////////////////////////////////////////////////////////////
+// BeatFlash
+
+
+typedef struct
+{
+    RBLightGenerator genDef;
+    RBTexture1 * pPalTex;
+    RBTimer flashTimer;
+} RBLightGeneratorBeatFlash;
+
+
+#define RB_BEAT_FLASH_TIME_MS 250
+
+
+void rbLightGenerationBeatFlashFree(void * pData);
+void rbLightGenerationBeatFlashGenerate(void * pData,
+    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame);
+
+
+RBLightGenerator * rbLightGenerationBeatFlashAlloc(RBTexture1 * pPalTex)
+{
+    RBLightGeneratorBeatFlash * pBeatFlash =
+        (RBLightGeneratorBeatFlash *)malloc(
+            sizeof (RBLightGeneratorBeatFlash));
+    
+    pBeatFlash->genDef.pData = pBeatFlash;
+    pBeatFlash->genDef.free = rbLightGenerationBeatFlashFree;
+    pBeatFlash->genDef.generate = rbLightGenerationBeatFlashGenerate;
+    pBeatFlash->pPalTex = pPalTex;
+    rbStopTimer(&pBeatFlash->flashTimer);
+    
+    return &pBeatFlash->genDef;
+}
+
+
+void rbLightGenerationBeatFlashFree(void * pData)
+{
+    RBLightGeneratorBeatFlash * pBeatFlash =
+        (RBLightGeneratorBeatFlash *)pData;
+    
+    free(pBeatFlash);
+}
+
+
+void rbLightGenerationBeatFlashGenerate(void * pData,
+    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame)
+{
+    RBLightGeneratorBeatFlash * pBeatFlash =
+        (RBLightGeneratorBeatFlash *)pData;
+    RBTime const flashTime = rbTimeFromMs(RB_BEAT_FLASH_TIME_MS);
+    RBColor fillColor;
+    
+    if(pAnalysis->peakDetected) {
+        rbStartTimer(&pBeatFlash->flashTimer, flashTime);
+    }
+    
+    if(!rbTimerElapsed(&pBeatFlash->flashTimer)) {
+        float flashAlpha = (float)rbGetTimeLeft(&pBeatFlash->flashTimer) /
+            (float)flashTime;
+        fillColor = colorct(t1samplc(pBeatFlash->pPalTex,
+            flashAlpha * flashAlpha * flashAlpha * flashAlpha));
+    }
+    else {
+        fillColor = colorct(t1sampnc(pBeatFlash->pPalTex, 0.0f));
+    }
+    
+    for(size_t j = 0; j < t2geth(pFrame); ++j) {
+        for(size_t i = 0; i < t2getw(pFrame); ++i) {
+            t2sett(pFrame, i, j, fillColor);
+        }
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
 // PulsePlasma
 
 
@@ -770,13 +849,51 @@ void rbLightGenerationPulseGridGenerate(void * pData,
 {
     RBLightGeneratorPulseGrid * pPulseGrid =
         (RBLightGeneratorPulseGrid *)pData;
+    float hSpacing = 4.0f + 2.0f * rbClampF(pAnalysis->trebleEnergy, 0.0f, 4.0f);
+    float vSpacing = 4.0f + 2.0f * rbClampF(pAnalysis->bassEnergy, 0.0f, 4.0f);
+    RBColor const hColor = pPulseGrid->hColor;
+    RBColor const vColor = pPulseGrid->vColor;
+    size_t const fWidth = t2getw(pFrame);
+    size_t const fHeight = t2geth(pFrame);
+    float centerX = (float)(fWidth - 1) * 0.5f;
+    float centerY = (float)(fHeight - 1) * 0.5f;
     
-    // TODO Implement
-    UNUSED(pAnalysis);
-    UNUSED(pPulseGrid);
-    for(size_t j = 0; j < t2geth(pFrame); ++j) {
-        for(size_t i = 0; i < t2getw(pFrame); ++i) {
-            t2sett(pFrame, i, j, colori(255, 0, 255, 255));
+    for(size_t j = 0; j < fHeight; ++j) {
+        for(size_t i = 0; i < fWidth; ++i) {
+            float u = fmodf(fabsf((float)i - centerX) + hSpacing * 0.75f,
+                hSpacing);
+            float v = fmodf(fabsf((float)j - centerY) + vSpacing * 0.75f,
+                vSpacing);
+            RBColor hc;
+            RBColor vc;
+            
+            if(u < 0.5f) {
+                hc = cscalef(hColor, u * 2.0f);
+            }
+            else if(u < 1.5f) {
+                hc = hColor;
+            }
+            else if(u < 2.0f) {
+                hc = cscalef(hColor, (2.0f - u) * 2.0f);
+            }
+            else {
+                hc = colori(0, 0, 0, 0);
+            }
+            
+            if(v < 1.0f) {
+                vc = cscalef(vColor, v * 1.0f);
+            }
+            else if(v < 1.5f) {
+                vc = vColor;
+            }
+            else if(v < 2.0f) {
+                vc = cscalef(vColor, (2.0f - v) * 2.0f);
+            }
+            else {
+                vc = colori(0, 0, 0, 0);
+            }
+            
+            t2sett(pFrame, i, j, cadd(hc, vc));
         }
     }
 }
