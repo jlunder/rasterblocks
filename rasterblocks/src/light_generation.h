@@ -61,9 +61,9 @@ RBLightGenerator * rbLightGenerationImageFilterAlloc(
 RBLightGenerator * rbLightGenerationRescaleAlloc(
     RBLightGenerator * pGenerator, size_t srcWidth, size_t srcHeight);
 
-RBLightGenerator * rbLightGenerationTimedRotationAlloc(void);
-void rbLightGenerationTimedRotationAddGenerator(
-    RBLightGenerator * pTRGenerator, RBLightGenerator * pGenerator);
+RBLightGenerator * rbLightGenerationTimedRotationAlloc(
+    RBLightGenerator * pGenerators[], size_t numGenerators);
+/*
 void rbLightGenerationTimedRotationPauseRotation(
     RBLightGenerator * pTRGenerator);
 void rbLightGenerationTimedRotationContinueRotation(
@@ -72,18 +72,23 @@ void rbLightGenerationTimedRotationTransitionToGenerator(
     RBLightGenerator * pTRGenerator, RBLightGenerator * pGenerator);
 void rbLightGenerationTimedRotationSetGenerator(
     RBLightGenerator * pTRGenerator, RBLightGenerator * pGenerator);
+    */
 
+RBLightGenerator * rbLightGenerationBeatFlashAlloc(RBTexture1 * pPalTex);
 RBLightGenerator * rbLightGenerationPulsePlasmaAlloc(RBTexture1 * pPalTex);
-RBLightGenerator * rbLightGenerationGridPulseAlloc(RBColor hColor,
+RBLightGenerator * rbLightGenerationPulseGridAlloc(RBColor hColor,
     RBColor vColor);
 RBLightGenerator * rbLightGenerationDashedCirclesAlloc(RBTexture1 * pPalTex);
+RBLightGenerator * rbLightGenerationSmokeSignalsAlloc(RBTexture1 * pPalTex);
 RBLightGenerator * rbLightGenerationFireworksAlloc(RBTexture1 * pPalTex);
-RBLightGenerator * rbLightGenerationAmericanFlagAlloc(void);
-RBLightGenerator * rbLightGenerationIconCheckerboardAlloc(void);
-RBLightGenerator * rbLightGenerationPulseCheckerboardAlloc(void);
-RBLightGenerator * rbLightGenerationLissajousAlloc(void);
-RBLightGenerator * rbLightGenerationOscilloscopeAlloc(void);
-RBLightGenerator * rbLightGenerationSeqCircLogoAlloc(void);
+RBLightGenerator * rbLightGenerationVolumeBarsAlloc(RBTexture1 * pLowPalTex,
+    RBTexture1 * pHiPalTex);
+RBLightGenerator * rbLightGenerationBeatStarsAlloc(RBColor color);
+RBLightGenerator * rbLightGenerationIconCheckerboardAlloc(RBColor color);
+RBLightGenerator * rbLightGenerationPulseCheckerboardAlloc(RBColor color);
+RBLightGenerator * rbLightGenerationParticleLissajousAlloc(RBColor color);
+RBLightGenerator * rbLightGenerationSignalLissajousAlloc(RBColor color);
+RBLightGenerator * rbLightGenerationOscilloscopeAlloc(RBColor color);
 
 
 #endif

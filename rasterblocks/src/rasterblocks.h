@@ -169,6 +169,8 @@ typedef struct {
     float trebleEnergy;
     float totalEnergy;
     float leftRightBalance;
+    
+    bool peakDetected;
 } RBAnalyzedAudio;
 
 

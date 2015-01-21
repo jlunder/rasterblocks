@@ -122,9 +122,6 @@ static char const * g_rbSeqCircLogoData =
     "                                                                                      "
     ;
 
-static RBTime g_rbIconDebounceTime;
-static RBTime g_rbIconDisplayTime;
-
 RBTexture1 * g_rbPWarmPalTex = NULL;
 RBTexture1 * g_rbPWarmPalAlphaTex = NULL;
 RBTexture1 * g_rbPColdPalTex = NULL;
@@ -139,6 +136,8 @@ RBTexture2 * g_rbPSeqCircLogoTex = NULL;
 RBTexture2 * g_rbPSeqCircLogoTex16x8 = NULL;
 RBTexture2 * g_rbPSeqCircLogoTex32x16 = NULL;
 
+RBTexture2 * g_rbPIconTexs[LENGTHOF(g_rbIconsData)];
+
 static RBLightGenerator * g_rbPCurrentGenerator = NULL;
 
 
@@ -147,9 +146,6 @@ void rbLightGenerationInitialize(RBConfiguration const * config)
     UNUSED(config);
     
     rbLightGenerationShutdown();
-    
-    g_rbIconDebounceTime = rbTimeFromMs(50);
-    g_rbIconDisplayTime = rbTimeFromMs(500);
     
     g_rbPWarmPalTex = rbTexture1Alloc(256);
     rbTexture1FillFromPiecewiseLinear(g_rbPWarmPalTex, g_rbWarmPalette,
@@ -179,7 +175,17 @@ void rbLightGenerationInitialize(RBConfiguration const * config)
     rbTexture1FillFromPiecewiseLinear(g_rbPRainbowPalTex, g_rbRainbowPalette,
         LENGTHOF(g_rbRainbowPalette), true);
     
-    UNUSED(g_rbIconsData);
+    for(size_t k = 0; k < LENGTHOF(g_rbIconsData); ++k) {
+        g_rbPIconTexs[k] = rbTexture2Alloc(8, 8);
+        
+        for(size_t j = 0; j < 8; ++j) {
+            for(size_t i = 0; i < 8; ++i) {
+                t2sett(g_rbPIconTexs[k], i, j,
+                    ((g_rbIconsData[k][j] >> i) & 1) != 0 ?
+                        colori(255, 255, 255, 255) : colori(0, 0, 0, 0));
+            }
+        }
+    }
     
     g_rbPAmericanFlagTex = rbTexture2Alloc(28, 13);
     for(size_t j = 0; j < t2geth(g_rbPAmericanFlagTex); ++j) {
@@ -248,6 +254,12 @@ void rbLightGenerationShutdown(void)
     if(g_rbPRainbowPalTex != NULL) {
         rbTexture1Free(g_rbPRainbowPalTex);
         g_rbPRainbowPalTex = NULL;
+    }
+    for(size_t k = 0; k < LENGTHOF(g_rbIconsData); ++k) {
+        if(g_rbPIconTexs[k] != NULL) {
+            rbTexture2Free(g_rbPIconTexs[k]);
+            g_rbPIconTexs[k] = NULL;
+        }
     }
     if(g_rbPAmericanFlagTex != NULL) {
         rbTexture2Free(g_rbPAmericanFlagTex);
@@ -349,11 +361,24 @@ void rbLightGenerationCompositorGenerate(void * pData,
 {
     RBLightGeneratorCompositor * pCompositor =
         (RBLightGeneratorCompositor *)pData;
+    size_t const fWidth = t2getw(pFrame);
+    size_t const fHeight = t2geth(pFrame);
+    RBTexture2 * pTempTex = rbTexture2Alloc(fWidth, fHeight);
     
-    // TODO
-    UNUSED(pCompositor);
-    UNUSED(pAnalysis);
-    UNUSED(pFrame);
+    for(size_t i = 0; i < LENGTHOF(pCompositor->pGenerators); ++i) {
+        if(i == 0) {
+            rbLightGenerationGeneratorGenerate(pCompositor->pGenerators[i],
+                pAnalysis, pFrame);
+        }
+        else {
+            rbLightGenerationGeneratorGenerate(pCompositor->pGenerators[i],
+                pAnalysis, pTempTex);
+            rbTexture2BltSrcAlpha(pFrame, 0, 0, fWidth, fHeight, pTempTex,
+                0, 0);
+        }
+    }
+    
+    rbTexture2Free(pTempTex);
 }
 
 
@@ -462,8 +487,9 @@ void rbLightGenerationImageFilterGenerate(void * pData,
         pFrame);
     for(size_t j = 0; j < fHeight; ++j) {
         for(size_t i = 0; i < fWidth; ++i) {
-            t2sett(pFrame, i, j, cscalef(t2gett(pFrame, i, j),
-                ctgeta(t2samplc(pImageFilter->pTexture,
+            t2sett(pFrame, i, j, colorct(ctmul(
+                colortempc(t2gett(pFrame, i, j)),
+                t2samplc(pImageFilter->pTexture,
                     vector2(i * fwMul, j * fhMul)))));
         }
     }
@@ -530,80 +556,518 @@ void rbLightGenerationRescaleGenerate(void * pData,
 // TimedRotation
 
 
+typedef struct
+{
+    RBLightGenerator genDef;
+    size_t numGenerators;
+    size_t curGenerator;
+    size_t lastGenerator;
+    RBTimer rotationTimer;
+    RBTimer transitionTimer;
+    RBLightGenerator * pGenerators[64];
+} RBLightGeneratorTimedRotation;
+
+
+#define RB_ROTATION_TIME_MS 60000
+#define RB_TRANSITION_TIME_MS 1000
+
+
 void rbLightGenerationTimedRotationFree(void * pData);
 void rbLightGenerationTimedRotationGenerate(void * pData,
     RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame);
 
 
-RBLightGenerator * rbLightGenerationTimedRotationAlloc(void);
-void rbLightGenerationTimedRotationAddGenerator(
-    RBLightGenerator * pTRGenerator, RBLightGenerator * pGenerator);
-void rbLightGenerationTimedRotationPauseRotation(
-    RBLightGenerator * pTRGenerator);
-void rbLightGenerationTimedRotationContinueRotation(
-    RBLightGenerator * pTRGenerator);
-void rbLightGenerationTimedRotationTransitionToGenerator(
-    RBLightGenerator * pTRGenerator, RBLightGenerator * pGenerator);
-void rbLightGenerationTimedRotationSetGenerator(
-    RBLightGenerator * pTRGenerator, RBLightGenerator * pGenerator);
+RBLightGenerator * rbLightGenerationTimedRotationAlloc(
+    RBLightGenerator * pGenerators[], size_t numGenerators)
+{
+    RBLightGeneratorTimedRotation * pTimedRotation =
+        (RBLightGeneratorTimedRotation *)malloc(
+            sizeof (RBLightGeneratorTimedRotation));
+    
+    pTimedRotation->genDef.pData = pTimedRotation;
+    pTimedRotation->genDef.free = rbLightGenerationTimedRotationFree;
+    pTimedRotation->genDef.generate = rbLightGenerationTimedRotationGenerate;
+    
+    if(numGenerators > LENGTHOF(pTimedRotation->pGenerators)) {
+        pTimedRotation->numGenerators = LENGTHOF(pTimedRotation->pGenerators);
+    }
+    else {
+        pTimedRotation->numGenerators = numGenerators;
+    }
+    memcpy(pTimedRotation->pGenerators, pGenerators,
+        pTimedRotation->numGenerators * sizeof (RBLightGenerator *));
+    
+    pTimedRotation->curGenerator = rand() % pTimedRotation->numGenerators;
+    pTimedRotation->lastGenerator = 0;
+    
+    rbStartTimer(&pTimedRotation->rotationTimer,
+        rbTimeFromMs(RB_ROTATION_TIME_MS));
+    rbStopTimer(&pTimedRotation->transitionTimer);
+    
+    return &pTimedRotation->genDef;
+}
+
+
+void rbLightGenerationTimedRotationFree(void * pData)
+{
+    RBLightGeneratorTimedRotation * pTimedRotation =
+        (RBLightGeneratorTimedRotation *)pData;
+    
+    for(size_t i = 0; i < pTimedRotation->numGenerators; ++i) {
+        rbLightGenerationGeneratorFree(pTimedRotation->pGenerators[i]);
+    }
+    free(pTimedRotation);
+}
+
+
+void rbLightGenerationTimedRotationGenerate(void * pData,
+    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame)
+{
+    RBLightGeneratorTimedRotation * pTimedRotation =
+        (RBLightGeneratorTimedRotation *)pData;
+    
+    if(rbGetTimerPeriodsAndReset(&pTimedRotation->rotationTimer) != 0) {
+        pTimedRotation->lastGenerator = pTimedRotation->curGenerator;
+        do {
+            pTimedRotation->curGenerator =
+                rand() % pTimedRotation->numGenerators;
+        } while(pTimedRotation->numGenerators > 1 &&
+            pTimedRotation->curGenerator == pTimedRotation->lastGenerator);
+        rbStartTimer(&pTimedRotation->transitionTimer,
+            rbTimeFromMs(RB_TRANSITION_TIME_MS));
+    }
+    
+    if(rbTimerElapsed(&pTimedRotation->transitionTimer)) {
+        rbLightGenerationGeneratorGenerate(
+            pTimedRotation->pGenerators[pTimedRotation->curGenerator],
+            pAnalysis, pFrame);
+    }
+    else {
+        size_t const fWidth = t2getw(pFrame);
+        size_t const fHeight = t2geth(pFrame);
+        RBTexture2 * pTempTexA = rbTexture2Alloc(fWidth, fHeight);
+        RBTexture2 * pTempTexB = rbTexture2Alloc(fWidth, fHeight);
+        float alpha = (float)rbGetTimeLeft(&pTimedRotation->transitionTimer) /
+            (float)rbTimeFromMs(RB_TRANSITION_TIME_MS);
+        
+        rbLightGenerationGeneratorGenerate(
+            pTimedRotation->pGenerators[pTimedRotation->lastGenerator],
+            pAnalysis, pTempTexA);
+        rbLightGenerationGeneratorGenerate(
+            pTimedRotation->pGenerators[pTimedRotation->curGenerator],
+            pAnalysis, pTempTexB);
+        
+        rbTexture2Mix(pFrame, pTempTexA, 1.0f - alpha, pTempTexB, alpha);
+        
+        rbTexture2Free(pTempTexA);
+        rbTexture2Free(pTempTexB);
+    }
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // PulsePlasma
 
 
+typedef struct
+{
+    RBLightGenerator genDef;
+    RBTexture1 * pPalTex;
+} RBLightGeneratorPulsePlasma;
+
+
+void rbLightGenerationPulsePlasmaFree(void * pData);
 void rbLightGenerationPulsePlasmaGenerate(void * pData,
     RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame);
 
 
-RBLightGenerator * rbLightGenerationPulsePlasmaAlloc(RBTexture1 * pPalTex);
+RBLightGenerator * rbLightGenerationPulsePlasmaAlloc(RBTexture1 * pPalTex)
+{
+    RBLightGeneratorPulsePlasma * pPulsePlasma =
+        (RBLightGeneratorPulsePlasma *)malloc(
+            sizeof (RBLightGeneratorPulsePlasma));
+    
+    pPulsePlasma->genDef.pData = pPulsePlasma;
+    pPulsePlasma->genDef.free = rbLightGenerationPulsePlasmaFree;
+    pPulsePlasma->genDef.generate = rbLightGenerationPulsePlasmaGenerate;
+    pPulsePlasma->pPalTex = pPalTex;
+    
+    return &pPulsePlasma->genDef;
+}
+
+
+void rbLightGenerationPulsePlasmaFree(void * pData)
+{
+    RBLightGeneratorPulsePlasma * pPulsePlasma =
+        (RBLightGeneratorPulsePlasma *)pData;
+    
+    free(pPulsePlasma);
+}
+
+
+void rbLightGenerationPulsePlasmaGenerate(void * pData,
+    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame)
+{
+    RBLightGeneratorPulsePlasma * pPulsePlasma =
+        (RBLightGeneratorPulsePlasma *)pData;
+    
+    // TODO Implement
+    UNUSED(pAnalysis);
+    UNUSED(pPulsePlasma);
+    for(size_t j = 0; j < t2geth(pFrame); ++j) {
+        for(size_t i = 0; i < t2getw(pFrame); ++i) {
+            t2sett(pFrame, i, j, colori(255, 0, 255, 255));
+        }
+    }
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// GridPulse
+// PulseGrid
 
 
-void rbLightGenerationGridPulseGenerate(void * pData,
+typedef struct
+{
+    RBLightGenerator genDef;
+    RBColor hColor;
+    RBColor vColor;
+} RBLightGeneratorPulseGrid;
+
+
+void rbLightGenerationPulseGridFree(void * pData);
+void rbLightGenerationPulseGridGenerate(void * pData,
     RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame);
 
 
-RBLightGenerator * rbLightGenerationGridPulseAlloc(RBColor hColor,
-    RBColor vColor);
+RBLightGenerator * rbLightGenerationPulseGridAlloc(RBColor hColor,
+    RBColor vColor)
+{
+    RBLightGeneratorPulseGrid * pPulseGrid =
+        (RBLightGeneratorPulseGrid *)malloc(
+            sizeof (RBLightGeneratorPulseGrid));
+    
+    pPulseGrid->genDef.pData = pPulseGrid;
+    pPulseGrid->genDef.free = rbLightGenerationPulseGridFree;
+    pPulseGrid->genDef.generate = rbLightGenerationPulseGridGenerate;
+    pPulseGrid->hColor = hColor;
+    pPulseGrid->vColor = vColor;
+    
+    return &pPulseGrid->genDef;
+}
+
+
+void rbLightGenerationPulseGridFree(void * pData)
+{
+    RBLightGeneratorPulseGrid * pPulseGrid =
+        (RBLightGeneratorPulseGrid *)pData;
+    
+    free(pPulseGrid);
+}
+
+
+void rbLightGenerationPulseGridGenerate(void * pData,
+    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame)
+{
+    RBLightGeneratorPulseGrid * pPulseGrid =
+        (RBLightGeneratorPulseGrid *)pData;
+    
+    // TODO Implement
+    UNUSED(pAnalysis);
+    UNUSED(pPulseGrid);
+    for(size_t j = 0; j < t2geth(pFrame); ++j) {
+        for(size_t i = 0; i < t2getw(pFrame); ++i) {
+            t2sett(pFrame, i, j, colori(255, 0, 255, 255));
+        }
+    }
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // DashedCircles
 
 
+typedef struct
+{
+    RBLightGenerator genDef;
+    RBTexture1 * pPalTex;
+} RBLightGeneratorDashedCircles;
+
+
+void rbLightGenerationDashedCirclesFree(void * pData);
 void rbLightGenerationDashedCirclesGenerate(void * pData,
     RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame);
 
 
-RBLightGenerator * rbLightGenerationDashedCirclesAlloc(RBTexture1 * pPalTex);
+RBLightGenerator * rbLightGenerationDashedCirclesAlloc(RBTexture1 * pPalTex)
+{
+    RBLightGeneratorDashedCircles * pDashedCircles =
+        (RBLightGeneratorDashedCircles *)malloc(
+            sizeof (RBLightGeneratorDashedCircles));
+    
+    pDashedCircles->genDef.pData = pDashedCircles;
+    pDashedCircles->genDef.free = rbLightGenerationDashedCirclesFree;
+    pDashedCircles->genDef.generate = rbLightGenerationDashedCirclesGenerate;
+    pDashedCircles->pPalTex = pPalTex;
+    
+    return &pDashedCircles->genDef;
+}
+
+
+void rbLightGenerationDashedCirclesFree(void * pData)
+{
+    RBLightGeneratorDashedCircles * pDashedCircles =
+        (RBLightGeneratorDashedCircles *)pData;
+    
+    free(pDashedCircles);
+}
+
+
+void rbLightGenerationDashedCirclesGenerate(void * pData,
+    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame)
+{
+    RBLightGeneratorDashedCircles * pDashedCircles =
+        (RBLightGeneratorDashedCircles *)pData;
+    
+    // TODO Implement
+    UNUSED(pAnalysis);
+    UNUSED(pDashedCircles);
+    for(size_t j = 0; j < t2geth(pFrame); ++j) {
+        for(size_t i = 0; i < t2getw(pFrame); ++i) {
+            t2sett(pFrame, i, j, colori(255, 0, 255, 255));
+        }
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// SmokeSignals
+
+
+typedef struct
+{
+    RBLightGenerator genDef;
+    RBTexture1 * pPalTex;
+} RBLightGeneratorSmokeSignals;
+
+
+void rbLightGenerationSmokeSignalsFree(void * pData);
+void rbLightGenerationSmokeSignalsGenerate(void * pData,
+    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame);
+
+
+RBLightGenerator * rbLightGenerationSmokeSignalsAlloc(RBTexture1 * pPalTex)
+{
+    RBLightGeneratorSmokeSignals * pSmokeSignals =
+        (RBLightGeneratorSmokeSignals *)malloc(
+            sizeof (RBLightGeneratorSmokeSignals));
+    
+    pSmokeSignals->genDef.pData = pSmokeSignals;
+    pSmokeSignals->genDef.free = rbLightGenerationSmokeSignalsFree;
+    pSmokeSignals->genDef.generate = rbLightGenerationSmokeSignalsGenerate;
+    pSmokeSignals->pPalTex = pPalTex;
+    
+    return &pSmokeSignals->genDef;
+}
+
+
+void rbLightGenerationSmokeSignalsFree(void * pData)
+{
+    RBLightGeneratorSmokeSignals * pSmokeSignals =
+        (RBLightGeneratorSmokeSignals *)pData;
+    
+    free(pSmokeSignals);
+}
+
+
+void rbLightGenerationSmokeSignalsGenerate(void * pData,
+    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame)
+{
+    RBLightGeneratorSmokeSignals * pSmokeSignals =
+        (RBLightGeneratorSmokeSignals *)pData;
+    
+    // TODO Implement
+    UNUSED(pAnalysis);
+    UNUSED(pSmokeSignals);
+    for(size_t j = 0; j < t2geth(pFrame); ++j) {
+        for(size_t i = 0; i < t2getw(pFrame); ++i) {
+            t2sett(pFrame, i, j, colori(255, 0, 255, 255));
+        }
+    }
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // Fireworks
 
 
+typedef struct
+{
+    RBLightGenerator genDef;
+    RBTexture1 * pPalTex;
+} RBLightGeneratorFireworks;
+
+
+void rbLightGenerationFireworksFree(void * pData);
 void rbLightGenerationFireworksGenerate(void * pData,
     RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame);
 
 
-RBLightGenerator * rbLightGenerationFireworksAlloc(RBTexture1 * pPalTex);
+RBLightGenerator * rbLightGenerationFireworksAlloc(RBTexture1 * pPalTex)
+{
+    RBLightGeneratorFireworks * pFireworks =
+        (RBLightGeneratorFireworks *)malloc(
+            sizeof (RBLightGeneratorFireworks));
+    
+    pFireworks->genDef.pData = pFireworks;
+    pFireworks->genDef.free = rbLightGenerationFireworksFree;
+    pFireworks->genDef.generate = rbLightGenerationFireworksGenerate;
+    pFireworks->pPalTex = pPalTex;
+    
+    return &pFireworks->genDef;
+}
 
 
-void rbLightGenerationAmericanFlagGenerate(void * pData,
-    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame);
+void rbLightGenerationFireworksFree(void * pData)
+{
+    RBLightGeneratorFireworks * pFireworks =
+        (RBLightGeneratorFireworks *)pData;
+    
+    free(pFireworks);
+}
+
+
+void rbLightGenerationFireworksGenerate(void * pData,
+    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame)
+{
+    RBLightGeneratorFireworks * pFireworks =
+        (RBLightGeneratorFireworks *)pData;
+    
+    // TODO Implement
+    UNUSED(pAnalysis);
+    UNUSED(pFireworks);
+    for(size_t j = 0; j < t2geth(pFrame); ++j) {
+        for(size_t i = 0; i < t2getw(pFrame); ++i) {
+            t2sett(pFrame, i, j, colori(255, 0, 255, 255));
+        }
+    }
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// AmericanFlag
+// VolumeBars
 
 
-RBLightGenerator * rbLightGenerationAmericanFlagAlloc(void)
+typedef struct
 {
-    return rbLightGenerationStaticImageAlloc(g_rbPAmericanFlagTex);
+    RBLightGenerator genDef;
+    RBTexture1 * pLowPalTex;
+    RBTexture1 * pHiPalTex;
+} RBLightGeneratorVolumeBars;
+
+
+void rbLightGenerationVolumeBarsFree(void * pData);
+void rbLightGenerationVolumeBarsGenerate(void * pData,
+    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame);
+
+
+RBLightGenerator * rbLightGenerationVolumeBarsAlloc(RBTexture1 * pLowPalTex,
+    RBTexture1 * pHiPalTex)
+{
+    RBLightGeneratorVolumeBars * pVolumeBars =
+        (RBLightGeneratorVolumeBars *)malloc(
+            sizeof (RBLightGeneratorVolumeBars));
+    
+    pVolumeBars->genDef.pData = pVolumeBars;
+    pVolumeBars->genDef.free = rbLightGenerationVolumeBarsFree;
+    pVolumeBars->genDef.generate = rbLightGenerationVolumeBarsGenerate;
+    pVolumeBars->pLowPalTex = pLowPalTex;
+    pVolumeBars->pHiPalTex = pHiPalTex;
+    
+    return &pVolumeBars->genDef;
+}
+
+
+void rbLightGenerationVolumeBarsFree(void * pData)
+{
+    RBLightGeneratorVolumeBars * pVolumeBars =
+        (RBLightGeneratorVolumeBars *)pData;
+    
+    free(pVolumeBars);
+}
+
+
+void rbLightGenerationVolumeBarsGenerate(void * pData,
+    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame)
+{
+    RBLightGeneratorVolumeBars * pVolumeBars =
+        (RBLightGeneratorVolumeBars *)pData;
+    
+    // TODO Implement
+    UNUSED(pAnalysis);
+    UNUSED(pVolumeBars);
+    for(size_t j = 0; j < t2geth(pFrame); ++j) {
+        for(size_t i = 0; i < t2getw(pFrame); ++i) {
+            t2sett(pFrame, i, j, colori(255, 0, 255, 255));
+        }
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// BeatStars
+
+
+typedef struct
+{
+    RBLightGenerator genDef;
+    RBColor color;
+} RBLightGeneratorBeatStars;
+
+
+void rbLightGenerationBeatStarsFree(void * pData);
+void rbLightGenerationBeatStarsGenerate(void * pData,
+    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame);
+
+
+RBLightGenerator * rbLightGenerationBeatStarsAlloc(RBColor color)
+{
+    RBLightGeneratorBeatStars * pBeatStars =
+        (RBLightGeneratorBeatStars *)malloc(
+            sizeof (RBLightGeneratorBeatStars));
+    
+    pBeatStars->genDef.pData = pBeatStars;
+    pBeatStars->genDef.free = rbLightGenerationBeatStarsFree;
+    pBeatStars->genDef.generate = rbLightGenerationBeatStarsGenerate;
+    pBeatStars->color = color;
+    pBeatStars->color = color;
+    
+    return &pBeatStars->genDef;
+}
+
+
+void rbLightGenerationBeatStarsFree(void * pData)
+{
+    RBLightGeneratorBeatStars * pBeatStars =
+        (RBLightGeneratorBeatStars *)pData;
+    
+    free(pBeatStars);
+}
+
+
+void rbLightGenerationBeatStarsGenerate(void * pData,
+    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame)
+{
+    RBLightGeneratorBeatStars * pBeatStars =
+        (RBLightGeneratorBeatStars *)pData;
+    
+    // TODO Implement
+    UNUSED(pAnalysis);
+    UNUSED(pBeatStars);
+    for(size_t j = 0; j < t2geth(pFrame); ++j) {
+        for(size_t i = 0; i < t2getw(pFrame); ++i) {
+            t2sett(pFrame, i, j, colori(255, 0, 255, 255));
+        }
+    }
 }
 
 
@@ -611,54 +1075,328 @@ RBLightGenerator * rbLightGenerationAmericanFlagAlloc(void)
 // IconCheckerboard
 
 
+typedef struct
+{
+    RBLightGenerator genDef;
+    RBColor color;
+} RBLightGeneratorIconCheckerboard;
+
+
+void rbLightGenerationIconCheckerboardFree(void * pData);
 void rbLightGenerationIconCheckerboardGenerate(void * pData,
     RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame);
 
 
-RBLightGenerator * rbLightGenerationIconCheckerboardAlloc(void);
+RBLightGenerator * rbLightGenerationIconCheckerboardAlloc(RBColor color)
+{
+    RBLightGeneratorIconCheckerboard * pIconCheckerboard =
+        (RBLightGeneratorIconCheckerboard *)malloc(
+            sizeof (RBLightGeneratorIconCheckerboard));
+    
+    pIconCheckerboard->genDef.pData = pIconCheckerboard;
+    pIconCheckerboard->genDef.free = rbLightGenerationIconCheckerboardFree;
+    pIconCheckerboard->genDef.generate = rbLightGenerationIconCheckerboardGenerate;
+    pIconCheckerboard->color = color;
+    
+    return &pIconCheckerboard->genDef;
+}
+
+
+void rbLightGenerationIconCheckerboardFree(void * pData)
+{
+    RBLightGeneratorIconCheckerboard * pIconCheckerboard =
+        (RBLightGeneratorIconCheckerboard *)pData;
+    
+    free(pIconCheckerboard);
+}
+
+
+void rbLightGenerationIconCheckerboardGenerate(void * pData,
+    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame)
+{
+    RBLightGeneratorIconCheckerboard * pIconCheckerboard =
+        (RBLightGeneratorIconCheckerboard *)pData;
+    
+    // TODO Implement
+    UNUSED(pAnalysis);
+    UNUSED(pIconCheckerboard);
+    for(size_t j = 0; j < t2geth(pFrame); ++j) {
+        for(size_t i = 0; i < t2getw(pFrame); ++i) {
+            t2sett(pFrame, i, j, colori(255, 0, 255, 255));
+        }
+    }
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // PulseCheckerboard
 
 
+typedef struct
+{
+    RBLightGenerator genDef;
+    RBColor color;
+} RBLightGeneratorPulseCheckerboard;
+
+
+void rbLightGenerationPulseCheckerboardFree(void * pData);
 void rbLightGenerationPulseCheckerboardGenerate(void * pData,
     RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame);
 
 
-RBLightGenerator * rbLightGenerationPulseCheckerboardAlloc(void);
+RBLightGenerator * rbLightGenerationPulseCheckerboardAlloc(RBColor color)
+{
+    RBLightGeneratorPulseCheckerboard * pPulseCheckerboard =
+        (RBLightGeneratorPulseCheckerboard *)malloc(
+            sizeof (RBLightGeneratorPulseCheckerboard));
+    
+    pPulseCheckerboard->genDef.pData = pPulseCheckerboard;
+    pPulseCheckerboard->genDef.free = rbLightGenerationPulseCheckerboardFree;
+    pPulseCheckerboard->genDef.generate = rbLightGenerationPulseCheckerboardGenerate;
+    pPulseCheckerboard->color = color;
+    
+    return &pPulseCheckerboard->genDef;
+}
+
+
+void rbLightGenerationPulseCheckerboardFree(void * pData)
+{
+    RBLightGeneratorPulseCheckerboard * pPulseCheckerboard =
+        (RBLightGeneratorPulseCheckerboard *)pData;
+    
+    free(pPulseCheckerboard);
+}
+
+
+void rbLightGenerationPulseCheckerboardGenerate(void * pData,
+    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame)
+{
+    RBLightGeneratorPulseCheckerboard * pPulseCheckerboard =
+        (RBLightGeneratorPulseCheckerboard *)pData;
+    
+    // TODO Implement
+    UNUSED(pAnalysis);
+    UNUSED(pPulseCheckerboard);
+    for(size_t j = 0; j < t2geth(pFrame); ++j) {
+        for(size_t i = 0; i < t2getw(pFrame); ++i) {
+            t2sett(pFrame, i, j, colori(255, 0, 255, 255));
+        }
+    }
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// Lissajous
+// ParticleLissajous
 
 
-void rbLightGenerationLissajousGenerate(void * pData,
+typedef struct
+{
+    RBLightGenerator genDef;
+    RBColor color;
+} RBLightGeneratorParticleLissajous;
+
+
+void rbLightGenerationParticleLissajousFree(void * pData);
+void rbLightGenerationParticleLissajousGenerate(void * pData,
     RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame);
 
 
-RBLightGenerator * rbLightGenerationLissajousAlloc(void);
+RBLightGenerator * rbLightGenerationParticleLissajousAlloc(RBColor color)
+{
+    RBLightGeneratorParticleLissajous * pParticleLissajous =
+        (RBLightGeneratorParticleLissajous *)malloc(
+            sizeof (RBLightGeneratorParticleLissajous));
+    
+    pParticleLissajous->genDef.pData = pParticleLissajous;
+    pParticleLissajous->genDef.free = rbLightGenerationParticleLissajousFree;
+    pParticleLissajous->genDef.generate = rbLightGenerationParticleLissajousGenerate;
+    pParticleLissajous->color = color;
+    
+    return &pParticleLissajous->genDef;
+}
+
+
+void rbLightGenerationParticleLissajousFree(void * pData)
+{
+    RBLightGeneratorParticleLissajous * pParticleLissajous =
+        (RBLightGeneratorParticleLissajous *)pData;
+    
+    free(pParticleLissajous);
+}
+
+
+void rbLightGenerationParticleLissajousGenerate(void * pData,
+    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame)
+{
+    RBLightGeneratorParticleLissajous * pParticleLissajous =
+        (RBLightGeneratorParticleLissajous *)pData;
+    
+    // TODO Implement
+    UNUSED(pAnalysis);
+    UNUSED(pParticleLissajous);
+    for(size_t j = 0; j < t2geth(pFrame); ++j) {
+        for(size_t i = 0; i < t2getw(pFrame); ++i) {
+            t2sett(pFrame, i, j, colori(255, 0, 255, 255));
+        }
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// SignalLissajous
+
+
+typedef struct
+{
+    RBLightGenerator genDef;
+    RBColor color;
+} RBLightGeneratorSignalLissajous;
+
+
+void rbLightGenerationSignalLissajousFree(void * pData);
+void rbLightGenerationSignalLissajousGenerate(void * pData,
+    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame);
+
+
+RBLightGenerator * rbLightGenerationSignalLissajousAlloc(RBColor color)
+{
+    RBLightGeneratorSignalLissajous * pSignalLissajous =
+        (RBLightGeneratorSignalLissajous *)malloc(
+            sizeof (RBLightGeneratorSignalLissajous));
+    
+    pSignalLissajous->genDef.pData = pSignalLissajous;
+    pSignalLissajous->genDef.free = rbLightGenerationSignalLissajousFree;
+    pSignalLissajous->genDef.generate = rbLightGenerationSignalLissajousGenerate;
+    pSignalLissajous->color = color;
+    
+    return &pSignalLissajous->genDef;
+}
+
+
+void rbLightGenerationSignalLissajousFree(void * pData)
+{
+    RBLightGeneratorSignalLissajous * pSignalLissajous =
+        (RBLightGeneratorSignalLissajous *)pData;
+    
+    free(pSignalLissajous);
+}
+
+
+void rbLightGenerationSignalLissajousGenerate(void * pData,
+    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame)
+{
+    RBLightGeneratorSignalLissajous * pSignalLissajous =
+        (RBLightGeneratorSignalLissajous *)pData;
+    
+    // TODO Implement
+    UNUSED(pAnalysis);
+    UNUSED(pSignalLissajous);
+    for(size_t j = 0; j < t2geth(pFrame); ++j) {
+        for(size_t i = 0; i < t2getw(pFrame); ++i) {
+            t2sett(pFrame, i, j, colori(255, 0, 255, 255));
+        }
+    }
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // Oscilloscope
 
 
+typedef struct
+{
+    RBLightGenerator genDef;
+    RBColor color;
+} RBLightGeneratorOscilloscope;
+
+
+void rbLightGenerationOscilloscopeFree(void * pData);
 void rbLightGenerationOscilloscopeGenerate(void * pData,
     RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame);
 
 
-RBLightGenerator * rbLightGenerationOscilloscopeAlloc(void);
-
-
-///////////////////////////////////////////////////////////////////////////////
-// SeqCircLogo
-
-
-RBLightGenerator * rbLightGenerationSeqCircLogoAlloc(void)
+RBLightGenerator * rbLightGenerationOscilloscopeAlloc(RBColor color)
 {
-    return rbLightGenerationStaticImageAlloc(g_rbPSeqCircLogoTex32x16);
+    RBLightGeneratorOscilloscope * pOscilloscope =
+        (RBLightGeneratorOscilloscope *)malloc(
+            sizeof (RBLightGeneratorOscilloscope));
+    
+    pOscilloscope->genDef.pData = pOscilloscope;
+    pOscilloscope->genDef.free = rbLightGenerationOscilloscopeFree;
+    pOscilloscope->genDef.generate = rbLightGenerationOscilloscopeGenerate;
+    pOscilloscope->color = color;
+    
+    return &pOscilloscope->genDef;
 }
+
+
+void rbLightGenerationOscilloscopeFree(void * pData)
+{
+    RBLightGeneratorOscilloscope * pOscilloscope =
+        (RBLightGeneratorOscilloscope *)pData;
+    
+    free(pOscilloscope);
+}
+
+
+void rbLightGenerationOscilloscopeGenerate(void * pData,
+    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame)
+{
+    RBLightGeneratorOscilloscope * pOscilloscope =
+        (RBLightGeneratorOscilloscope *)pData;
+    
+    // TODO Implement
+    UNUSED(pAnalysis);
+    UNUSED(pOscilloscope);
+    for(size_t j = 0; j < t2geth(pFrame); ++j) {
+        for(size_t i = 0; i < t2getw(pFrame); ++i) {
+            t2sett(pFrame, i, j, colori(255, 0, 255, 255));
+        }
+    }
+}
+
+/*
+typedef struct
+{
+    RBLightGenerator genDef;
+} RBLightGenerator<**>;
+
+
+void rbLightGeneration<**>Free(void * pData);
+void rbLightGeneration<**>Generate(void * pData,
+    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame);
+
+
+RBLightGenerator * rbLightGeneration<**>Alloc(void)
+{
+    RBLightGenerator<**> * p<**> =
+        (RBLightGenerator<**> *)malloc(
+            sizeof (RBLightGenerator<**>));
+    
+    p<**>->genDef.pData = p<**>;
+    p<**>->genDef.free = rbLightGeneration<**>Free;
+    p<**>->genDef.generate = rbLightGeneration<**>Generate;
+    
+    return &p<**>->genDef;
+}
+
+
+void rbLightGeneration<**>Free(void * pData)
+{
+    RBLightGenerator<**> * p<**> =
+        (RBLightGenerator<**> *)pData;
+}
+
+
+void rbLightGeneration<**>Generate(void * pData,
+    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame)
+{
+    RBLightGenerator<**> * p<**> =
+        (RBLightGenerator<**> *)pData;
+}
+
+
+*/
 
 
 /*

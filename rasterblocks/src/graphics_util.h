@@ -138,6 +138,12 @@ static inline RBVector4 rbVector4Scale(RBVector4 a, float scale)
     return res;
 }
 
+static inline RBVector4 rbVector4EntrywiseMul(RBVector4 a, RBVector4 b)
+{
+    RBVector4 res = {a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w};
+    return res;
+}
+
 static inline float rbVector4LengthSqr(RBVector4 a)
 {
     return a.x * a.x + a.y * a.y + a.z * a.z + a.w * a.w;
@@ -213,6 +219,7 @@ static inline RBColorTemp rbColorTempMix(RBColorTemp a, float aAlpha,
 
 #define rbColorTempScale rbVector4Scale
 #define rbColorTempAdd rbVector4Add
+#define rbColorTempMul rbVector4EntrywiseMul
 
 static inline RBColorTemp rbColorTempClamp(RBColorTemp c)
 {
@@ -319,6 +326,7 @@ static inline RBVector2 rbHarmonicPathGeneratorPos(
 #define ctmix rbColorTempMix
 #define ctscale rbColorTempScale
 #define ctadd rbColorTempAdd
+#define ctmul rbColorTempMul
 #define ctclamp rbColorTempClamp
 
 #define vector2 rbVector2Make

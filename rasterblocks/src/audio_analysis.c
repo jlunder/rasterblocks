@@ -39,6 +39,13 @@ static float g_rbAgcMax;
 static float g_rbAgcMin;
 static float g_rbAgcStrength;
 
+static RBTime g_rbPeakDebounceTime;
+static float g_rbPeakDetectThreshold;
+static float g_rbPeakResetThreshold;
+
+static RBTimer g_rbPeakDebounceTimer;
+static bool g_rbPeakDetected;
+
 
 static void rbAudioAnalysisLowPassFilter(RBFSFloat xv[NZEROS + 1],
     RBFSFloat yv[NPOLES + 1], RBFSFloat g, RBFSFloat const k[NPOLES],
@@ -198,8 +205,8 @@ void rbAudioAnalysisInitialize(RBConfiguration const * config)
     g_rbAgcMax = config->agcMax;
     g_rbAgcMin = config->agcMin;
     g_rbAgcStrength = config->agcStrength;
-
-    if(!g_rbAudioAnalysisFirstInit) {
+    
+    if(!rbIsRestarting()) {
         for(size_t i = 0; i < LENGTHOF(g_rbAgcSamples); ++i) {
             g_rbAgcSamples[i] = 1.0f;
         }
@@ -210,6 +217,13 @@ void rbAudioAnalysisInitialize(RBConfiguration const * config)
     memset(g_rbYVLOW, 0, sizeof g_rbYVLOW);
     memset(g_rbXVHI, 0, sizeof g_rbXVHI);
     memset(g_rbYVHI, 0, sizeof g_rbYVHI);
+
+    g_rbPeakDebounceTime = rbTimeFromMs(100);
+    g_rbPeakDetectThreshold = 1.0f;
+    g_rbPeakResetThreshold = 0.5f;
+    
+    rbStopTimer(&g_rbPeakDebounceTimer);
+    g_rbPeakDetected = false;
 }
 
 
@@ -316,7 +330,7 @@ static void rbAudioAnalysisUpdateAgc(RBAnalyzedAudio * analysis)
 }
 
 
-void rbAudioAnalysisAnalyze(RBRawAudio const * audio, RBAnalyzedAudio * analysis)
+void rbAudioAnalysisAnalyze(RBRawAudio const * audio, RBAnalyzedAudio * pAnalysis)
 {
     float inputBuf[RB_AUDIO_FRAMES_PER_VIDEO_FRAME];
     float bufLOW[RB_AUDIO_FRAMES_PER_VIDEO_FRAME];
@@ -339,10 +353,24 @@ void rbAudioAnalysisAnalyze(RBRawAudio const * audio, RBAnalyzedAudio * analysis
     rbAudioAnalysisCalculatePower(inputBuf, bufLOW, bufHI,
         &bassPower, &midPower, &treblePower);
 
-    rbAudioAnalysisCalculateEnergy(analysis, bassPower, midPower, treblePower,
+    rbAudioAnalysisCalculateEnergy(pAnalysis, bassPower, midPower, treblePower,
         leftPower, rightPower);
 
-    rbAudioAnalysisUpdateAgc(analysis);
+    rbAudioAnalysisUpdateAgc(pAnalysis);
+    
+    if(g_rbPeakDetected) {
+        if(pAnalysis->bassEnergy < g_rbPeakResetThreshold &&
+                rbTimerElapsed(&g_rbPeakDebounceTimer)) {
+            g_rbPeakDetected = false;
+            rbStopTimer(&g_rbPeakDebounceTimer);
+        }
+    }
+    else if(pAnalysis->bassEnergy > g_rbPeakDetectThreshold) {
+        g_rbPeakDetected = true;
+        rbStartTimer(&g_rbPeakDebounceTimer, g_rbPeakDebounceTime);
+        
+        pAnalysis->peakDetected = true;
+    }
 }
 
 
