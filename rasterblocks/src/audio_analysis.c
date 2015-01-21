@@ -5,7 +5,6 @@
 #include "audio_analysis.h"
 
 #define RB_AGC_SAMPLE_WINDOW_S 4
-#define RB_PI 3.14159265358979323846
 
 static float const RB_AGC_ROOT_2 = 1.41421356237f;
 
@@ -94,16 +93,16 @@ static void rbAudioAnalysisLowPassFilter(RBFSFloat xv[NZEROS + 1],
 static double warpFrequency(double cutoffFreq)
 {
     return RB_AUDIO_SAMPLE_RATE *
-     tan(RB_PI * cutoffFreq / RB_AUDIO_SAMPLE_RATE) / RB_PI;
+     tan(RB_PI_D * cutoffFreq / RB_AUDIO_SAMPLE_RATE) / RB_PI_D;
 }
 
 static void butterworthPoles(RBComplex* poles, double cutoff)
 {
     double arg;
     for (int i = 0; i < NZEROS; i++) {
-        arg = RB_PI * (2* i + NZEROS + 1)/2/NZEROS;
+        arg = RB_PI_D * (2* i + NZEROS + 1)/2/NZEROS;
         poles[i] = cos(arg) + sin(arg) * I;
-        poles[i] *= 2* RB_PI * cutoff;
+        poles[i] *= 2* RB_PI_D * cutoff;
     }
 }
 
