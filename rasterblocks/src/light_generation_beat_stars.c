@@ -13,14 +13,14 @@ typedef struct
         RBVector2 v;
         RBTimer timer;
         bool twinkledLastFrame;
-    } stars[64];
+    } stars[128];
 } RBLightGeneratorBeatStars;
 
 
-#define RB_BEAT_STARS_TWINKLE_TIME_MS 500
-#define RB_BEAT_STARS_SPAWN_COUNT 8
+#define RB_BEAT_STARS_TWINKLE_TIME_MS 1000
+#define RB_BEAT_STARS_SPAWN_COUNT 16
 #define RB_BEAT_STARS_INITIAL_V 0.1f
-#define RB_BEAT_STARS_A 0.1f
+#define RB_BEAT_STARS_A 0.5f
 
 void rbLightGenerationBeatStarsFree(void * pData);
 void rbLightGenerationBeatStarsGenerate(void * pData,
@@ -91,6 +91,8 @@ void rbLightGenerationBeatStarsGenerate(void * pData,
             float dir = rbRandomF() * 2.0f * RB_PI;
             RBVector2 a = v2scale(vector2(cosf(dir), sinf(dir)),
                 rbRandomF() * RB_BEAT_STARS_A);
+            
+            p = p * p * p * p;
             
             if(rbRandomF() < p && !pBeatStars->stars[i].twinkledLastFrame) {
                 size_t posX = (size_t)rbClampF(
