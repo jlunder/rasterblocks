@@ -223,7 +223,8 @@ void rbLightGenerationInitialize(RBConfiguration const * config)
 //            rbLightGenerationPulseGridAlloc(colori(63, 0, 0, 255),
 //                colori(0, 0, 63, 255)),
             rbLightGenerationDashedCirclesAlloc(g_rbPColdPalAlphaTex),
-            rbLightGenerationBeatStarsAlloc(colori(255, 0, 0, 255))
+            rbLightGenerationPulseCheckerboardAlloc(colori(255, 255, 255, 255))
+            //rbLightGenerationBeatStarsAlloc(colori(255, 0, 0, 255))
             //rbLightGenerationBeatFlashAlloc(g_rbPGrayscalePalAlphaTex)
         ));
 }
