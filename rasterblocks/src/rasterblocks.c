@@ -206,13 +206,18 @@ int32_t rbGetTimerPeriodsAndReset(RBTimer * pTimer)
 
 RBTime rbGetTimeLeft(RBTimer * pTimer)
 {
-    RBTime diff = rbDiffTime(pTimer->time + pTimer->period, rbGetTime());
-    
-    if(diff < 0) {
+    if(pTimer->period == 0) {
         return 0;
     }
     else {
-        return diff;
+        RBTime diff = rbDiffTime(pTimer->time + pTimer->period, rbGetTime());
+    
+        if(diff < 0) {
+            return 0;
+        }
+        else {
+            return diff;
+        }
     }
 }
 

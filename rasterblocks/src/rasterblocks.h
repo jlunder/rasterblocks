@@ -26,6 +26,7 @@
 #else
 #define RB_VIDEO_FRAME_RATE 60
 #endif
+#define RB_VIDEO_FRAME_TIME (1.0f / RB_VIDEO_FRAME_RATE)
 #define RB_AUDIO_FRAMES_PER_VIDEO_FRAME \
     (RB_AUDIO_SAMPLE_RATE / RB_VIDEO_FRAME_RATE)
 
@@ -329,6 +330,16 @@ static inline float rbClampF(float f, float fMin, float fMax)
     return fMin;
 }
 
+static inline uint32_t rbRandomI(uint32_t range)
+{
+    return ((rand() << 15) ^ rand()) % range;
+}
+
+static inline float rbRandomF(void)
+{
+    static float const randMul = 1.0f / ((float)RAND_MAX + 1.0f);
+    return rand() * randMul;
+}
 
 #ifdef NDEBUG
 #define rbAssert(assertExpr) do {} while(false)
