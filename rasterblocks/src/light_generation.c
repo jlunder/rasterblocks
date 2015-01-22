@@ -978,7 +978,7 @@ void rbLightGenerationDashedCirclesGenerate(void * pData,
     for(size_t j = 0; j < t2geth(pFrame); ++j) {
         for(size_t i = 0; i < t2getw(pFrame); ++i) {
             RBColor c = colorct(t1samplc(pDashedCircles->pPalTex,
-                pAnalysis->bassEnergy));
+                pAnalysis->bassEnergy * 0.5f));
             float dx = (float)i - centerX;
             float dy = (float)j - centerY;
             float dist = sqrtf(dx * dx + dy * dy);
