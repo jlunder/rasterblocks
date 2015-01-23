@@ -134,6 +134,7 @@ RBTexture1 * g_rbPRainbowPalTex = NULL;
 RBTexture2 * g_rbPAmericanFlagTex = NULL;
 RBTexture2 * g_rbPSeqCircLogoTex = NULL;
 RBTexture2 * g_rbPSeqCircLogoTex16x8 = NULL;
+RBTexture2 * g_rbPSeqCircLogoTex24x12 = NULL;
 RBTexture2 * g_rbPSeqCircLogoTex32x16 = NULL;
 
 RBTexture2 * g_rbPIconTexs[LENGTHOF(g_rbIconsData)];
@@ -215,6 +216,8 @@ void rbLightGenerationInitialize(RBConfiguration const * config)
     
     g_rbPSeqCircLogoTex16x8 = rbTexture2Alloc(16, 8);
     rbTexture2Rescale(g_rbPSeqCircLogoTex16x8, g_rbPSeqCircLogoTex);
+    g_rbPSeqCircLogoTex24x12 = rbTexture2Alloc(24, 12);
+    rbTexture2Rescale(g_rbPSeqCircLogoTex24x12, g_rbPSeqCircLogoTex);
     g_rbPSeqCircLogoTex32x16 = rbTexture2Alloc(32, 16);
     rbTexture2Rescale(g_rbPSeqCircLogoTex32x16, g_rbPSeqCircLogoTex);
     
@@ -223,7 +226,11 @@ void rbLightGenerationInitialize(RBConfiguration const * config)
 //            rbLightGenerationPulseGridAlloc(colori(63, 0, 0, 255),
 //                colori(0, 0, 63, 255)),
             rbLightGenerationDashedCirclesAlloc(g_rbPColdPalAlphaTex),
-            rbLightGenerationPulseCheckerboardAlloc(colori(255, 255, 255, 255))
+            rbLightGenerationStaticImageAlloc(g_rbPSeqCircLogoTex24x12)
+//            rbLightGenerationImageFilterAlloc(
+//                rbLightGenerationBeatFlashAlloc(g_rbPGrayscalePalAlphaTex),
+//                g_rbPSeqCircLogoTex24x12)
+            //rbLightGenerationPulseCheckerboardAlloc(colori(64, 64, 64, 64))
             //rbLightGenerationBeatStarsAlloc(colori(255, 0, 0, 255))
             //rbLightGenerationBeatFlashAlloc(g_rbPGrayscalePalAlphaTex)
         ));

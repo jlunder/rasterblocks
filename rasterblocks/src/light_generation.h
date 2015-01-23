@@ -30,6 +30,9 @@ extern RBTexture1 * g_rbPRainbowPalTex;
 
 extern RBTexture2 * g_rbPAmericanFlagTex;
 extern RBTexture2 * g_rbPSeqCircLogoTex;
+extern RBTexture2 * g_rbPSeqCircLogoTex16x8;
+extern RBTexture2 * g_rbPSeqCircLogoTex24x12;
+extern RBTexture2 * g_rbPSeqCircLogoTex32x16;
 
 
 // Light generation subsystem

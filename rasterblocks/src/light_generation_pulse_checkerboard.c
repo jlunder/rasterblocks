@@ -49,8 +49,9 @@ void rbLightGenerationPulseCheckerboardGenerate(void * pData,
     RBTime const flashTime = rbTimeFromMs(RB_PULSE_CHECKERBOARD_FLASH_TIME_MS);
     RBLightGeneratorPulseCheckerboard * pPulseCheckerboard =
         (RBLightGeneratorPulseCheckerboard *)pData;
+    float energy = pAnalysis->bassEnergy;//logf(pAnalysis->bassEnergy * (0.75f * RB_E)) * 0.5f + 1.0f;
     float squareSize =
-        rbClampF(pAnalysis->bassEnergy * 0.75f, 0.15f, 1.0f) * 4.0f;
+        rbClampF(energy, 0.15f, 1.0f) * 4.0f;
     RBColor checkerboardColor = pPulseCheckerboard->color;
     
     if(pAnalysis->peakDetected) {
@@ -69,19 +70,20 @@ void rbLightGenerationPulseCheckerboardGenerate(void * pData,
                 float a = (float)rbGetTimeLeft(
                     &pPulseCheckerboard->flashTimer) / (float)flashTime;
                 
+                a = a * a;
+                
                 if(p < 0) {
-                    a = 0.0f;
                 }
                 else if(p < 0.5f) {
-                    a = p * 2.0f;
+                    a += p * 2.0f;
                 }
                 else if(p < 1.5f) {
                     a = 1.0f;
                 }
                 else if(p < 2.0f) {
-                    a = (2.0f - p) * 1.0f + (p - 1.5f) * a;
+                    a += (2.0f - p) * 2.0f;
                 }
-                c = cscalef(checkerboardColor, a);
+                c = cscalef(checkerboardColor, rbClampF(a, 0.0f, 1.0f));
             }
             t2sett(pFrame, i, j, c);
         }
