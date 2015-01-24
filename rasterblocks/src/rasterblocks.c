@@ -372,13 +372,18 @@ void rbProcess(uint64_t nsSinceLastProcess)
     RBSubsystem lastSubsystem = rbChangeSubsystem(RBS_MAIN);
     bool configChanged = false;
     int32_t msSinceLastProcess;
+    uint64_t lastClockRemainder = g_rbClockMsNsRemainder;
     
     g_rbClockNs += nsSinceLastProcess;
     msSinceLastProcess = (g_rbClockMsNsRemainder + nsSinceLastProcess) /
         1000000;
-    g_rbClockMsNsRemainder = nsSinceLastProcess -
-        msSinceLastProcess * 1000000;
+    g_rbClockMsNsRemainder = g_rbClockMsNsRemainder + nsSinceLastProcess -
+        (uint64_t)msSinceLastProcess * 1000000;
+    rbAssert(g_rbClockMsNsRemainder < 1000000);
+    rbAssert(msSinceLastProcess >= 0);
     g_rbClockMs += msSinceLastProcess;
+    rbAssert(g_rbClockNs == (uint64_t)g_rbClockMs * 1000000 +
+        g_rbClockMsNsRemainder);
     
     rbInfo("Frame time: %dms\n", msSinceLastProcess);
     
