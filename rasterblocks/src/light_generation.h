@@ -77,6 +77,7 @@ void rbLightGenerationTimedRotationSetGenerator(
     RBLightGenerator * pTRGenerator, RBLightGenerator * pGenerator);
     */
 
+RBLightGenerator * rbLightGenerationPlasmaAlloc(RBTexture1 * pPalTex);
 RBLightGenerator * rbLightGenerationBeatFlashAlloc(RBTexture1 * pPalTex);
 RBLightGenerator * rbLightGenerationPulsePlasmaAlloc(RBTexture1 * pPalTex);
 RBLightGenerator * rbLightGenerationPulseGridAlloc(RBColor hColor,

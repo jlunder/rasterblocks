@@ -13,16 +13,6 @@ typedef RBVector4 RBColorTemp;
 
 
 typedef struct {
-    RBTime time;
-    float frequency;
-    float phase;
-    RBVector2 orientation;
-    RBVector2 scale[4];
-    RBVector2 pos;
-} RBHarmonicPathGenerator;
-
-
-typedef struct {
     size_t width;
     size_t size;
     RBColor data[0];
@@ -36,6 +26,16 @@ typedef struct {
     size_t size;
     RBColor data[0];
 } RBTexture2;
+
+
+typedef struct {
+    RBTime time;
+    float frequency;
+    float phase;
+    RBVector2 orientation;
+    RBVector2 scale[4];
+    RBVector2 pos;
+} RBHarmonicPathGenerator;
 
 
 typedef struct {
@@ -179,6 +179,7 @@ RBColor rbColorMakeCT(RBColorTemp ct);
 RBColor rbColorScaleI(RBColor a, uint8_t alpha);
 RBColor rbColorScaleF(RBColor a, float alpha);
 RBColor rbColorAdd(RBColor a, RBColor b);
+RBColor rbColorMul(RBColor a, RBColor b);
 RBColor rbColorMixI(RBColor a, uint8_t aAlpha, RBColor b, uint8_t bAlpha);
 RBColor rbColorMixF(RBColor a, float aAlpha, RBColor b, float bAlpha);
 
@@ -286,12 +287,14 @@ RBColorTemp rbTexture2SampleLinearRepeat(RBTexture2 const * pTex,
     RBVector2 tc);
 RBColorTemp rbTexture2SampleLinearClamp(RBTexture2 const * pTex, RBVector2 tc);
 
+void rbTexture2Clear(RBTexture2 * pDestTex, RBColor clearColor);
+
 void rbTexture2Blt(RBTexture2 * pDestTex, int32_t du, int32_t dv, int32_t dw,
     int32_t dh, RBTexture2 const * pSrcTex, int32_t su, int32_t sv);
 void rbTexture2BltSrcAlpha(RBTexture2 * pDestTex, int32_t du, int32_t dv,
     int32_t dw, int32_t dh, RBTexture2 const * pSrcTex, int32_t su,
     int32_t sv);
-
+    
 void rbTexture2Mix(RBTexture2 * pDestTex, RBTexture2 const * pSrcTexA,
     uint8_t alphaA, RBTexture2 const * pSrcTexB, uint8_t alphaB);
 void rbTexture2Rescale(RBTexture2 * pDestTex, RBTexture2 const * pSrcTex);
@@ -314,6 +317,7 @@ static inline RBVector2 rbHarmonicPathGeneratorPos(
 #define cscalei rbColorScaleI
 #define cscalef rbColorScaleF
 #define cadd rbColorAdd
+#define cmul rbColorMul
 #define cmixi rbColorMixI
 #define cmixf rbColorMixF
 
@@ -365,6 +369,8 @@ static inline RBVector2 rbHarmonicPathGeneratorPos(
 #define t2sampnc rbTexture2SampleNearestClamp
 #define t2samplr rbTexture2SampleLinearRepeat
 #define t2samplc rbTexture2SampleLinearClamp
+
+#define t2clear rbTexture2Clear
 
 #define t2blt rbTexture2Blt
 #define t2bltsa rbTexture2BltSrcAlpha

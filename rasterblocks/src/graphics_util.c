@@ -193,6 +193,21 @@ RBColor rbColorAdd(RBColor a, RBColor b)
 }
 
 
+RBColor rbColorMul(RBColor a, RBColor b)
+{
+    uint32_t rr = ((uint32_t)a.r * (uint32_t)b.r + 127) / 255;
+    uint32_t rg = ((uint32_t)a.g * (uint32_t)b.g + 127) / 255;
+    uint32_t rb = ((uint32_t)a.b * (uint32_t)b.b + 127) / 255;
+    uint32_t ra = ((uint32_t)a.a * (uint32_t)b.a + 127) / 255;
+    
+    return rbColorMakeI(
+        (uint8_t)(rr >= 255 ? 255 : rr),
+        (uint8_t)(rg >= 255 ? 255 : rg),
+        (uint8_t)(rb >= 255 ? 255 : rb),
+        (uint8_t)(ra >= 255 ? 255 : ra));
+}
+
+
 RBColor rbColorMixI(RBColor a, uint8_t aAlpha, RBColor b, uint8_t bAlpha)
 {
     uint32_t rr = (uint32_t)a.r * aAlpha +  (uint32_t)b.r * bAlpha + 127;
@@ -582,6 +597,17 @@ RBColorTemp rbTexture2SampleLinearClamp(RBTexture2 const * pTex, RBVector2 tc)
         alphaV);
 }
 
+
+void rbTexture2Clear(RBTexture2 * pDestTex, RBColor clearColor)
+{
+    size_t const size = pDestTex->size;
+    
+    RB_ASSERT_TEXTURE2_VALID(pDestTex);
+    
+    for(size_t i = 0; i < size; ++i) {
+        pDestTex->data[i] = clearColor;
+    }
+}
 
 void rbTexture2Blt(RBTexture2 * pDestTex, int32_t du, int32_t dv, int32_t dw,
     int32_t dh, RBTexture2 const * pSrcTex, int32_t su, int32_t sv)

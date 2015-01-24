@@ -11,7 +11,7 @@ typedef struct
 } RBLightGeneratorBeatFlash;
 
 
-#define RB_BEAT_FLASH_TIME_MS 250
+#define RB_BEAT_FLASH_TIME_MS 500
 
 
 void rbLightGenerationBeatFlashFree(void * pData);

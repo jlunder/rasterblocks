@@ -38,6 +38,7 @@ void rbLightGenerationStaticImageGenerate(void * pData,
     RBTexture2 const * pTex = pStaticImage->pTexture;
     
     UNUSED(pAnalysis);
+    t2clear(pFrame, colori(0, 0, 0, 0));
     rbTexture2Blt(pFrame,
         ((int32_t)t2getw(pFrame) - (int32_t)t2getw(pTex)) / 2,
         ((int32_t)t2geth(pFrame) - (int32_t)t2geth(pTex)) / 2,
