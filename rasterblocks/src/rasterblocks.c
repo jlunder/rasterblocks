@@ -372,7 +372,6 @@ void rbProcess(uint64_t nsSinceLastProcess)
     RBSubsystem lastSubsystem = rbChangeSubsystem(RBS_MAIN);
     bool configChanged = false;
     int32_t msSinceLastProcess;
-    uint64_t lastClockRemainder = g_rbClockMsNsRemainder;
     
     g_rbClockNs += nsSinceLastProcess;
     msSinceLastProcess = (g_rbClockMsNsRemainder + nsSinceLastProcess) /
