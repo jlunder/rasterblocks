@@ -28,6 +28,11 @@ extern RBTexture1 * g_rbPGrayscalePalAlphaTex;
 // This palette is meant to be used with repeat sampling
 extern RBTexture1 * g_rbPRainbowPalTex;
 
+extern RBTexture1 * g_rbPPal0Tex;
+extern RBTexture1 * g_rbPPal1Tex;
+extern RBTexture1 * g_rbPPal2Tex;
+extern RBTexture1 * g_rbPPal3Tex;
+
 extern RBTexture2 * g_rbPAmericanFlagTex;
 extern RBTexture2 * g_rbPSeqCircLogoTex;
 extern RBTexture2 * g_rbPSeqCircLogoTex16x8;

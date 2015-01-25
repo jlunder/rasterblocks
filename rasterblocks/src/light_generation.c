@@ -56,6 +56,34 @@ static RBPiecewiseLinearColorSegment g_rbRainbowPalette[] = {
     {{255,   0,   0, 255}, 0},
 };
 
+static RBPiecewiseLinearColorSegment g_rbPalette0[] = {
+    {{255, 255,  31, 255}, 2},
+    {{255, 255,  63, 255}, 1},
+    {{255, 255, 255, 255}, 1},
+    {{127, 255, 127, 255}, 2},
+    {{ 63, 255,  63, 255}, 0},
+};
+
+static RBPiecewiseLinearColorSegment g_rbPalette1[] = {
+    {{ 31,   0,  63, 255}, 1},
+    {{  0,   0,   0, 255}, 1},
+    {{127,  15,  15, 255}, 0},
+};
+
+static RBPiecewiseLinearColorSegment g_rbPalette2[] = {
+    {{255, 255,   0, 255}, 2},
+    {{255, 127,   7, 255}, 1},
+    {{255,  63,  15, 255}, 1},
+    {{ 63,  15,  63, 255}, 2},
+    {{ 31,   0,  63, 255}, 0},
+};
+
+static RBPiecewiseLinearColorSegment g_rbPalette3[] = {
+    {{  0, 127, 127, 255}, 1},
+    {{  0,  15, 127, 255}, 1},
+    {{ 63, 127,  15, 255}, 0},
+};
+
 static uint8_t g_rbIconsData[][8] = {
 #include "icons.h"
 };
@@ -130,6 +158,10 @@ RBTexture1 * g_rbPGrayscalePalTex = NULL;
 RBTexture1 * g_rbPGrayscalePalAlphaTex = NULL;
 
 RBTexture1 * g_rbPRainbowPalTex = NULL;
+RBTexture1 * g_rbPPal0Tex = NULL;
+RBTexture1 * g_rbPPal1Tex = NULL;
+RBTexture1 * g_rbPPal2Tex = NULL;
+RBTexture1 * g_rbPPal3Tex = NULL;
 
 RBTexture2 * g_rbPAmericanFlagTex = NULL;
 RBTexture2 * g_rbPSeqCircLogoTex = NULL;
@@ -172,11 +204,27 @@ void rbLightGenerationInitialize(RBConfiguration const * config)
     rbTexture1FillFromPiecewiseLinear(g_rbPGrayscalePalAlphaTex,
         g_rbGrayscalePaletteAlpha, LENGTHOF(g_rbGrayscalePaletteAlpha), false);
     
-    g_rbPRainbowPalTex = rbTexture1Alloc(3);
+    g_rbPRainbowPalTex = rbTexture1Alloc(256);
     rbTexture1FillFromPiecewiseLinear(g_rbPRainbowPalTex, g_rbRainbowPalette,
         LENGTHOF(g_rbRainbowPalette), true);
     
-    for(size_t k = 0; k < LENGTHOF(g_rbIconsData); ++k) {
+    g_rbPPal0Tex = rbTexture1Alloc(256);
+    rbTexture1FillFromPiecewiseLinear(g_rbPPal0Tex, g_rbPalette0,
+        LENGTHOF(g_rbPalette0), true);
+    
+    g_rbPPal1Tex = rbTexture1Alloc(256);
+    rbTexture1FillFromPiecewiseLinear(g_rbPPal1Tex, g_rbPalette1,
+        LENGTHOF(g_rbPalette1), true);
+    
+    g_rbPPal2Tex = rbTexture1Alloc(256);
+    rbTexture1FillFromPiecewiseLinear(g_rbPPal2Tex, g_rbPalette2,
+        LENGTHOF(g_rbPalette2), true);
+    
+    g_rbPPal3Tex = rbTexture1Alloc(256);
+    rbTexture1FillFromPiecewiseLinear(g_rbPPal3Tex, g_rbPalette3,
+        LENGTHOF(g_rbPalette3), true);
+    
+   for(size_t k = 0; k < LENGTHOF(g_rbIconsData); ++k) {
         g_rbPIconTexs[k] = rbTexture2Alloc(8, 8);
         
         for(size_t j = 0; j < 8; ++j) {
@@ -223,13 +271,17 @@ void rbLightGenerationInitialize(RBConfiguration const * config)
     
     rbLightGenerationSetGenerator(
         rbLightGenerationCompositor2Alloc(
-//            rbLightGenerationPulseGridAlloc(colori(63, 0, 0, 255),
-//                colori(0, 0, 63, 255)),
-            rbLightGenerationDashedCirclesAlloc(g_rbPColdPalAlphaTex),
+            rbLightGenerationPulseGridAlloc(colori(63, 0, 0, 255),
+                colori(0, 0, 63, 255)),
+//            rbLightGenerationDashedCirclesAlloc(g_rbPColdPalAlphaTex),
+//            rbLightGenerationPlasmaAlloc(g_rbPColdPalTex),
 //            rbLightGenerationStaticImageAlloc(g_rbPSeqCircLogoTex24x12)
             rbLightGenerationImageFilterAlloc(
-                rbLightGenerationBeatFlashAlloc(g_rbPGrayscalePalAlphaTex),
+                rbLightGenerationPlasmaAlloc(g_rbPColdPalTex),
                 g_rbPSeqCircLogoTex24x12)
+//            rbLightGenerationImageFilterAlloc(
+//                rbLightGenerationBeatFlashAlloc(g_rbPGrayscalePalAlphaTex),
+//                g_rbPSeqCircLogoTex24x12)
             //rbLightGenerationPulseCheckerboardAlloc(colori(64, 64, 64, 64))
             //rbLightGenerationBeatStarsAlloc(colori(255, 0, 0, 255))
             //rbLightGenerationBeatFlashAlloc(g_rbPGrayscalePalAlphaTex)

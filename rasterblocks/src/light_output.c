@@ -3,11 +3,15 @@
 #include "graphics_util.h"
 
 
+#define RB_NUM_BIAS_FRAMES 8
+
+
 static RBLightOutput g_rbLightOutput = RBLO_INVALID;
 
-static uint8_t g_rbColorTransformR[256];
-static uint8_t g_rbColorTransformG[256];
-static uint8_t g_rbColorTransformB[256];
+static float g_rbColorTransform[256];
+
+static float g_rbBiasFrame[RB_NUM_BIAS_FRAMES][RB_PANEL_HEIGHT][RB_PANEL_WIDTH];
+static size_t g_rbBiasCounter;
 
 
 void rbLightOutputInitialize(RBConfiguration const * pConfig)
@@ -38,13 +42,18 @@ void rbLightOutputInitialize(RBConfiguration const * pConfig)
     
     rbInfo("Generating color table for brightness %g\n", brightness);
     for(size_t i = 0; i < LENGTHOF(g_rbCieTable); ++i) {
-        g_rbColorTransformR[i] = (uint8_t)rbClampF(
-            ceilf(g_rbCieTable[i] * brightness), 0.0f, 255.0f);
-        g_rbColorTransformG[i] = (uint8_t)rbClampF(
-            ceilf(g_rbCieTable[i] * brightness), 0.0f, 255.0f);
-        g_rbColorTransformB[i] = (uint8_t)rbClampF(
-            ceilf(g_rbCieTable[i] * brightness), 0.0f, 255.0f);
+        g_rbColorTransform[i] = g_rbCieTable[i] * brightness;
     }
+    
+    for(size_t k = 0; k < RB_NUM_BIAS_FRAMES; ++k) {
+        for(size_t j = 0; j < RB_PANEL_HEIGHT; ++j) {
+            for(size_t i = 0; i < RB_PANEL_WIDTH; ++i) {
+                g_rbBiasFrame[k][j][i] = rbRandomF();
+            }
+        }
+    }
+    
+    g_rbBiasCounter = 0;
 }
 
 
@@ -72,15 +81,20 @@ void rbLightOutputShowLights(RBRawLightFrame const * pFrame)
 {
     RBRawLightFrame tempFrame;
     
+    g_rbBiasCounter++;
     for(size_t k = 0; k < RB_NUM_PANELS; ++k) {
+        size_t bias = (g_rbBiasCounter + k) % RB_NUM_BIAS_FRAMES;
         for(size_t j = 0; j < RB_PANEL_HEIGHT; ++j) {
             for(size_t i = 0; i < RB_PANEL_WIDTH; ++i) {
-                tempFrame.data[k][j][i].r =
-                    g_rbColorTransformR[pFrame->data[k][j][i].r];
-                tempFrame.data[k][j][i].g =
-                    g_rbColorTransformG[pFrame->data[k][j][i].g];
-                tempFrame.data[k][j][i].b =
-                    g_rbColorTransformB[pFrame->data[k][j][i].b];
+                tempFrame.data[k][j][i].r = floorf(
+                    g_rbColorTransform[pFrame->data[k][j][i].r] +
+                        g_rbBiasFrame[bias][j][i]);
+                tempFrame.data[k][j][i].g = floorf(
+                    g_rbColorTransform[pFrame->data[k][j][i].g] +
+                        g_rbBiasFrame[bias][j][i]);
+                tempFrame.data[k][j][i].b = floorf(
+                    g_rbColorTransform[pFrame->data[k][j][i].b] +
+                        g_rbBiasFrame[bias][j][i]);
             }
         }
     }

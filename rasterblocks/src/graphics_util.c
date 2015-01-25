@@ -833,8 +833,15 @@ void rbHarmonicPathGeneratorInitialize(RBHarmonicPathGenerator * pPathGen,
 
 void rbHarmonicPathGeneratorUpdate(RBHarmonicPathGenerator * pPathGen)
 {
-    float phase = 0.0f;
+    float phase = pPathGen->phase;
     RBVector2 pos = {0.0f, 0.0f};
+    RBTime dt = rbDiffTime(rbGetTime(), pPathGen->time);
+    
+    phase += rbMsFromTime(dt) * (pPathGen->frequency * 2.0f * RB_PI / 1000);
+    phase = fmodf(phase, 2.0f * RB_PI);
+    
+    pPathGen->phase = phase;
+    pPathGen->time += dt;
     
     for(size_t i = 0; i < LENGTHOF(pPathGen->scale); ++i) {
         RBVector2 scale = pPathGen->scale[i];

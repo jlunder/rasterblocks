@@ -214,6 +214,11 @@ static inline RBTime rbTimeFromMs(int32_t ms)
     return ms;
 }
 
+static inline int32_t rbMsFromTime(RBTime time)
+{
+    return time;
+}
+
 RBTime rbGetTime(void);
 
 static inline RBTime rbDiffTime(RBTime x, RBTime y)
