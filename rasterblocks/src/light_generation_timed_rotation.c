@@ -94,8 +94,9 @@ void rbLightGenerationTimedRotationGenerate(void * pData,
         size_t const fHeight = t2geth(pFrame);
         RBTexture2 * pTempTexA = rbTexture2Alloc(fWidth, fHeight);
         RBTexture2 * pTempTexB = rbTexture2Alloc(fWidth, fHeight);
-        float alpha = (float)rbGetTimeLeft(&pTimedRotation->transitionTimer) /
-            (float)rbTimeFromMs(RB_TRANSITION_TIME_MS);
+        uint8_t alpha = 255 - (uint8_t)rbClampF(
+            (float)rbGetTimeLeft(&pTimedRotation->transitionTimer) * 256 /
+                (float)rbTimeFromMs(RB_TRANSITION_TIME_MS), 0.0f, 255.0f);
         
         rbLightGenerationGeneratorGenerate(
             pTimedRotation->pGenerators[pTimedRotation->lastGenerator],
@@ -104,7 +105,7 @@ void rbLightGenerationTimedRotationGenerate(void * pData,
             pTimedRotation->pGenerators[pTimedRotation->curGenerator],
             pAnalysis, pTempTexB);
         
-        rbTexture2Mix(pFrame, pTempTexA, 1.0f - alpha, pTempTexB, alpha);
+        rbTexture2Mix(pFrame, pTempTexA, 255 - alpha, pTempTexB, alpha);
         
         rbTexture2Free(pTempTexA);
         rbTexture2Free(pTempTexB);

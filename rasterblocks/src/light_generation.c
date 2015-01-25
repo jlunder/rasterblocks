@@ -174,6 +174,9 @@ RBTexture2 * g_rbPIconTexs[LENGTHOF(g_rbIconsData)];
 static RBLightGenerator * g_rbPCurrentGenerator = NULL;
 
 
+static void rbLightGenerationInitializeGenerators(void);
+
+
 void rbLightGenerationInitialize(RBConfiguration const * config)
 {
     UNUSED(config);
@@ -241,9 +244,9 @@ void rbLightGenerationInitialize(RBConfiguration const * config)
         for(size_t i = 0; i < t2getw(g_rbPAmericanFlagTex); ++i) {
             RBColor c;
             switch(g_rbAmericanFlagData[j * t2getw(g_rbPAmericanFlagTex) + i]) {
-            case 'r': c = colori(255, 0, 0, 255); break;
-            case 'w': c = colori(255, 255, 255, 255); break;
-            case 'b': c = colori(0, 0, 255, 255); break;
+            case 'r': c = colori(63, 0, 0, 255); break;
+            case 'w': c = colori(63, 63, 63, 255); break;
+            case 'b': c = colori(0, 0, 63, 255); break;
             default: c = colori(0, 0, 0, 255); break;
             }
             t2sett(g_rbPAmericanFlagTex, i, j, c);
@@ -269,23 +272,37 @@ void rbLightGenerationInitialize(RBConfiguration const * config)
     g_rbPSeqCircLogoTex32x16 = rbTexture2Alloc(32, 16);
     rbTexture2Rescale(g_rbPSeqCircLogoTex32x16, g_rbPSeqCircLogoTex);
     
+    rbLightGenerationInitializeGenerators();
+}
+
+
+void rbLightGenerationInitializeGenerators(void)
+{
+    RBLightGenerator * pTopLayerGenerators[] = {
+        rbLightGenerationImageFilterAlloc(
+            rbLightGenerationPlasmaAlloc(g_rbPWarmPalTex),
+            g_rbPSeqCircLogoTex24x12),
+        rbLightGenerationPulseCheckerboardAlloc(colori(64, 64, 64, 64)),
+        rbLightGenerationImageFilterAlloc(
+            rbLightGenerationBeatFlashAlloc(g_rbPGrayscalePalAlphaTex),
+            g_rbPSeqCircLogoTex24x12),
+        rbLightGenerationBeatStarsAlloc(colori(255, 255, 255, 255)),
+        rbLightGenerationBeatFlashAlloc(g_rbPGrayscalePalAlphaTex),
+    };
+    RBLightGenerator * pBottomLayerGenerators[] = {
+        rbLightGenerationPulseGridAlloc(colori(63, 0, 0, 255),
+            colori(0, 0, 63, 255)),
+        rbLightGenerationDashedCirclesAlloc(g_rbPColdPalAlphaTex),
+        rbLightGenerationDashedCirclesAlloc(g_rbPWarmPalAlphaTex),
+        rbLightGenerationPlasmaAlloc(g_rbPPal0Tex),
+    };
+    
     rbLightGenerationSetGenerator(
         rbLightGenerationCompositor2Alloc(
-            rbLightGenerationPulseGridAlloc(colori(63, 0, 0, 255),
-                colori(0, 0, 63, 255)),
-//            rbLightGenerationDashedCirclesAlloc(g_rbPColdPalAlphaTex),
-//            rbLightGenerationPlasmaAlloc(g_rbPColdPalTex),
-//            rbLightGenerationStaticImageAlloc(g_rbPSeqCircLogoTex24x12)
-            rbLightGenerationImageFilterAlloc(
-                rbLightGenerationPlasmaAlloc(g_rbPColdPalTex),
-                g_rbPSeqCircLogoTex24x12)
-//            rbLightGenerationImageFilterAlloc(
-//                rbLightGenerationBeatFlashAlloc(g_rbPGrayscalePalAlphaTex),
-//                g_rbPSeqCircLogoTex24x12)
-            //rbLightGenerationPulseCheckerboardAlloc(colori(64, 64, 64, 64))
-            //rbLightGenerationBeatStarsAlloc(colori(255, 0, 0, 255))
-            //rbLightGenerationBeatFlashAlloc(g_rbPGrayscalePalAlphaTex)
-        ));
+            rbLightGenerationTimedRotationAlloc(
+                pBottomLayerGenerators, LENGTHOF(pBottomLayerGenerators)),
+            rbLightGenerationTimedRotationAlloc(
+                pTopLayerGenerators, LENGTHOF(pTopLayerGenerators))));
 }
 
 
