@@ -52,27 +52,29 @@ void rbLightOutputPixelPusherShowLights(RBRawLightFrame const * pFrame)
         RB_NUM_PANELS_PER_STRING * 3];
     uint8_t * pB;
     
-    for(size_t j = 0; j < RB_NUM_STRINGS; ++j) {
-        buf[0] = (g_rbPpSeqNumber >> 24) & 0xFF;
-        buf[1] = (g_rbPpSeqNumber >> 16) & 0xFF;
-        buf[2] = (g_rbPpSeqNumber >> 8) & 0xFF;
-        buf[3] = (g_rbPpSeqNumber >> 0) & 0xFF;
-        ++g_rbPpSeqNumber;
-        buf[4] = (uint8_t)j;
-        pB = buf + 5;
-        for(size_t i = 0; i < RB_NUM_PANELS_PER_STRING; ++i) {
-            rbAssert(pB < buf + LENGTHOF(buf));
-            pB = rbLightOutputPixelPusherEmitPanel(pB,
-                pFrame->data[j * RB_NUM_PANELS_PER_STRING + i]);
+    for(size_t k = 0; k < 2; ++k) {
+        for(size_t j = 0; j < RB_NUM_STRINGS; ++j) {
+            buf[0] = (g_rbPpSeqNumber >> 24) & 0xFF;
+            buf[1] = (g_rbPpSeqNumber >> 16) & 0xFF;
+            buf[2] = (g_rbPpSeqNumber >> 8) & 0xFF;
+            buf[3] = (g_rbPpSeqNumber >> 0) & 0xFF;
+            ++g_rbPpSeqNumber;
+            buf[4] = (uint8_t)(j + k * RB_NUM_STRINGS);
+            pB = buf + 5;
+            for(size_t i = 0; i < RB_NUM_PANELS_PER_STRING; ++i) {
+                rbAssert(pB < buf + LENGTHOF(buf));
+                pB = rbLightOutputPixelPusherEmitPanel(pB,
+                    pFrame->data[j * RB_NUM_PANELS_PER_STRING + i]);
+            }
+            rbAssert(pB == buf + LENGTHOF(buf));
+        
+            rbInfo("%02X %02X %02X %02X:%02X:%02X %02X %02X\n",
+                buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7]);
+        
+            rbVerify(sendto(g_rbPpSocket, buf, sizeof buf, 0,
+                    (struct sockaddr *)&g_rbPpAddress, sizeof g_rbPpAddress) ==
+                sizeof buf);
         }
-        rbAssert(pB == buf + LENGTHOF(buf));
-        
-        rbInfo("%02X %02X %02X %02X:%02X:%02X %02X %02X\n",
-            buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7]);
-        
-        rbVerify(sendto(g_rbPpSocket, buf, sizeof buf, 0,
-                (struct sockaddr *)&g_rbPpAddress, sizeof g_rbPpAddress) ==
-            sizeof buf);
     }
 }
 

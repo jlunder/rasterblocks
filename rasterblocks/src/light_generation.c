@@ -287,14 +287,13 @@ void rbLightGenerationInitializeGenerators(void)
             rbLightGenerationBeatFlashAlloc(g_rbPGrayscalePalAlphaTex),
             g_rbPSeqCircLogoTex24x12),
         rbLightGenerationBeatStarsAlloc(colori(255, 255, 255, 255)),
-        rbLightGenerationBeatFlashAlloc(g_rbPGrayscalePalAlphaTex),
     };
     RBLightGenerator * pBottomLayerGenerators[] = {
         rbLightGenerationPulseGridAlloc(colori(63, 0, 0, 255),
             colori(0, 0, 63, 255)),
         rbLightGenerationDashedCirclesAlloc(g_rbPColdPalAlphaTex),
         rbLightGenerationDashedCirclesAlloc(g_rbPWarmPalAlphaTex),
-        rbLightGenerationPlasmaAlloc(g_rbPPal0Tex),
+        rbLightGenerationPlasmaAlloc(g_rbPPal2Tex),
     };
     
     rbLightGenerationSetGenerator(

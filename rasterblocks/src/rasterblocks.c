@@ -279,6 +279,8 @@ void rbInitialize(int argc, char * argv[])
     if(rbIsRestarting()) {
     }
     
+    srand(time(NULL));
+    
     for(int i = 0; i < argc; ++i) {
         if(strcmp(argv[i], "-v") == 0) {
             logLevel = RBLL_INFO;
