@@ -52,7 +52,7 @@ void rbLightOutputPixelPusherShowLights(RBRawLightFrame const * pFrame)
         RB_NUM_PANELS_PER_STRING * 3];
     uint8_t * pB;
     
-    for(size_t k = 0; k < 2; ++k) {
+    for(size_t k = 0; k < 1; ++k) {
         for(size_t j = 0; j < RB_NUM_STRINGS; ++j) {
             buf[0] = (g_rbPpSeqNumber >> 24) & 0xFF;
             buf[1] = (g_rbPpSeqNumber >> 16) & 0xFF;

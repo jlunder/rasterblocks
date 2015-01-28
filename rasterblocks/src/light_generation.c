@@ -79,8 +79,8 @@ static RBPiecewiseLinearColorSegment g_rbPalette2[] = {
 };
 
 static RBPiecewiseLinearColorSegment g_rbPalette3[] = {
-    {{  0, 127, 127, 255}, 1},
-    {{  0,  15, 127, 255}, 1},
+    {{  0,  63, 127, 255}, 1},
+    {{ 15,   7,  31, 255}, 1},
     {{ 63, 127,  15, 255}, 0},
 };
 
@@ -150,6 +150,25 @@ static char const * g_rbSeqCircLogoData =
     "                                                                                      "
     ;
 
+static char const * g_rbVectorHarmonyLogoData =
+    "   XXXXX          XXXX    XXXX        XXXX      "
+    "    XXXXX         XXXX    XXXX        XXXX      "
+    "     XXXXX        XXXX    XXXX        XXXX      "
+    "      XXXXX       XXXX    XXXX        XXXX      "
+    "       XXXXX      XXXX    XXXX        XXXX      "
+    "        XXXXX     XXXX    XXXX        XXXX      "
+    "         XXXXX    XXXX    XXXXXXXXXXXXXXXX      "
+    "          XXXXX   XXXX    XXXXXXXXXXXXXXXX      "
+    "           XXXXX  XXXX    XXXXXXXXXXXXXXXX      "
+    "            XXXXX XXXX    XXXXXXXXXXXXXXXX      "
+    "             XXXXXXXXX    XXXX        XXXX      "
+    "              XXXXXXXX    XXXX        XXXX      "
+    "               XXXXXXX    XXXX        XXXX      "
+    "                XXXXXX    XXXX        XXXX      "
+    "                 XXXXX    XXXX        XXXX      "
+    "                  XXXX    XXXX        XXXX      "
+    ;
+
 RBTexture1 * g_rbPWarmPalTex = NULL;
 RBTexture1 * g_rbPWarmPalAlphaTex = NULL;
 RBTexture1 * g_rbPColdPalTex = NULL;
@@ -168,6 +187,8 @@ RBTexture2 * g_rbPSeqCircLogoTex = NULL;
 RBTexture2 * g_rbPSeqCircLogoTex16x8 = NULL;
 RBTexture2 * g_rbPSeqCircLogoTex24x12 = NULL;
 RBTexture2 * g_rbPSeqCircLogoTex32x16 = NULL;
+RBTexture2 * g_rbPVectorHarmonyLogoTex48x16 = NULL;
+RBTexture2 * g_rbPVectorHarmonyLogoTex24x8 = NULL;
 
 RBTexture2 * g_rbPIconTexs[LENGTHOF(g_rbIconsData)];
 
@@ -272,6 +293,23 @@ void rbLightGenerationInitialize(RBConfiguration const * config)
     g_rbPSeqCircLogoTex32x16 = rbTexture2Alloc(32, 16);
     rbTexture2Rescale(g_rbPSeqCircLogoTex32x16, g_rbPSeqCircLogoTex);
     
+    g_rbPVectorHarmonyLogoTex48x16 = rbTexture2Alloc(48, 16);
+    for(size_t j = 0; j < t2geth(g_rbPVectorHarmonyLogoTex48x16); ++j) {
+        for(size_t i = 0; i < t2getw(g_rbPVectorHarmonyLogoTex48x16); ++i) {
+            RBColor c;
+            switch(g_rbVectorHarmonyLogoData[
+                    j * t2getw(g_rbPVectorHarmonyLogoTex48x16) + i]) {
+            case ' ': c = colori(0, 0, 0, 0); break;
+            default: c = colori(255, 255, 255, 255); break;
+            }
+            t2sett(g_rbPVectorHarmonyLogoTex48x16, i, j, c);
+        }
+    }
+    
+    g_rbPVectorHarmonyLogoTex24x8 = rbTexture2Alloc(24, 8);
+    rbTexture2Rescale(g_rbPVectorHarmonyLogoTex24x8,
+        g_rbPVectorHarmonyLogoTex48x16);
+    
     rbLightGenerationInitializeGenerators();
 }
 
@@ -281,19 +319,22 @@ void rbLightGenerationInitializeGenerators(void)
     RBLightGenerator * pTopLayerGenerators[] = {
         rbLightGenerationImageFilterAlloc(
             rbLightGenerationPlasmaAlloc(g_rbPWarmPalTex),
-            g_rbPSeqCircLogoTex24x12),
-        rbLightGenerationPulseCheckerboardAlloc(colori(64, 64, 64, 64)),
+            g_rbPVectorHarmonyLogoTex24x8),
+        rbLightGenerationPulseCheckerboardAlloc(colori(127, 127, 127, 255)),
+        rbLightGenerationPulseCheckerboardAlloc(colori(127,  63,   0, 255)),
         rbLightGenerationImageFilterAlloc(
             rbLightGenerationBeatFlashAlloc(g_rbPGrayscalePalAlphaTex),
-            g_rbPSeqCircLogoTex24x12),
+            g_rbPVectorHarmonyLogoTex24x8),
+        /*
         rbLightGenerationBeatStarsAlloc(colori(255, 255, 255, 255)),
+        */
     };
     RBLightGenerator * pBottomLayerGenerators[] = {
-        rbLightGenerationPulseGridAlloc(colori(63, 0, 0, 255),
-            colori(0, 0, 63, 255)),
-        rbLightGenerationDashedCirclesAlloc(g_rbPColdPalAlphaTex),
-        rbLightGenerationDashedCirclesAlloc(g_rbPWarmPalAlphaTex),
-        rbLightGenerationPlasmaAlloc(g_rbPPal2Tex),
+        rbLightGenerationPulseGridAlloc(colori(63, 63, 0, 255),
+            colori(0, 63, 0, 255)),
+        rbLightGenerationDashedCirclesAlloc(g_rbPPal2Tex),
+        rbLightGenerationDashedCirclesAlloc(g_rbPPal3Tex),
+        rbLightGenerationPlasmaAlloc(g_rbPPal1Tex),
     };
     
     rbLightGenerationSetGenerator(

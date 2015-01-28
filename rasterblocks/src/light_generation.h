@@ -38,6 +38,8 @@ extern RBTexture2 * g_rbPSeqCircLogoTex;
 extern RBTexture2 * g_rbPSeqCircLogoTex16x8;
 extern RBTexture2 * g_rbPSeqCircLogoTex24x12;
 extern RBTexture2 * g_rbPSeqCircLogoTex32x16;
+extern RBTexture2 * g_rbPVectorHarmonyLogoTex48x16;
+extern RBTexture2 * g_rbPVectorHarmonyLogoTex24x8;
 
 
 // Light generation subsystem
