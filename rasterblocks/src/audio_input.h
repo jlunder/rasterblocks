@@ -6,9 +6,9 @@
 
 
 // Audio input subsystem
-void rbAudioInputInitialize(RBConfiguration const * config);
+void rbAudioInputInitialize(RBConfiguration const * pConfig);
 void rbAudioInputShutdown(void);
-void rbAudioInputBlockingRead(RBRawAudio * audio);
+void rbAudioInputBlockingRead(RBRawAudio * pAudio);
 
 
 #endif

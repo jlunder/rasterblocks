@@ -6,6 +6,7 @@
 #include "graphics_util.h"
 #include "light_generation.h"
 #include "light_output.h"
+#include "pruss_io.h"
 
 
 RBPanelConfig const g_rbPanelConfigs[RB_NUM_PANELS] = {
@@ -322,6 +323,11 @@ void rbInitialize(int argc, char * argv[])
     }
     
     rbChangeSubsystem(RBS_MAIN);
+#ifdef RB_USE_PRUSS_IO
+    rbInfo("Initializing PRUSS I/O\n");
+    rbPrussIoInitialize(&g_rbConfiguration);
+#endif
+    
     rbInfo("Initializing audio input\n");
     rbChangeSubsystem(RBS_AUDIO_INPUT);
     rbAudioInputInitialize(&g_rbConfiguration);
@@ -375,6 +381,10 @@ void rbShutdown(void)
     
     rbChangeSubsystem(RBS_AUDIO_INPUT);
     rbAudioInputShutdown();
+    
+#ifdef RB_USE_PRUSS_IO
+    rbPrussIoShutdown();
+#endif
     
     rbChangeSubsystem(lastSubsystem);
 }

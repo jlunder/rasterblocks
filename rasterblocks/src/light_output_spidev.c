@@ -75,7 +75,7 @@ void rbLightOutputSpiDevStartSpiDevice(void)
         
         rbWarning("BB SPI device not found, attempting startup\n");
         int ret = system(RB_TARGET_SPI_DEVICE_STARTUP_COMMAND);
-        if(ret==-1) {
+        if(ret != 0) {
             rbWarning("Failed to start up SPI\n");
         }
         
