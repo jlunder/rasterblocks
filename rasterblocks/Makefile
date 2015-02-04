@@ -114,7 +114,8 @@ ifneq ($(CROSS_BUILD)$(BUILD_ON_TARGET),)
 STAGE_LIGHTS_O_TARGET := $(addprefix build/,$(addsuffix .target.o, $(STAGE_LIGHTS_SRC)))
 STAGE_LIGHTS_D_TARGET := $(addprefix build/,$(addsuffix .target.d, $(STAGE_LIGHTS_SRC)))
 
-build/%.target.d: src/%.c src/icons.h build Makefile
+build/%.target.d: src/%.c src/icons.h Makefile
+	@mkdir -p build
 	@$(MAKEDEPEND_TARGET)
 
 ifneq ($(CROSS_BUILD)$(BUILD_ON_TARGET),)
