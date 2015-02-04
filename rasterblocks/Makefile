@@ -79,6 +79,12 @@ STAGE_LIGHTS_D := $(addprefix build/,$(addsuffix .d, $(STAGE_LIGHTS_SRC)))
 src/icons.h: $(wildcard icons/[0-9][0-9]*)
 	python make-icons.py $(wildcard icons/[0-9][0-9]*)
 
+bin:
+	@mkdir -p bin
+
+build:
+	@mkdir -p build
+
 build/%.d: src/%.c src/icons.h Makefile
 	@mkdir -p build
 	@$(MAKEDEPEND)
@@ -91,14 +97,15 @@ endif
 endif
 endif
 
-build/%.o: src/%.c Makefile
-	@mkdir -p build
+build/%.o: src/%.c build Makefile
 	@$(MAKEDEPEND)
 	$(CC) -c -g $(CFLAGS) -o $@ $(CPPFLAGS) $<
 
-bin/rasterblocks: $(STAGE_LIGHTS_O)
-	@mkdir -p bin
-	$(CC) -o $@ $^ $(LDFLAGS)
+bin/pasm: $(wildcard pasm/*.c) bin Makefile
+	$(CC) -g $(CFLAGS) -Wno-unused-parameter -Wno-sign-compare -D_UNIX_ -o $@ $(wildcard pasm/*.c) $(LDFLAGS)
+
+bin/rasterblocks: $(STAGE_LIGHTS_O) bin Makefile
+	$(CC) -o $@ $(STAGE_LIGHTS_O) $(LDFLAGS)
 
 ifneq ($(CROSS_BUILD)$(BUILD_ON_TARGET),)
 
@@ -107,8 +114,7 @@ ifneq ($(CROSS_BUILD)$(BUILD_ON_TARGET),)
 STAGE_LIGHTS_O_TARGET := $(addprefix build/,$(addsuffix .target.o, $(STAGE_LIGHTS_SRC)))
 STAGE_LIGHTS_D_TARGET := $(addprefix build/,$(addsuffix .target.d, $(STAGE_LIGHTS_SRC)))
 
-build/%.target.d: src/%.c src/icons.h Makefile
-	@mkdir -p build
+build/%.target.d: src/%.c src/icons.h build Makefile
 	@$(MAKEDEPEND_TARGET)
 
 ifneq ($(CROSS_BUILD)$(BUILD_ON_TARGET),)
@@ -119,14 +125,12 @@ endif
 endif
 endif
 
-build/%.target.o: src/%.c Makefile
-	@mkdir -p build
+build/%.target.o: src/%.c build Makefile
 	@$(MAKEDEPEND_TARGET)
 	$(CC_TARGET) -c -g $(CFLAGS_TARGET) -o $@ $(CPPFLAGS_TARGET) $<
 
-bin/rasterblocks.target: $(STAGE_LIGHTS_O_TARGET)
-	@mkdir -p bin
-	$(CC_TARGET) -o $@ $^ $(LDFLAGS_TARGET)
+bin/rasterblocks.target: $(STAGE_LIGHTS_O_TARGET) bin/pasm bin Makefile
+	$(CC_TARGET) -o $@ $(STAGE_LIGHTS_O_TARGET) $(LDFLAGS_TARGET)
 
 else
 
