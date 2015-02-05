@@ -94,6 +94,66 @@ MEMACCESSPRUDATARAM:
     //Store result in into memory location c3(PRU0/1 Local Data)+8 using constant table
     SBCO      r3, CONST_PRUDRAM, 8, 4
 
+
+#define GPIO0 0x44E07000
+#define GPIO1 0x4804c000
+#define GPIO_CLEARDATAOUT 0x190
+#define GPIO_SETDATAOUT 0x194
+
+#define CONST_PRUCFG         C4
+//#define CONST_PRUDRAM        C24
+#define CONST_PRUSHAREDRAM   C28
+//#define CONST_DDR            C31
+
+    // Enable OCP master port
+    LBCO      r0, CONST_PRUCFG, 4, 4
+    CLR     r0, r0, 4         // Clear SYSCFG[STANDBY_INIT] to enable OCP master port
+    SBCO      r0, CONST_PRUCFG, 4, 4
+
+    // Configure the programmable pointer register for PRU0 by setting c28_pointer[15:0]
+    // field to 0x0120.  This will make C28 point to 0x00012000 (PRU shared RAM).
+    MOV     r0, 0x00000120
+    MOV       r1, CTPPR_0
+    ST32      r0, r1
+
+    // Configure the programmable pointer register for PRU0 by setting c31_pointer[15:0]
+    // field to 0x0010.  This will make C31 point to 0x80001000 (DDR memory).
+    MOV     r0, 0x00100000
+    MOV       r1, CTPPR_1
+    ST32      r0, r1
+
+    //Load values from external DDR Memory into Registers R0/R1/R2
+    LBCO      r0, CONST_DDR, 0, 12
+
+    //Store values from read from the DDR memory into PRU shared RAM
+    SBCO      r0, CONST_PRUSHAREDRAM, 0, 12
+
+    // test GP output
+    MOV r1, 10 // loop 10 times
+
+MAINLOOP:
+    MOV r2, 1<<30
+    MOV r3, GPIO0 | GPIO_SETDATAOUT
+    SBBO r2, r3, 0, 4
+
+    MOV r0, 100000000
+DEL1:
+    SUB r0, r0, 1
+    QBNE DEL1, r0, 0
+
+    MOV R2, 1<<30
+    MOV r3, GPIO0 | GPIO_CLEARDATAOUT
+    SBBO r2, r3, 0, 4
+
+    MOV r0, 100000000
+DEL2:
+    SUB r0, r0, 1
+    QBNE DEL2, r0, 0
+
+    SUB r1, r1, 1
+    QBNE MAINLOOP, r1, 0
+
+
 #ifdef AM33XX
 
     // Send notification to Host for program completion
