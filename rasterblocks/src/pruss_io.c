@@ -59,37 +59,27 @@
 * Include Files                                                              *
 *****************************************************************************/
 
+
+#ifdef RB_USE_PRUSS_IO
+
+
 #include "rasterblocks.h"
 
-// Driver header file
 #include <prussdrv.h>
 #include <pruss_intc_mapping.h>
 
-/*****************************************************************************
-* Explicit External Declarations                                             *
-*****************************************************************************/
-
-/*****************************************************************************
-* Local Macro Declarations                                                   *
-*****************************************************************************/
 
 #define PRU_NUM 	0
 #define ADDEND1		0x0010F012u
 #define ADDEND2		0x0000567Au
 
+
 #define AM33XX
+
 
 #define RB_TARGET_PRUSS_DEVICE_STARTUP_COMMAND \
     "echo BB-BONE-PRU-01 > /sys/devices/bone_capemgr.9/slots"
 
-/*****************************************************************************
-* Local Typedef Declarations                                                 *
-*****************************************************************************/
-
-
-/*****************************************************************************
-* Local Function Declarations                                                *
-*****************************************************************************/
 
 static int LOCAL_exampleInit ( unsigned short pruNum );
 static unsigned short LOCAL_examplePassed ( unsigned short pruNum );
@@ -167,10 +157,6 @@ void rbPrussIoInitialize(RBConfiguration * pConfig)
     {
         rbInfo("Example failed.\r\n");
     }
-
-    /* Disable PRU and close memory mapping*/
-    prussdrv_pru_disable (PRU_NUM);
-    prussdrv_exit ();
 }
 
 /*****************************************************************************
@@ -206,6 +192,10 @@ static unsigned short LOCAL_examplePassed ( unsigned short pruNum )
 
 void rbPrussIoShutdown(void)
 {
+    /* Disable PRU and close memory mapping*/
+    prussdrv_pru_disable (PRU_NUM);
+    prussdrv_exit ();
 }
 
 
+#endif
