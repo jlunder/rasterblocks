@@ -280,12 +280,12 @@ static void rbAudioAnalysisCalculateEnergy(RBAnalyzedAudio * analysis,
     }
 }
 
-static void rbAudioAnalysisUpdateAgc(RBAnalyzedAudio * analysis)
+static void rbAudioAnalysisUpdateAgc(RBAnalyzedAudio * pAnalysis)
 {
     float agcTarget = 0.0f;
     float agcValue = 1.0f;
     g_rbAgcIndex = (g_rbAgcIndex + 1) % LENGTHOF(g_rbAgcSamples);
-    g_rbAgcSamples[g_rbAgcIndex] = analysis->totalEnergy * RB_AGC_ROOT_2;
+    g_rbAgcSamples[g_rbAgcIndex] = pAnalysis->totalEnergy * RB_AGC_ROOT_2;
     
     if(g_rbAgcMin < 1.0e-10f || isinf(g_rbAgcMin) || isnan(g_rbAgcMin)) {
         rbWarning("Insane configured AGC min %g", g_rbAgcMin);
@@ -320,12 +320,17 @@ static void rbAudioAnalysisUpdateAgc(RBAnalyzedAudio * analysis)
     
     agcValue = 1.0f / g_rbAgcTrackingValue;
     
-    analysis->bassEnergy *= agcValue;
-    analysis->midEnergy *= agcValue;
-    analysis->trebleEnergy *= agcValue;
+    for(size_t i = 0; i < RB_AUDIO_FRAMES_PER_VIDEO_FRAME; ++i) {
+        pAnalysis->rawAudio[i] *= agcValue;
+        pAnalysis->bassAudio[i] *= agcValue;
+        pAnalysis->trebleAudio[i] *= agcValue;
+    }
     
-    analysis->totalEnergy *= agcValue;
-
+    pAnalysis->bassEnergy *= agcValue;
+    pAnalysis->midEnergy *= agcValue;
+    pAnalysis->trebleEnergy *= agcValue;
+    
+    pAnalysis->totalEnergy *= agcValue;
 }
 
 
@@ -355,6 +360,10 @@ void rbAudioAnalysisAnalyze(RBRawAudio const * audio, RBAnalyzedAudio * pAnalysi
     rbAudioAnalysisCalculateEnergy(pAnalysis, bassPower, midPower, treblePower,
         leftPower, rightPower);
 
+    memcpy(pAnalysis->rawAudio, inputBuf, sizeof pAnalysis->rawAudio);
+    memcpy(pAnalysis->bassAudio, bufLOW, sizeof pAnalysis->bassAudio);
+    memcpy(pAnalysis->trebleAudio, bufHI, sizeof pAnalysis->trebleAudio);
+    
     rbAudioAnalysisUpdateAgc(pAnalysis);
     
     pAnalysis->peakDetected = false;

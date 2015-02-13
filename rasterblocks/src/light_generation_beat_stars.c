@@ -19,8 +19,10 @@ typedef struct
 
 #define RB_BEAT_STARS_TWINKLE_TIME_MS 1000
 #define RB_BEAT_STARS_SPAWN_COUNT 16
-#define RB_BEAT_STARS_INITIAL_V 0.1f
-#define RB_BEAT_STARS_A 0.5f
+//#define RB_BEAT_STARS_INITIAL_V 0.1f
+//#define RB_BEAT_STARS_A 0.5f
+#define RB_BEAT_STARS_INITIAL_V 0.0f
+#define RB_BEAT_STARS_A 0.0f
 
 void rbLightGenerationBeatStarsFree(void * pData);
 void rbLightGenerationBeatStarsGenerate(void * pData,

@@ -317,6 +317,7 @@ void rbLightGenerationInitialize(RBConfiguration const * config)
 void rbLightGenerationInitializeGenerators(void)
 {
     RBLightGenerator * pTopLayerGenerators[] = {
+        /*
         rbLightGenerationImageFilterAlloc(
             rbLightGenerationPlasmaAlloc(g_rbPWarmPalTex),
             g_rbPVectorHarmonyLogoTex24x8),
@@ -325,24 +326,37 @@ void rbLightGenerationInitializeGenerators(void)
         rbLightGenerationImageFilterAlloc(
             rbLightGenerationBeatFlashAlloc(g_rbPGrayscalePalAlphaTex),
             g_rbPVectorHarmonyLogoTex24x8),
+        */
+        rbLightGenerationOscilloscopeAlloc(colori(127, 127, 127, 255)),
         /*
         rbLightGenerationBeatStarsAlloc(colori(255, 255, 255, 255)),
         */
     };
     RBLightGenerator * pBottomLayerGenerators[] = {
+        /*
         rbLightGenerationPulseGridAlloc(colori(63, 63, 0, 255),
             colori(0, 63, 0, 255)),
         rbLightGenerationDashedCirclesAlloc(g_rbPPal2Tex),
         rbLightGenerationDashedCirclesAlloc(g_rbPPal3Tex),
+        */
         rbLightGenerationPlasmaAlloc(g_rbPPal1Tex),
     };
     
+    UNUSED(pTopLayerGenerators);
+    UNUSED(pBottomLayerGenerators);
+    
     rbLightGenerationSetGenerator(
+        rbLightGenerationCompositor2Alloc(
+            rbLightGenerationPulsePlasmaAlloc(g_rbPPal1Tex),
+            rbLightGenerationOscilloscopeAlloc(colori(127, 127, 127, 255)))
+            );
+/*
         rbLightGenerationCompositor2Alloc(
             rbLightGenerationTimedRotationAlloc(
                 pBottomLayerGenerators, LENGTHOF(pBottomLayerGenerators)),
             rbLightGenerationTimedRotationAlloc(
                 pTopLayerGenerators, LENGTHOF(pTopLayerGenerators))));
+*/
 }
 
 

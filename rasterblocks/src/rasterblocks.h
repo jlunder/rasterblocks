@@ -30,10 +30,12 @@
 #define RB_AUDIO_FRAMES_PER_VIDEO_FRAME \
     (RB_AUDIO_SAMPLE_RATE / RB_VIDEO_FRAME_RATE)
 
+#define RB_CHLADNI_SIZE 64
+
 #define RB_PANEL_WIDTH 8
 #define RB_PANEL_HEIGHT 8
-#define RB_NUM_PANELS_PER_STRING 3
-#define RB_NUM_STRINGS 2
+#define RB_NUM_PANELS_PER_STRING 6
+#define RB_NUM_STRINGS 1
 #define RB_NUM_PANELS (RB_NUM_PANELS_PER_STRING * RB_NUM_STRINGS)
 #define RB_NUM_LIGHTS (RB_PANEL_WIDTH * RB_PANEL_HEIGHT * RB_NUM_PANELS)
 
@@ -167,6 +169,10 @@ typedef struct {
 
 
 typedef struct {
+    float rawAudio[RB_AUDIO_FRAMES_PER_VIDEO_FRAME];
+    float bassAudio[RB_AUDIO_FRAMES_PER_VIDEO_FRAME];
+    float trebleAudio[RB_AUDIO_FRAMES_PER_VIDEO_FRAME];
+    
     float bassEnergy;
     float midEnergy;
     float trebleEnergy;
@@ -174,6 +180,8 @@ typedef struct {
     float leftRightBalance;
     
     bool peakDetected;
+    
+    float chladniPattern[RB_CHLADNI_SIZE][RB_CHLADNI_SIZE];
 } RBAnalyzedAudio;
 
 
