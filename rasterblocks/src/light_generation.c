@@ -84,6 +84,29 @@ static RBPiecewiseLinearColorSegment g_rbPalette3[] = {
     {{ 63, 127,  15, 255}, 0},
 };
 
+static RBPiecewiseLinearColorSegment g_rbPalette4[] = {
+    {{  0,   7,   3, 255}, 1},
+    {{ 63,   0, 127, 255}, 0},
+};
+
+static RBPiecewiseLinearColorSegment g_rbPalette5[] = {
+    {{  0,  63, 127, 255}, 1},
+    {{ 15,   7,  31, 255}, 1},
+    {{ 63, 127,  15, 255}, 0},
+};
+
+static RBPiecewiseLinearColorSegment g_rbPalette6[] = {
+    {{  0,  63, 127, 255}, 1},
+    {{ 15,   7,  31, 255}, 1},
+    {{ 63, 127,  15, 255}, 0},
+};
+
+static RBPiecewiseLinearColorSegment g_rbPalette7[] = {
+    {{  0,  63, 127, 255}, 1},
+    {{ 15,   7,  31, 255}, 1},
+    {{ 63, 127,  15, 255}, 0},
+};
+
 static uint8_t g_rbIconsData[][8] = {
 #include "icons.h"
 };
@@ -181,6 +204,10 @@ RBTexture1 * g_rbPPal0Tex = NULL;
 RBTexture1 * g_rbPPal1Tex = NULL;
 RBTexture1 * g_rbPPal2Tex = NULL;
 RBTexture1 * g_rbPPal3Tex = NULL;
+RBTexture1 * g_rbPPal4Tex = NULL;
+RBTexture1 * g_rbPPal5Tex = NULL;
+RBTexture1 * g_rbPPal6Tex = NULL;
+RBTexture1 * g_rbPPal7Tex = NULL;
 
 RBTexture2 * g_rbPAmericanFlagTex = NULL;
 RBTexture2 * g_rbPSeqCircLogoTex = NULL;
@@ -248,7 +275,23 @@ void rbLightGenerationInitialize(RBConfiguration const * config)
     rbTexture1FillFromPiecewiseLinear(g_rbPPal3Tex, g_rbPalette3,
         LENGTHOF(g_rbPalette3), true);
     
-   for(size_t k = 0; k < LENGTHOF(g_rbIconsData); ++k) {
+    g_rbPPal4Tex = rbTexture1Alloc(256);
+    rbTexture1FillFromPiecewiseLinear(g_rbPPal4Tex, g_rbPalette4,
+        LENGTHOF(g_rbPalette4), true);
+    
+    g_rbPPal5Tex = rbTexture1Alloc(256);
+    rbTexture1FillFromPiecewiseLinear(g_rbPPal5Tex, g_rbPalette5,
+        LENGTHOF(g_rbPalette5), true);
+    
+    g_rbPPal6Tex = rbTexture1Alloc(256);
+    rbTexture1FillFromPiecewiseLinear(g_rbPPal6Tex, g_rbPalette6,
+        LENGTHOF(g_rbPalette6), true);
+    
+    g_rbPPal7Tex = rbTexture1Alloc(256);
+    rbTexture1FillFromPiecewiseLinear(g_rbPPal7Tex, g_rbPalette7,
+        LENGTHOF(g_rbPalette7), true);
+    
+    for(size_t k = 0; k < LENGTHOF(g_rbIconsData); ++k) {
         g_rbPIconTexs[k] = rbTexture2Alloc(8, 8);
         
         for(size_t j = 0; j < 8; ++j) {
@@ -347,8 +390,8 @@ void rbLightGenerationInitializeGenerators(void)
     
     rbLightGenerationSetGenerator(
         rbLightGenerationCompositor2Alloc(
-            rbLightGenerationPulsePlasmaAlloc(g_rbPPal1Tex),
-            rbLightGenerationOscilloscopeAlloc(colori(127, 127, 127, 255)))
+            rbLightGenerationPulsePlasmaAlloc(g_rbPPal4Tex),
+            rbLightGenerationOscilloscopeAlloc(colori(0, 0, 0, 0)))
             );
 /*
         rbLightGenerationCompositor2Alloc(

@@ -110,6 +110,9 @@ static unsigned int *pruDataMem_int;
 void rbPrussIoInitialize(RBConfiguration * pConfig)
 {
     int ret;
+    
+    return;
+    
     ret = system(RB_TARGET_PRUSS_DEVICE_STARTUP_COMMAND);
     if(ret != 0) {
         rbWarning("Failed to start up PRUSS\n");
@@ -192,6 +195,7 @@ static unsigned short LOCAL_examplePassed ( unsigned short pruNum )
 
 void rbPrussIoShutdown(void)
 {
+    return;
     /* Disable PRU and close memory mapping*/
     prussdrv_pru_disable (PRU_NUM);
     prussdrv_exit ();

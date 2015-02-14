@@ -17,7 +17,7 @@ typedef struct
     RBLightGenerator genDef;
     RBColor color;
     size_t sampleSkipRemainder;
-    float data[RB_OSCILLOSCOPE_WINDOW];
+    float data[RB_OSCILLOSCOPE_WINDOW+1];
 } RBLightGeneratorOscilloscope;
 
 
@@ -59,8 +59,7 @@ void rbLightGenerationOscilloscopeGenerate(void * pData,
         (RBLightGeneratorOscilloscope *)pData;
     RBColor c = cscalef(pOscilloscope->color, 1.0f / RB_OSCILLOSCOPE_ANTIALIAS);
     size_t displayStart = RB_OSCILLOSCOPE_WINDOW -
-        RB_OSCILLOSCOPE_DISPLAY_WINDOW / 2;
-    size_t displayEnd;
+        RB_OSCILLOSCOPE_DISPLAY_WINDOW;
     size_t newDataPoints = (RB_AUDIO_FRAMES_PER_VIDEO_FRAME -
         pOscilloscope->sampleSkipRemainder) / RB_OSCILLOSCOPE_SAMPLE_SKIP;
     
@@ -98,7 +97,6 @@ void rbLightGenerationOscilloscopeGenerate(void * pData,
             break;
         }
     }
-    displayEnd = displayStart + RB_OSCILLOSCOPE_DISPLAY_WINDOW;
     
     rbTexture2Clear(pFrame, colori(0, 0, 0, 0));
     {

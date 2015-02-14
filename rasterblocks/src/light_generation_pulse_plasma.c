@@ -61,7 +61,7 @@ void rbLightGenerationPulsePlasmaGenerate(void * pData,
     RBVector2 pathPos[LENGTHOF(pPulsePlasma->paths)];
     RBVector2 frameCenter =
         vector2(t2getw(pFrame) * 0.5f, t2geth(pFrame) * 0.5f);
-    float pulseScale = 1.0f + 0.1f * (pAnalysis->bassEnergy - 1.0f);
+    float pulseScale = 1.0f + 0.2f * (pAnalysis->bassEnergy - 0.5f);
     
     for(size_t k = 0; k < LENGTHOF(pPulsePlasma->paths); ++k) {
         rbHarmonicPathGeneratorUpdate(&pPulsePlasma->paths[k]);

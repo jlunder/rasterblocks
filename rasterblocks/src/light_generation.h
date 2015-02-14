@@ -32,6 +32,10 @@ extern RBTexture1 * g_rbPPal0Tex;
 extern RBTexture1 * g_rbPPal1Tex;
 extern RBTexture1 * g_rbPPal2Tex;
 extern RBTexture1 * g_rbPPal3Tex;
+extern RBTexture1 * g_rbPPal4Tex;
+extern RBTexture1 * g_rbPPal5Tex;
+extern RBTexture1 * g_rbPPal6Tex;
+extern RBTexture1 * g_rbPPal7Tex;
 
 extern RBTexture2 * g_rbPAmericanFlagTex;
 extern RBTexture2 * g_rbPSeqCircLogoTex;
