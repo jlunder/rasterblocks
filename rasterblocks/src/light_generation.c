@@ -391,7 +391,7 @@ void rbLightGenerationInitializeGenerators(void)
     rbLightGenerationSetGenerator(
         rbLightGenerationCompositor2Alloc(
             rbLightGenerationPulsePlasmaAlloc(g_rbPPal4Tex),
-            rbLightGenerationOscilloscopeAlloc(colori(0, 0, 0, 0)))
+            rbLightGenerationOscilloscopeAlloc(colori(0, 127, 0, 255)))
             );
 /*
         rbLightGenerationCompositor2Alloc(
