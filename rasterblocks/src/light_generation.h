@@ -96,6 +96,7 @@ RBLightGenerator * rbLightGenerationPulseGridAlloc(RBColor hColor,
 RBLightGenerator * rbLightGenerationDashedCirclesAlloc(RBTexture1 * pPalTex);
 RBLightGenerator * rbLightGenerationSmokeSignalsAlloc(RBTexture1 * pPalTex);
 RBLightGenerator * rbLightGenerationFireworksAlloc(RBTexture1 * pPalTex);
+RBLightGenerator * rbLightGenerationVerticalBarsAlloc(RBTexture1 * pPalTex);
 RBLightGenerator * rbLightGenerationVolumeBarsAlloc(RBTexture1 * pLowPalTex,
     RBTexture1 * pHiPalTex);
 RBLightGenerator * rbLightGenerationBeatStarsAlloc(RBColor color);

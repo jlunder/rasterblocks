@@ -390,7 +390,7 @@ void rbLightGenerationInitializeGenerators(void)
     
     rbLightGenerationSetGenerator(
         rbLightGenerationCompositor2Alloc(
-            rbLightGenerationPulsePlasmaAlloc(g_rbPPal4Tex),
+            rbLightGenerationVerticalBarsAlloc(g_rbPPal4Tex),
             rbLightGenerationOscilloscopeAlloc(colori(0, 127, 0, 255)))
             );
 /*
