@@ -156,8 +156,8 @@ void rbLightGenerationOscilloscopeGenerate(void * pData,
                 
                 dMin = rbClampF(dMin * 0.25f + 0.5f, 0.0f, 1.0f);
                 dMax = rbClampF(dMax * 0.25f + 0.5f, 0.0f, 1.0f);
-                yMin = height - (int32_t)(dMax * (height - 1)) - 1;
-                yMax = height - (int32_t)(dMin * (height - 1));
+                yMin = height - (int32_t)roundf(dMax * (height - 1)) - 1;
+                yMax = height - (int32_t)roundf(dMin * (height - 1));
                 for(int32_t y = yMin; y < yMax; ++y) {
                     t2sett(pFrame, x, y, cadd(t2gett(pFrame, x, y), c));
                 }

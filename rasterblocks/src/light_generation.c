@@ -88,18 +88,21 @@ static RBPiecewiseLinearColorSegment g_rbPalBlackPurpleRedHS[] = {
 };
 
 static RBPiecewiseLinearColorSegment g_rbPalBluePurpleGreenHS[] = {
+    {{  0,  15,  31, 255}, 1},
     {{  0,  63, 127, 255}, 1},
     {{ 15,   7,  31, 255}, 1},
-    {{ 63, 127,  15, 255}, 0},
+    {{ 31, 127,  15, 255}, 0},
 };
 
 static RBPiecewiseLinearColorSegment g_rbPalBlueGoldHS[] = {
+    {{  0,  15,  31, 255}, 1},
     {{  0,  63, 127, 255}, 1},
-    {{ 63, 127,  15, 255}, 0},
+    {{127, 127,  15, 255}, 0},
 };
 
 static RBPiecewiseLinearColorSegment g_rbPalRedPinkHS[] = {
     {{ 15,   0,   0, 255}, 1},
+    {{ 91,   0,   0, 255}, 1},
     {{127,  63,  63, 255}, 0},
 };
 
@@ -370,11 +373,31 @@ void rbLightGenerationInitializeGenerators(void)
     
     UNUSED(pTopLayerGenerators);
     UNUSED(pBottomLayerGenerators);
-    
+    /*
+extern RBTexture1 * g_rbPBlackRedGoldWhiteFSAlphaPalTex;
+extern RBTexture1 * g_rbPBlackBlueGreenWhiteFSAlphaPalTex;
+extern RBTexture1 * g_rbPBlackWhiteFSAlphaPalTex;
+extern RBTexture1 * g_rbPBlackGoldFSAlphaPalTex;
+extern RBTexture1 * g_rbPBlackPaleBlueFSAlphaPalTex;
+extern RBTexture1 * g_rbPBlackPaleGreenFSAlphaPalTex;
+extern RBTexture1 * g_rbPBlackPurpleFSAlphaPalTex;
+
+
+
+extern RBTexture1 * g_rbPGreenLavenderHSPalTex;
+extern RBTexture1 * g_rbPBluePurpleGreenHSPalTex;
+extern RBTexture1 * g_rbPBlueGoldHSPalTex;
+extern RBTexture1 * g_rbPBlackWhiteHSPalTex;
+
+extern RBTexture1 * g_rbPRedPinkHSPalTex;
+extern RBTexture1 * g_rbPBlackPurpleRedHSPalTex;
+extern RBTexture1 * g_rbPBlackRedGoldHSPalTex;
+    */
     rbLightGenerationSetGenerator(
         rbLightGenerationCompositor2Alloc(
-            rbLightGenerationVerticalBarsAlloc(g_rbPRedPinkHSPalTex, 40, rbTimeFromMs(6), rbTimeFromMs(500)),
-            rbLightGenerationOscilloscopeAlloc(colori(0, 127, 0, 255)))
+            //rbLightGenerationVerticalBarsAlloc(g_rbPBlackPurpleFSAlphaPalTex, 40, rbTimeFromMs(6), rbTimeFromMs(500)),
+            rbLightGenerationVolumeBarsAlloc(g_rbPBlackRedGoldWhiteFSAlphaPalTex, g_rbPBlackBlueGreenWhiteFSAlphaPalTex),
+            rbLightGenerationSignalLissajousAlloc(colori(0, 255, 0, 255)))
             );
 /*
         rbLightGenerationCompositor2Alloc(

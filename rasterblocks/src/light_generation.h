@@ -100,6 +100,8 @@ RBLightGenerator * rbLightGenerationSmokeSignalsAlloc(RBTexture1 * pPalTex);
 RBLightGenerator * rbLightGenerationFireworksAlloc(RBTexture1 * pPalTex);
 RBLightGenerator * rbLightGenerationVerticalBarsAlloc(RBTexture1 * pPalTex,
     size_t numBars, RBTime spawnInterval, RBTime fadeTime);
+RBLightGenerator * rbLightGenerationCriscrossAlloc(RBTexture1 * pPalTex,
+    size_t numBars, RBTime spawnInterval, RBTime fadeTime);
 RBLightGenerator * rbLightGenerationVolumeBarsAlloc(RBTexture1 * pLowPalTex,
     RBTexture1 * pHiPalTex);
 RBLightGenerator * rbLightGenerationBeatStarsAlloc(RBColor color);

@@ -48,6 +48,7 @@
 #define RB_E (2.71828182845905f)
 #define RB_PI (3.14159265358979f)
 #define RB_PI_D (3.14159265358979323846)
+#define RB_SQRT_2 (1.4142135623730950488f)
 
 
 typedef enum {
@@ -327,6 +328,19 @@ static inline void rbSanitizeDouble(double * pF, double saneValue)
 {
     if(isinf(*pF) || isnan(*pF)) {
         *pF = saneValue;
+    }
+}
+
+static inline int32_t rbClampI(int32_t i, int32_t iMin, int32_t iMax)
+{
+    if(i < iMin) {
+        return iMin;
+    }
+    else if(i > iMax) {
+        return iMax;
+    }
+    else {
+        return i;
     }
 }
 

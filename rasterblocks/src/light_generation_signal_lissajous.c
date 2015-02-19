@@ -92,10 +92,12 @@ void rbLightGenerationSignalLissajousGenerate(void * pData,
     
     t2clear(pFrame, colori(0, 0, 0, 0));
     for(size_t i = 0; i < RB_LISSAJOUS_WINDOW; ++i) {
-        int32_t x = (int32_t)roundf((pSignalLissajous->bassData[i] * 0.5f +
-            0.5f) * widthF);
-        int32_t y = (int32_t)roundf((pSignalLissajous->trebleData[i] * 0.5f +
-            0.5f) * heightF);
+        RBVector2 p = v2rotscale(
+            vector2(pSignalLissajous->bassData[i],
+                pSignalLissajous->trebleData[i]),
+            vector2(1.0f, 0.0f));//vector2(RB_SQRT_2 * 0.5f, -RB_SQRT_2 * 0.5f));
+        int32_t x = (int32_t)roundf((p.x * 0.5f + 0.5f) * widthF);
+        int32_t y = (int32_t)roundf((p.y * 0.5f + 0.5f) * heightF);
         if(x >= 0 && x < width && y >= 0 && y < height) {
             t2sett(pFrame, x, y, cadd(c, t2gett(pFrame, x, y)));
         }

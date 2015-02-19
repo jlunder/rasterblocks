@@ -53,7 +53,7 @@ void rbConfigurationSetDefaults(RBConfiguration * pConfig)
 #endif
     
     pConfig->lowCutoff = 200.0f;
-    pConfig->hiCutoff = 300.0f;
+    pConfig->hiCutoff = 500.0f;
     
     pConfig->agcMax = 1e-0f;
     pConfig->agcMin = 1e-2f;
