@@ -3,7 +3,7 @@
 #include "graphics_util.h"
 
 
-static RBPiecewiseLinearColorSegment g_rbWarmPalette[] = {
+static RBPiecewiseLinearColorSegment g_rbPalBlackRedGoldWhiteFS[] = {
     {{  0,   0,   0, 255}, 2},
     {{ 63,   0,   0, 255}, 2},
     {{127,  15,   0, 255}, 2},
@@ -13,7 +13,7 @@ static RBPiecewiseLinearColorSegment g_rbWarmPalette[] = {
     {{255, 255, 255, 255}, 0},
 };
 
-static RBPiecewiseLinearColorSegment g_rbWarmPaletteAlpha[] = {
+static RBPiecewiseLinearColorSegment g_rbPalBlackRedGoldWhiteFSAlpha[] = {
     {{  0,   0,   0,   0}, 2},
     {{ 63,   0,   0,  57}, 2},
     {{127,  15,   0, 113}, 2},
@@ -23,7 +23,7 @@ static RBPiecewiseLinearColorSegment g_rbWarmPaletteAlpha[] = {
     {{255, 255, 255, 255}, 0},
 };
 
-static RBPiecewiseLinearColorSegment g_rbColdPalette[] = {
+static RBPiecewiseLinearColorSegment g_rbPalBlackBlueGreenWhiteFS[] = {
     {{  0,   0,   0, 255}, 1},
     {{  0,  63, 255, 255}, 1},
     {{127,   0,  63, 255}, 1},
@@ -31,7 +31,7 @@ static RBPiecewiseLinearColorSegment g_rbColdPalette[] = {
     {{255, 255, 255, 255}, 0},
 };
 
-static RBPiecewiseLinearColorSegment g_rbColdPaletteAlpha[] = {
+static RBPiecewiseLinearColorSegment g_rbPalBlackBlueGreenWhiteFSAlpha[] = {
     {{  0,   0,   0,   0}, 1},
     {{  0,  63, 255,  64}, 1},
     {{127,   0,  63, 128}, 1},
@@ -39,72 +39,82 @@ static RBPiecewiseLinearColorSegment g_rbColdPaletteAlpha[] = {
     {{255, 255, 255, 255}, 0},
 };
 
-static RBPiecewiseLinearColorSegment g_rbGrayscalePalette[] = {
+static RBPiecewiseLinearColorSegment g_rbPalBlackWhiteFS[] = {
     {{  0,   0,   0, 255}, 1},
     {{255, 255, 255, 255}, 0},
 };
 
-static RBPiecewiseLinearColorSegment g_rbGrayscalePaletteAlpha[] = {
+static RBPiecewiseLinearColorSegment g_rbPalBlackWhiteFSAlpha[] = {
     {{  0,   0,   0,   0}, 1},
     {{255, 255, 255, 255}, 0},
 };
 
-static RBPiecewiseLinearColorSegment g_rbRainbowPalette[] = {
+static RBPiecewiseLinearColorSegment g_rbPalRainbowFS[] = {
     {{255,   0,   0, 255}, 1},
     {{  0, 255,   0, 255}, 1},
     {{  0,   0, 255, 255}, 1},
     {{255,   0,   0, 255}, 0},
 };
 
-static RBPiecewiseLinearColorSegment g_rbPalette0[] = {
-    {{255, 255,  31, 255}, 2},
-    {{255, 255,  63, 255}, 1},
-    {{255, 255, 255, 255}, 1},
-    {{127, 255, 127, 255}, 2},
+static RBPiecewiseLinearColorSegment g_rbPalBlackGoldFSAlpha[] = {
+    {{  0,   0,   0,   0}, 1},
+    {{255, 255,  63, 255}, 0},
+};
+
+static RBPiecewiseLinearColorSegment g_rbPalBlackPaleBlueFSAlpha[] = {
+    {{  0,   0,   0,   0}, 1},
+    {{ 63,  63, 255, 255}, 0},
+};
+
+static RBPiecewiseLinearColorSegment g_rbPalBlackPaleGreenFSAlpha[] = {
+    {{  0,   0,   0,   0}, 1},
     {{ 63, 255,  63, 255}, 0},
 };
 
-static RBPiecewiseLinearColorSegment g_rbPalette1[] = {
-    {{ 31,   0,  63, 255}, 1},
-    {{  0,   0,   0, 255}, 1},
-    {{127,  15,  15, 255}, 0},
+static RBPiecewiseLinearColorSegment g_rbPalBlackPurpleFSAlpha[] = {
+    {{  0,   0,   0,   0}, 1},
+    {{127,   0, 255, 255}, 0},
 };
 
-static RBPiecewiseLinearColorSegment g_rbPalette2[] = {
-    {{255, 255,   0, 255}, 2},
-    {{255, 127,   7, 255}, 1},
-    {{255,  63,  15, 255}, 1},
-    {{ 63,  15,  63, 255}, 2},
-    {{ 31,   0,  63, 255}, 0},
-};
-
-static RBPiecewiseLinearColorSegment g_rbPalette3[] = {
-    {{  0,  63, 127, 255}, 1},
-    {{ 15,   7,  31, 255}, 1},
-    {{ 63, 127,  15, 255}, 0},
-};
-
-static RBPiecewiseLinearColorSegment g_rbPalette4[] = {
+static RBPiecewiseLinearColorSegment g_rbPalGreenLavenderHS[] = {
     {{  0,   7,   3, 255}, 1},
     {{ 63,   0, 127, 255}, 0},
 };
 
-static RBPiecewiseLinearColorSegment g_rbPalette5[] = {
+static RBPiecewiseLinearColorSegment g_rbPalBlackPurpleRedHS[] = {
+    {{  0,   0,   0, 255}, 1},
+    {{ 31,   0,  63, 255}, 1},
+    {{127,  15,  15, 255}, 0},
+};
+
+static RBPiecewiseLinearColorSegment g_rbPalBluePurpleGreenHS[] = {
     {{  0,  63, 127, 255}, 1},
     {{ 15,   7,  31, 255}, 1},
     {{ 63, 127,  15, 255}, 0},
 };
 
-static RBPiecewiseLinearColorSegment g_rbPalette6[] = {
+static RBPiecewiseLinearColorSegment g_rbPalBlueGoldHS[] = {
     {{  0,  63, 127, 255}, 1},
-    {{ 15,   7,  31, 255}, 1},
     {{ 63, 127,  15, 255}, 0},
 };
 
-static RBPiecewiseLinearColorSegment g_rbPalette7[] = {
-    {{  0,  63, 127, 255}, 1},
-    {{ 15,   7,  31, 255}, 1},
-    {{ 63, 127,  15, 255}, 0},
+static RBPiecewiseLinearColorSegment g_rbPalRedPinkHS[] = {
+    {{ 15,   0,   0, 255}, 1},
+    {{127,  63,  63, 255}, 0},
+};
+
+static RBPiecewiseLinearColorSegment g_rbPalBlackRedGoldHS[] = {
+    {{  0,   0,   0, 255}, 2},
+    {{ 31,   0,   0, 255}, 2},
+    {{ 63,   7,   0, 255}, 2},
+    {{127,  31,   0, 255}, 1},
+    {{127,  63,   0, 255}, 1},
+    {{127, 127,  15, 255}, 0},
+};
+
+static RBPiecewiseLinearColorSegment g_rbPalBlackWhiteHS[] = {
+    {{  0,   0,   0, 255}, 1},
+    {{127, 127, 127, 255}, 0},
 };
 
 static uint8_t g_rbIconsData[][8] = {
@@ -192,22 +202,25 @@ static char const * g_rbVectorHarmonyLogoData =
     "                  XXXX    XXXX        XXXX      "
     ;
 
-RBTexture1 * g_rbPWarmPalTex = NULL;
-RBTexture1 * g_rbPWarmPalAlphaTex = NULL;
-RBTexture1 * g_rbPColdPalTex = NULL;
-RBTexture1 * g_rbPColdPalAlphaTex = NULL;
-RBTexture1 * g_rbPGrayscalePalTex = NULL;
-RBTexture1 * g_rbPGrayscalePalAlphaTex = NULL;
-
-RBTexture1 * g_rbPRainbowPalTex = NULL;
-RBTexture1 * g_rbPPal0Tex = NULL;
-RBTexture1 * g_rbPPal1Tex = NULL;
-RBTexture1 * g_rbPPal2Tex = NULL;
-RBTexture1 * g_rbPPal3Tex = NULL;
-RBTexture1 * g_rbPPal4Tex = NULL;
-RBTexture1 * g_rbPPal5Tex = NULL;
-RBTexture1 * g_rbPPal6Tex = NULL;
-RBTexture1 * g_rbPPal7Tex = NULL;
+RBTexture1 * g_rbPBlackRedGoldWhiteFSPalTex = NULL;
+RBTexture1 * g_rbPBlackRedGoldWhiteFSAlphaPalTex = NULL;
+RBTexture1 * g_rbPBlackBlueGreenWhiteFSPalTex = NULL;
+RBTexture1 * g_rbPBlackBlueGreenWhiteFSAlphaPalTex = NULL;
+RBTexture1 * g_rbPBlackWhiteFSPalTex = NULL;
+RBTexture1 * g_rbPBlackWhiteFSAlphaPalTex = NULL;
+// This palette is meant to be used with repeat sampling
+RBTexture1 * g_rbPRainbowFSPalTex = NULL;
+RBTexture1 * g_rbPBlackGoldFSAlphaPalTex = NULL;
+RBTexture1 * g_rbPBlackPaleBlueFSAlphaPalTex = NULL;
+RBTexture1 * g_rbPBlackPaleGreenFSAlphaPalTex = NULL;
+RBTexture1 * g_rbPBlackPurpleFSAlphaPalTex = NULL;
+RBTexture1 * g_rbPGreenLavenderHSPalTex = NULL;
+RBTexture1 * g_rbPBlackPurpleRedHSPalTex = NULL;
+RBTexture1 * g_rbPBluePurpleGreenHSPalTex = NULL;
+RBTexture1 * g_rbPBlueGoldHSPalTex = NULL;
+RBTexture1 * g_rbPRedPinkHSPalTex = NULL;
+RBTexture1 * g_rbPBlackRedGoldHSPalTex = NULL;
+RBTexture1 * g_rbPBlackWhiteHSPalTex = NULL;
 
 RBTexture2 * g_rbPAmericanFlagTex = NULL;
 RBTexture2 * g_rbPSeqCircLogoTex = NULL;
@@ -230,66 +243,36 @@ void rbLightGenerationInitialize(RBConfiguration const * config)
     UNUSED(config);
     
     rbLightGenerationShutdown();
+
+#define MAKE_PAL(name) \
+    do { \
+        g_rbP##name##PalTex = rbTexture1Alloc(256); \
+        rbTexture1FillFromPiecewiseLinear(g_rbP##name##PalTex, \
+            g_rbPal##name, LENGTHOF(g_rbPal##name), false); \
+    } while(false)
     
-    g_rbPWarmPalTex = rbTexture1Alloc(256);
-    rbTexture1FillFromPiecewiseLinear(g_rbPWarmPalTex, g_rbWarmPalette,
-        LENGTHOF(g_rbWarmPalette), false);
-    
-    g_rbPWarmPalAlphaTex = rbTexture1Alloc(256);
-    rbTexture1FillFromPiecewiseLinear(g_rbPWarmPalAlphaTex,
-        g_rbWarmPaletteAlpha, LENGTHOF(g_rbWarmPaletteAlpha), false);
-    
-    g_rbPColdPalTex = rbTexture1Alloc(256);
-    rbTexture1FillFromPiecewiseLinear(g_rbPColdPalTex, g_rbColdPalette,
-        LENGTHOF(g_rbColdPalette), false);
-    
-    g_rbPColdPalAlphaTex = rbTexture1Alloc(256);
-    rbTexture1FillFromPiecewiseLinear(g_rbPColdPalAlphaTex,
-        g_rbColdPaletteAlpha, LENGTHOF(g_rbColdPaletteAlpha), false);
-    
-    g_rbPGrayscalePalTex = rbTexture1Alloc(256);
-    rbTexture1FillFromPiecewiseLinear(g_rbPGrayscalePalTex,
-        g_rbGrayscalePalette, LENGTHOF(g_rbGrayscalePalette), false);
-    
-    g_rbPGrayscalePalAlphaTex = rbTexture1Alloc(256);
-    rbTexture1FillFromPiecewiseLinear(g_rbPGrayscalePalAlphaTex,
-        g_rbGrayscalePaletteAlpha, LENGTHOF(g_rbGrayscalePaletteAlpha), false);
-    
-    g_rbPRainbowPalTex = rbTexture1Alloc(256);
-    rbTexture1FillFromPiecewiseLinear(g_rbPRainbowPalTex, g_rbRainbowPalette,
-        LENGTHOF(g_rbRainbowPalette), true);
-    
-    g_rbPPal0Tex = rbTexture1Alloc(256);
-    rbTexture1FillFromPiecewiseLinear(g_rbPPal0Tex, g_rbPalette0,
-        LENGTHOF(g_rbPalette0), true);
-    
-    g_rbPPal1Tex = rbTexture1Alloc(256);
-    rbTexture1FillFromPiecewiseLinear(g_rbPPal1Tex, g_rbPalette1,
-        LENGTHOF(g_rbPalette1), true);
-    
-    g_rbPPal2Tex = rbTexture1Alloc(256);
-    rbTexture1FillFromPiecewiseLinear(g_rbPPal2Tex, g_rbPalette2,
-        LENGTHOF(g_rbPalette2), true);
-    
-    g_rbPPal3Tex = rbTexture1Alloc(256);
-    rbTexture1FillFromPiecewiseLinear(g_rbPPal3Tex, g_rbPalette3,
-        LENGTHOF(g_rbPalette3), true);
-    
-    g_rbPPal4Tex = rbTexture1Alloc(256);
-    rbTexture1FillFromPiecewiseLinear(g_rbPPal4Tex, g_rbPalette4,
-        LENGTHOF(g_rbPalette4), true);
-    
-    g_rbPPal5Tex = rbTexture1Alloc(256);
-    rbTexture1FillFromPiecewiseLinear(g_rbPPal5Tex, g_rbPalette5,
-        LENGTHOF(g_rbPalette5), true);
-    
-    g_rbPPal6Tex = rbTexture1Alloc(256);
-    rbTexture1FillFromPiecewiseLinear(g_rbPPal6Tex, g_rbPalette6,
-        LENGTHOF(g_rbPalette6), true);
-    
-    g_rbPPal7Tex = rbTexture1Alloc(256);
-    rbTexture1FillFromPiecewiseLinear(g_rbPPal7Tex, g_rbPalette7,
-        LENGTHOF(g_rbPalette7), true);
+    MAKE_PAL(BlackRedGoldWhiteFS);
+    MAKE_PAL(BlackRedGoldWhiteFSAlpha);
+    MAKE_PAL(BlackBlueGreenWhiteFS);
+    MAKE_PAL(BlackBlueGreenWhiteFSAlpha);
+    MAKE_PAL(BlackWhiteFS);
+    MAKE_PAL(BlackWhiteFSAlpha);
+    //MAKE_PAL(RainbowFS);
+    g_rbPRainbowFSPalTex = rbTexture1Alloc(256);
+    rbTexture1FillFromPiecewiseLinear(g_rbPRainbowFSPalTex, g_rbPalRainbowFS,
+        LENGTHOF(g_rbPalRainbowFS), true);
+    MAKE_PAL(BlackGoldFSAlpha);
+    MAKE_PAL(BlackPaleBlueFSAlpha);
+    MAKE_PAL(BlackPaleGreenFSAlpha);
+    MAKE_PAL(BlackPurpleFSAlpha);
+    MAKE_PAL(GreenLavenderHS);
+    MAKE_PAL(BlackPurpleRedHS);
+    MAKE_PAL(BluePurpleGreenHS);
+    MAKE_PAL(BlueGoldHS);
+    MAKE_PAL(RedPinkHS);
+    MAKE_PAL(BlackRedGoldHS);
+    MAKE_PAL(BlackWhiteHS);
+#undef MAKE_PAL
     
     for(size_t k = 0; k < LENGTHOF(g_rbIconsData); ++k) {
         g_rbPIconTexs[k] = rbTexture2Alloc(8, 8);
@@ -382,7 +365,7 @@ void rbLightGenerationInitializeGenerators(void)
         rbLightGenerationDashedCirclesAlloc(g_rbPPal2Tex),
         rbLightGenerationDashedCirclesAlloc(g_rbPPal3Tex),
         */
-        rbLightGenerationPlasmaAlloc(g_rbPPal1Tex),
+        rbLightGenerationPlasmaAlloc(g_rbPRedPinkHSPalTex),
     };
     
     UNUSED(pTopLayerGenerators);
@@ -390,7 +373,7 @@ void rbLightGenerationInitializeGenerators(void)
     
     rbLightGenerationSetGenerator(
         rbLightGenerationCompositor2Alloc(
-            rbLightGenerationVerticalBarsAlloc(g_rbPPal4Tex),
+            rbLightGenerationVerticalBarsAlloc(g_rbPRedPinkHSPalTex, 40, rbTimeFromMs(6), rbTimeFromMs(500)),
             rbLightGenerationOscilloscopeAlloc(colori(0, 127, 0, 255)))
             );
 /*
@@ -407,34 +390,34 @@ void rbLightGenerationShutdown(void)
 {
     rbLightGenerationSetGenerator(NULL);
     
-    if(g_rbPWarmPalTex != NULL) {
-        rbTexture1Free(g_rbPWarmPalTex);
-        g_rbPWarmPalTex = NULL;
-    }
-    if(g_rbPWarmPalAlphaTex != NULL) {
-        rbTexture1Free(g_rbPWarmPalAlphaTex);
-        g_rbPWarmPalAlphaTex = NULL;
-    }
-    if(g_rbPColdPalTex != NULL) {
-        rbTexture1Free(g_rbPColdPalTex);
-        g_rbPColdPalTex = NULL;
-    }
-    if(g_rbPColdPalAlphaTex != NULL) {
-        rbTexture1Free(g_rbPColdPalAlphaTex);
-        g_rbPColdPalAlphaTex = NULL;
-    }
-    if(g_rbPGrayscalePalTex != NULL) {
-        rbTexture1Free(g_rbPGrayscalePalTex);
-        g_rbPGrayscalePalTex = NULL;
-    }
-    if(g_rbPGrayscalePalAlphaTex != NULL) {
-        rbTexture1Free(g_rbPGrayscalePalAlphaTex);
-        g_rbPGrayscalePalAlphaTex = NULL;
-    }
-    if(g_rbPRainbowPalTex != NULL) {
-        rbTexture1Free(g_rbPRainbowPalTex);
-        g_rbPRainbowPalTex = NULL;
-    }
+#define FREE_PAL(name) \
+    do { \
+        if(g_rbP##name##PalTex != NULL) { \
+            rbTexture1Free(g_rbP##name##PalTex); \
+            g_rbP##name##PalTex = NULL; \
+        } \
+    } while(false)
+    
+    FREE_PAL(BlackRedGoldWhiteFS);
+    FREE_PAL(BlackRedGoldWhiteFSAlpha);
+    FREE_PAL(BlackBlueGreenWhiteFS);
+    FREE_PAL(BlackBlueGreenWhiteFSAlpha);
+    FREE_PAL(BlackWhiteFS);
+    FREE_PAL(BlackWhiteFSAlpha);
+    FREE_PAL(RainbowFS);
+    FREE_PAL(BlackGoldFSAlpha);
+    FREE_PAL(BlackPaleBlueFSAlpha);
+    FREE_PAL(BlackPaleGreenFSAlpha);
+    FREE_PAL(BlackPurpleFSAlpha);
+    FREE_PAL(GreenLavenderHS);
+    FREE_PAL(BlackPurpleRedHS);
+    FREE_PAL(BluePurpleGreenHS);
+    FREE_PAL(BlueGoldHS);
+    FREE_PAL(RedPinkHS);
+    FREE_PAL(BlackRedGoldHS);
+    FREE_PAL(BlackWhiteHS);
+#undef FREE_PAL
+    
     for(size_t k = 0; k < LENGTHOF(g_rbIconsData); ++k) {
         if(g_rbPIconTexs[k] != NULL) {
             rbTexture2Free(g_rbPIconTexs[k]);

@@ -18,24 +18,26 @@ typedef struct {
 // These palette textures fade from black through white; *Alpha* versions also
 // fade alpha from 0 through 1, the non-alpha ones have alpha 1 throughout
 // They are all meant to be used with clamp sampling
-extern RBTexture1 * g_rbPWarmPalTex;
-extern RBTexture1 * g_rbPWarmPalAlphaTex;
-extern RBTexture1 * g_rbPColdPalTex;
-extern RBTexture1 * g_rbPColdPalAlphaTex;
-extern RBTexture1 * g_rbPGrayscalePalTex;
-extern RBTexture1 * g_rbPGrayscalePalAlphaTex;
-
+extern RBTexture1 * g_rbPBlackRedGoldWhiteFSPalTex;
+extern RBTexture1 * g_rbPBlackRedGoldWhiteFSAlphaPalTex;
+extern RBTexture1 * g_rbPBlackBlueGreenWhiteFSPalTex;
+extern RBTexture1 * g_rbPBlackBlueGreenWhiteFSAlphaPalTex;
+extern RBTexture1 * g_rbPBlackWhiteFSPalTex;
+extern RBTexture1 * g_rbPBlackWhiteFSAlphaPalTex;
 // This palette is meant to be used with repeat sampling
-extern RBTexture1 * g_rbPRainbowPalTex;
+extern RBTexture1 * g_rbPRainbowFSPalTex;
+extern RBTexture1 * g_rbPBlackGoldFSAlphaPalTex;
+extern RBTexture1 * g_rbPBlackPaleBlueFSAlphaPalTex;
+extern RBTexture1 * g_rbPBlackPaleGreenFSAlphaPalTex;
+extern RBTexture1 * g_rbPBlackPurpleFSAlphaPalTex;
+extern RBTexture1 * g_rbPGreenLavenderHSPalTex;
+extern RBTexture1 * g_rbPBlackPurpleRedHSPalTex;
+extern RBTexture1 * g_rbPBluePurpleGreenHSPalTex;
+extern RBTexture1 * g_rbPBlueGoldHSPalTex;
+extern RBTexture1 * g_rbPRedPinkHSPalTex;
+extern RBTexture1 * g_rbPBlackRedGoldHSPalTex;
+extern RBTexture1 * g_rbPBlackWhiteHSPalTex;
 
-extern RBTexture1 * g_rbPPal0Tex;
-extern RBTexture1 * g_rbPPal1Tex;
-extern RBTexture1 * g_rbPPal2Tex;
-extern RBTexture1 * g_rbPPal3Tex;
-extern RBTexture1 * g_rbPPal4Tex;
-extern RBTexture1 * g_rbPPal5Tex;
-extern RBTexture1 * g_rbPPal6Tex;
-extern RBTexture1 * g_rbPPal7Tex;
 
 extern RBTexture2 * g_rbPAmericanFlagTex;
 extern RBTexture2 * g_rbPSeqCircLogoTex;
@@ -96,7 +98,8 @@ RBLightGenerator * rbLightGenerationPulseGridAlloc(RBColor hColor,
 RBLightGenerator * rbLightGenerationDashedCirclesAlloc(RBTexture1 * pPalTex);
 RBLightGenerator * rbLightGenerationSmokeSignalsAlloc(RBTexture1 * pPalTex);
 RBLightGenerator * rbLightGenerationFireworksAlloc(RBTexture1 * pPalTex);
-RBLightGenerator * rbLightGenerationVerticalBarsAlloc(RBTexture1 * pPalTex);
+RBLightGenerator * rbLightGenerationVerticalBarsAlloc(RBTexture1 * pPalTex,
+    size_t numBars, RBTime spawnInterval, RBTime fadeTime);
 RBLightGenerator * rbLightGenerationVolumeBarsAlloc(RBTexture1 * pLowPalTex,
     RBTexture1 * pHiPalTex);
 RBLightGenerator * rbLightGenerationBeatStarsAlloc(RBColor color);
