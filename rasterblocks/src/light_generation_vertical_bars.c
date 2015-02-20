@@ -6,7 +6,8 @@
 typedef struct
 {
     RBLightGenerator genDef;
-    RBTexture1 * pPalTex;
+    RBTexture1 * pBassPalTex;
+    RBTexture1 * pTreblePalTex;
     size_t numBars;
     RBTimer spawnTimer;
     RBTime fadeTime;
@@ -19,7 +20,8 @@ void rbLightGenerationVerticalBarsGenerate(void * pData,
     RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame);
 
 
-RBLightGenerator * rbLightGenerationVerticalBarsAlloc(RBTexture1 * pPalTex,
+RBLightGenerator * rbLightGenerationVerticalBarsAlloc(
+    RBTexture1 * pBassPalTex, RBTexture1 * pTreblePalTex,
     size_t numBars, RBTime spawnInterval, RBTime fadeTime)
 {
     RBLightGeneratorVerticalBars * pVerticalBars =
@@ -29,12 +31,13 @@ RBLightGenerator * rbLightGenerationVerticalBarsAlloc(RBTexture1 * pPalTex,
     pVerticalBars->genDef.pData = pVerticalBars;
     pVerticalBars->genDef.free = rbLightGenerationVerticalBarsFree;
     pVerticalBars->genDef.generate = rbLightGenerationVerticalBarsGenerate;
-    pVerticalBars->pPalTex = pPalTex;
+    pVerticalBars->pBassPalTex = pBassPalTex;
+    pVerticalBars->pTreblePalTex = pTreblePalTex;
     pVerticalBars->numBars = numBars;
     rbStartTimer(&pVerticalBars->spawnTimer, spawnInterval);
     pVerticalBars->fadeTime = fadeTime;
-    pVerticalBars->pFadeTimers = (RBTimer *)malloc(sizeof (RBTimer) * numBars);
-    for(size_t i = 0; i < numBars; ++i) {
+    pVerticalBars->pFadeTimers = (RBTimer *)malloc(sizeof (RBTimer) * numBars * 2);
+    for(size_t i = 0; i < numBars * 2; ++i) {
         rbStopTimer(&pVerticalBars->pFadeTimers[i]);
     }
     
@@ -61,21 +64,38 @@ void rbLightGenerationVerticalBarsGenerate(void * pData,
     size_t numBars = pVerticalBars->numBars;
     RBColor barColors[numBars];
     int32_t spawnCount = rbGetTimerPeriodsAndReset(&pVerticalBars->spawnTimer);
-    RBTime spawnTime =
+    RBTime bassSpawnTime =
+        (RBTime)(fadeTime * rbClampF(pAnalysis->bassEnergy, 0.0f, 1.0f));
+    RBTime trebleSpawnTime =
         (RBTime)(fadeTime * rbClampF(pAnalysis->bassEnergy, 0.0f, 1.0f));
     
     for(int32_t i = 0; i < spawnCount; ++i) {
-        size_t bar = rbRandomI(numBars);
+        size_t bar;
         
-        if(rbGetTimeLeft(&pVerticalBars->pFadeTimers[bar]) < spawnTime) {
-            rbStartTimer(&pVerticalBars->pFadeTimers[bar], spawnTime);
+        bar  = rbRandomI(numBars);
+        if(rbGetTimeLeft(&pVerticalBars->pFadeTimers[bar * 2 + 0]) <
+                bassSpawnTime) {
+            rbStartTimer(&pVerticalBars->pFadeTimers[bar * 2 + 0],
+                bassSpawnTime);
+        }
+        
+        //bar = rbRandomI(numBars);
+        if(rbGetTimeLeft(&pVerticalBars->pFadeTimers[bar * 2 + 1]) <
+                trebleSpawnTime) {
+            rbStartTimer(&pVerticalBars->pFadeTimers[bar * 2 + 1],
+                trebleSpawnTime);
         }
     }
     
     for(size_t bar = 0; bar < numBars; ++bar) {
-        barColors[bar] = colorct(t1samplc(pVerticalBars->pPalTex,
-            (float)rbGetTimeLeft(&pVerticalBars->pFadeTimers[bar]) /
-                (float)fadeTime));
+        barColors[bar] = colorct(
+            ctscale(ctadd(
+                t1samplc(pVerticalBars->pBassPalTex,
+                    (float)rbGetTimeLeft(&pVerticalBars->pFadeTimers[
+                        bar * 2 + 0]) / (float)fadeTime),
+                t1samplc(pVerticalBars->pTreblePalTex,
+                    (float)rbGetTimeLeft(&pVerticalBars->pFadeTimers[
+                        bar * 2 + 1]) / (float)fadeTime)), 0.5f));
     }
     
     for(size_t j = 0; j < t2geth(pFrame); ++j) {

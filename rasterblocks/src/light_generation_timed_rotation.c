@@ -15,7 +15,6 @@ typedef struct
 } RBLightGeneratorTimedRotation;
 
 
-#define RB_ROTATION_TIME_MS 60000
 #define RB_TRANSITION_TIME_MS 1000
 
 
@@ -25,7 +24,7 @@ void rbLightGenerationTimedRotationGenerate(void * pData,
 
 
 RBLightGenerator * rbLightGenerationTimedRotationAlloc(
-    RBLightGenerator * pGenerators[], size_t numGenerators)
+    RBLightGenerator * pGenerators[], size_t numGenerators, RBTime interval)
 {
     RBLightGeneratorTimedRotation * pTimedRotation =
         (RBLightGeneratorTimedRotation *)malloc(
@@ -47,8 +46,7 @@ RBLightGenerator * rbLightGenerationTimedRotationAlloc(
     pTimedRotation->curGenerator = rand() % pTimedRotation->numGenerators;
     pTimedRotation->lastGenerator = 0;
     
-    rbStartTimer(&pTimedRotation->rotationTimer,
-        rbTimeFromMs(RB_ROTATION_TIME_MS));
+    rbStartTimer(&pTimedRotation->rotationTimer, interval);
     rbStopTimer(&pTimedRotation->transitionTimer);
     
     return &pTimedRotation->genDef;

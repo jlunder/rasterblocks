@@ -78,7 +78,7 @@ RBLightGenerator * rbLightGenerationRescaleAlloc(
     RBLightGenerator * pGenerator, size_t srcWidth, size_t srcHeight);
 
 RBLightGenerator * rbLightGenerationTimedRotationAlloc(
-    RBLightGenerator * pGenerators[], size_t numGenerators);
+    RBLightGenerator * pGenerators[], size_t numGenerators, RBTime interval);
 /*
 void rbLightGenerationTimedRotationPauseRotation(
     RBLightGenerator * pTRGenerator);
@@ -98,7 +98,8 @@ RBLightGenerator * rbLightGenerationPulseGridAlloc(RBColor hColor,
 RBLightGenerator * rbLightGenerationDashedCirclesAlloc(RBTexture1 * pPalTex);
 RBLightGenerator * rbLightGenerationSmokeSignalsAlloc(RBTexture1 * pPalTex);
 RBLightGenerator * rbLightGenerationFireworksAlloc(RBTexture1 * pPalTex);
-RBLightGenerator * rbLightGenerationVerticalBarsAlloc(RBTexture1 * pPalTex,
+RBLightGenerator * rbLightGenerationVerticalBarsAlloc(
+    RBTexture1 * pBassPalTex, RBTexture1 * pTreblePalTex,
     size_t numBars, RBTime spawnInterval, RBTime fadeTime);
 RBLightGenerator * rbLightGenerationCriscrossAlloc(RBTexture1 * pPalTex,
     size_t numBars, RBTime spawnInterval, RBTime fadeTime);

@@ -77,8 +77,9 @@ static RBPiecewiseLinearColorSegment g_rbPalBlackPurpleFSAlpha[] = {
 };
 
 static RBPiecewiseLinearColorSegment g_rbPalGreenLavenderHS[] = {
-    {{  0,   7,   3, 255}, 1},
-    {{ 63,   0, 127, 255}, 0},
+    {{  0,   0,   0, 255}, 1},
+    {{  7,  31,   7, 255}, 1},
+    {{ 95,  31, 127, 255}, 0},
 };
 
 static RBPiecewiseLinearColorSegment g_rbPalBlackPurpleRedHS[] = {
@@ -88,10 +89,10 @@ static RBPiecewiseLinearColorSegment g_rbPalBlackPurpleRedHS[] = {
 };
 
 static RBPiecewiseLinearColorSegment g_rbPalBluePurpleGreenHS[] = {
-    {{  0,  15,  31, 255}, 1},
-    {{  0,  63, 127, 255}, 1},
-    {{ 15,   7,  31, 255}, 1},
-    {{ 31, 127,  15, 255}, 0},
+    {{  0,   0,   0, 255}, 1},
+    {{  0,  31, 127, 255}, 1},
+    {{ 63,   0,  31, 255}, 1},
+    {{  0, 127,  31, 255}, 0},
 };
 
 static RBPiecewiseLinearColorSegment g_rbPalBlueGoldHS[] = {
@@ -101,7 +102,7 @@ static RBPiecewiseLinearColorSegment g_rbPalBlueGoldHS[] = {
 };
 
 static RBPiecewiseLinearColorSegment g_rbPalRedPinkHS[] = {
-    {{ 15,   0,   0, 255}, 1},
+    {{  0,   0,   0, 255}, 1},
     {{ 91,   0,   0, 255}, 1},
     {{127,  63,  63, 255}, 0},
 };
@@ -239,6 +240,12 @@ static RBLightGenerator * g_rbPCurrentGenerator = NULL;
 
 
 static void rbLightGenerationInitializeGenerators(void);
+static RBLightGenerator * rbLightGenerationCreateGeneratorsFromTheme(
+    RBTexture1 * pBassPalTex, RBTexture1 * pTreblePalTex,
+    RBTexture1 * pFGPalTex, RBColor fgColor);
+static RBLightGenerator * rbLightGenerationCreateVUGeneratorsFromTheme(
+    RBTexture1 * pBassPalTex, RBTexture1 * pTreblePalTex,
+    RBTexture1 * pFGPalTex, RBColor fgColor);
 
 
 void rbLightGenerationInitialize(RBConfiguration const * config)
@@ -366,6 +373,45 @@ extern RBTexture1 * g_rbPBlackPurpleRedHSPalTex;
 extern RBTexture1 * g_rbPBlackRedGoldHSPalTex;
     */
     RBLightGenerator * pGenerators[] = {
+        rbLightGenerationCreateGeneratorsFromTheme(
+            g_rbPGreenLavenderHSPalTex,
+            g_rbPGreenLavenderHSPalTex,
+            //g_rbPBlackWhiteHSPalTex,
+            g_rbPBlackGoldFSAlphaPalTex,
+            colori(127, 191, 0, 255)),
+        rbLightGenerationCreateGeneratorsFromTheme(
+            g_rbPRedPinkHSPalTex,
+            g_rbPBlueGoldHSPalTex,
+            g_rbPBlackGoldFSAlphaPalTex,
+            colori(127, 191, 0, 255)),
+        rbLightGenerationCreateVUGeneratorsFromTheme(
+            g_rbPBlackRedGoldHSPalTex,
+            g_rbPBluePurpleGreenHSPalTex,
+            g_rbPBlackGoldFSAlphaPalTex,
+            colori(127, 191, 0, 255)),
+    };
+    
+    rbLightGenerationSetGenerator(
+        rbLightGenerationTimedRotationAlloc(pGenerators,
+            LENGTHOF(pGenerators), rbTimeFromMs(300000))
+        //rbLightGenerationCompositor2Alloc(
+        //    rbLightGenerationPulsePlasmaAlloc(g_rbPGreenLavenderHSPalTex),
+        //    rbLightGenerationOscilloscopeAlloc(colori(127, 191, 0, 255)))
+        );
+/*
+        rbLightGenerationCompositor2Alloc(
+            //rbLightGenerationVerticalBarsAlloc(g_rbPBlackPurpleFSAlphaPalTex, 40, rbTimeFromMs(6), rbTimeFromMs(500)),
+            rbLightGenerationVolumeBarsAlloc(g_rbPBlackRedGoldWhiteFSAlphaPalTex, g_rbPBlackBlueGreenWhiteFSAlphaPalTex),
+            rbLightGenerationSignalLissajousAlloc(colori(0, 255, 0, 255)))
+*/
+}
+
+
+RBLightGenerator * rbLightGenerationCreateGeneratorsFromTheme(
+    RBTexture1 * pBassPalTex, RBTexture1 * pTreblePalTex,
+    RBTexture1 * pFGPalTex, RBColor fgColor)
+{
+    RBLightGenerator * pGenerators[] = {
         /*
         rbLightGenerationImageFilterAlloc(
             rbLightGenerationPlasmaAlloc(g_rbPWarmPalTex),
@@ -378,41 +424,52 @@ extern RBTexture1 * g_rbPBlackRedGoldHSPalTex;
         rbLightGenerationPlasmaAlloc(g_rbPRedPinkHSPalTex),
         */
         rbLightGenerationCompositor2Alloc(
-            rbLightGenerationVerticalBarsAlloc(g_rbPGreenLavenderHSPalTex, 40, rbTimeFromMs(6), rbTimeFromMs(500)),
-            rbLightGenerationOscilloscopeAlloc(colori(0, 255, 0, 255))),
+            rbLightGenerationVerticalBarsAlloc(pBassPalTex, pTreblePalTex,
+                40, rbTimeFromMs(10), rbTimeFromMs(250)),
+            rbLightGenerationOscilloscopeAlloc(fgColor)),
         rbLightGenerationCompositor2Alloc(
-            rbLightGenerationVerticalBarsAlloc(g_rbPGreenLavenderHSPalTex, 10, rbTimeFromMs(16), rbTimeFromMs(500)),
-            rbLightGenerationDashedCirclesAlloc(g_rbPBlackWhiteHSPalTex)),
+            rbLightGenerationVerticalBarsAlloc(pBassPalTex, pTreblePalTex,
+                20, rbTimeFromMs(15), rbTimeFromMs(100)),
+            rbLightGenerationSignalLissajousAlloc(fgColor)),
         rbLightGenerationCompositor2Alloc(
-            rbLightGenerationPulsePlasmaAlloc(g_rbPGreenLavenderHSPalTex),
-            rbLightGenerationOscilloscopeAlloc(colori(127, 127, 127, 255))),
+            rbLightGenerationVerticalBarsAlloc(pBassPalTex, pTreblePalTex,
+                20, rbTimeFromMs(15), rbTimeFromMs(100)),
+            rbLightGenerationDashedCirclesAlloc(pFGPalTex)),
         rbLightGenerationCompositor2Alloc(
-            rbLightGenerationPulsePlasmaAlloc(g_rbPGreenLavenderHSPalTex),
-            rbLightGenerationPulseCheckerboardAlloc(colori(127, 127, 127, 255))),
+            rbLightGenerationPulsePlasmaAlloc(pBassPalTex),
+            rbLightGenerationOscilloscopeAlloc(fgColor)),
         rbLightGenerationCompositor2Alloc(
-            rbLightGenerationDashedCirclesAlloc(g_rbPGreenLavenderHSPalTex),
-            rbLightGenerationPulseCheckerboardAlloc(colori(127, 127, 127, 255))),
+            rbLightGenerationPulsePlasmaAlloc(pBassPalTex),
+            rbLightGenerationPulseCheckerboardAlloc(colori(63, 63, 63, 0))),
         rbLightGenerationCompositor2Alloc(
-            rbLightGenerationDashedCirclesAlloc(g_rbPGreenLavenderHSPalTex),
-            rbLightGenerationOscilloscopeAlloc(colori(127, 127, 127, 255))),
+            rbLightGenerationDashedCirclesAlloc(pBassPalTex),
+            rbLightGenerationPulseCheckerboardAlloc(colori(63, 63, 63, 0))),
         rbLightGenerationCompositor2Alloc(
-            rbLightGenerationVolumeBarsAlloc(g_rbPBlackRedGoldWhiteFSAlphaPalTex, g_rbPBlackBlueGreenWhiteFSAlphaPalTex),
-            rbLightGenerationSignalLissajousAlloc(colori(255, 63, 63, 255))),
-        rbLightGenerationCompositor2Alloc(
-            rbLightGenerationVolumeBarsAlloc(g_rbPBlackRedGoldWhiteFSAlphaPalTex, g_rbPBlackBlueGreenWhiteFSAlphaPalTex),
-            rbLightGenerationOscilloscopeAlloc(colori(255, 63, 63, 255))),
+            rbLightGenerationDashedCirclesAlloc(pBassPalTex),
+            rbLightGenerationOscilloscopeAlloc(fgColor)),
     };
     
-    UNUSED(pGenerators);
-    rbLightGenerationSetGenerator(
-        rbLightGenerationTimedRotationAlloc(
-            pGenerators, LENGTHOF(pGenerators)));
-/*
+    return rbLightGenerationTimedRotationAlloc(pGenerators,
+        LENGTHOF(pGenerators), rbTimeFromMs(60000));
+}
+
+
+RBLightGenerator * rbLightGenerationCreateVUGeneratorsFromTheme(
+    RBTexture1 * pBassPalTex, RBTexture1 * pTreblePalTex,
+    RBTexture1 * pFGPalTex, RBColor fgColor)
+{
+    RBLightGenerator * pGenerators[] = {
         rbLightGenerationCompositor2Alloc(
-            //rbLightGenerationVerticalBarsAlloc(g_rbPBlackPurpleFSAlphaPalTex, 40, rbTimeFromMs(6), rbTimeFromMs(500)),
-            rbLightGenerationVolumeBarsAlloc(g_rbPBlackRedGoldWhiteFSAlphaPalTex, g_rbPBlackBlueGreenWhiteFSAlphaPalTex),
-            rbLightGenerationSignalLissajousAlloc(colori(0, 255, 0, 255)))
-*/
+            rbLightGenerationVolumeBarsAlloc(pBassPalTex, pTreblePalTex),
+            rbLightGenerationSignalLissajousAlloc(fgColor)),
+        rbLightGenerationCompositor2Alloc(
+            rbLightGenerationVolumeBarsAlloc(pBassPalTex, pTreblePalTex),
+            rbLightGenerationOscilloscopeAlloc(fgColor)),
+    };
+    UNUSED(pFGPalTex);
+    
+    return rbLightGenerationTimedRotationAlloc(pGenerators,
+        LENGTHOF(pGenerators), rbTimeFromMs(60000));
 }
 
 
@@ -540,64 +597,4 @@ void rbLightGeneration<**>Generate(void * pData,
 }
 
 
-*/
-
-
-/*
-static float g_rbFlagWave[RB_PROJECTION_WIDTH];
-
-
-    float leftTreble = pAnalysis->trebleEnergy * sqrtf(1.0f - pAnalysis->leftRightBalance);
-    float rightTreble = pAnalysis->trebleEnergy * sqrtf(pAnalysis->leftRightBalance);
-    float bass = pAnalysis->bassEnergy;
-    
-    UNUSED(g_rbRainbowPalette);
-
-//
-    for(size_t i = 0; i < RB_PANEL_HEIGHT; ++i) {
-        for(size_t j = 0; j < RB_PANEL_WIDTH; ++j) {
-            int32_t k = i < 4 ? (int32_t)j + 3 - i: (int32_t)j - 4 + i;
-            t2sett(pFrame, RB_PANEL_WIDTH - 1 - j, i,
-                colorct(
-                    t1sampnc(g_rbPColdTex,
-                        leftTreble - k * (2.0f / RB_PANEL_WIDTH))));
-        }
-    }
-    
-    for(size_t i = 0; i < RB_PANEL_HEIGHT; ++i) {
-        for(size_t j = 0; j < RB_PANEL_WIDTH; ++j) {
-            int32_t k = i < 4 ? (int32_t)j + 3 - i: (int32_t)j - 4 + i;
-            t2sett(pFrame, j + RB_PANEL_WIDTH, i,
-                colorct(
-                    t1sampnc(g_rbPColdTex,
-                        rightTreble - k * (2.0f / RB_PANEL_WIDTH))));
-        }
-    }
-//
-    
-    UNUSED(leftTreble);
-    UNUSED(rightTreble);
-    UNUSED(bass);
-    
-    //t2bltsa(pFrame, 0, 0, 32, 16, g_rbFlagTex, 0, 0);
-    
-    for(size_t i = 1; i < RB_PROJECTION_WIDTH; ++i) {
-        g_rbFlagWave[RB_PROJECTION_WIDTH - i] =
-            g_rbFlagWave[RB_PROJECTION_WIDTH - i - 1];
-    }
-    g_rbFlagWave[0] = bass;
-    
-    for(size_t j = 0; j < RB_PROJECTION_HEIGHT; ++j) {
-        for(size_t i = 0; i < RB_PROJECTION_WIDTH; ++i) {
-            t2sett(pFrame, i, j,
-                colorct(ctscale(
-                    t2sampnc(g_rbFlagTex,
-                        vector2((i + 0.5f) / RB_PROJECTION_WIDTH,
-                            (j + 0.5f) / RB_PROJECTION_HEIGHT)),
-                    g_rbFlagWave[i])));
-        }
-    }
-    
-    //rbLightGenerationCompositeIcon(&lights->overhead, 2, 15);
-    UNUSED(g_rbIcons);
 */

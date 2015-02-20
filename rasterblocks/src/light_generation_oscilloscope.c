@@ -83,7 +83,6 @@ void rbLightGenerationOscilloscopeGenerate(void * pData,
             inSample - RB_AUDIO_FRAMES_PER_VIDEO_FRAME;
         
         // Check math...
-        rbAssert(pOscilloscope->sampleSkipRemainder >= 0);
         rbAssert(pOscilloscope->sampleSkipRemainder <=
             RB_OSCILLOSCOPE_SAMPLE_SKIP);
     }
