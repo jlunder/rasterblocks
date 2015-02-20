@@ -345,34 +345,6 @@ void rbLightGenerationInitialize(RBConfiguration const * config)
 
 void rbLightGenerationInitializeGenerators(void)
 {
-    RBLightGenerator * pTopLayerGenerators[] = {
-        /*
-        rbLightGenerationImageFilterAlloc(
-            rbLightGenerationPlasmaAlloc(g_rbPWarmPalTex),
-            g_rbPVectorHarmonyLogoTex24x8),
-        rbLightGenerationPulseCheckerboardAlloc(colori(127, 127, 127, 255)),
-        rbLightGenerationPulseCheckerboardAlloc(colori(127,  63,   0, 255)),
-        rbLightGenerationImageFilterAlloc(
-            rbLightGenerationBeatFlashAlloc(g_rbPGrayscalePalAlphaTex),
-            g_rbPVectorHarmonyLogoTex24x8),
-        */
-        rbLightGenerationOscilloscopeAlloc(colori(127, 127, 127, 255)),
-        /*
-        rbLightGenerationBeatStarsAlloc(colori(255, 255, 255, 255)),
-        */
-    };
-    RBLightGenerator * pBottomLayerGenerators[] = {
-        /*
-        rbLightGenerationPulseGridAlloc(colori(63, 63, 0, 255),
-            colori(0, 63, 0, 255)),
-        rbLightGenerationDashedCirclesAlloc(g_rbPPal2Tex),
-        rbLightGenerationDashedCirclesAlloc(g_rbPPal3Tex),
-        */
-        rbLightGenerationPlasmaAlloc(g_rbPRedPinkHSPalTex),
-    };
-    
-    UNUSED(pTopLayerGenerators);
-    UNUSED(pBottomLayerGenerators);
     /*
 extern RBTexture1 * g_rbPBlackRedGoldWhiteFSAlphaPalTex;
 extern RBTexture1 * g_rbPBlackBlueGreenWhiteFSAlphaPalTex;
@@ -393,18 +365,53 @@ extern RBTexture1 * g_rbPRedPinkHSPalTex;
 extern RBTexture1 * g_rbPBlackPurpleRedHSPalTex;
 extern RBTexture1 * g_rbPBlackRedGoldHSPalTex;
     */
+    RBLightGenerator * pGenerators[] = {
+        /*
+        rbLightGenerationImageFilterAlloc(
+            rbLightGenerationPlasmaAlloc(g_rbPWarmPalTex),
+            g_rbPVectorHarmonyLogoTex24x8),
+        rbLightGenerationImageFilterAlloc(
+            rbLightGenerationBeatFlashAlloc(g_rbPGrayscalePalAlphaTex),
+            g_rbPVectorHarmonyLogoTex24x8),
+        rbLightGenerationPulseGridAlloc(colori(63, 63, 0, 255),
+            colori(0, 63, 0, 255)),
+        rbLightGenerationPlasmaAlloc(g_rbPRedPinkHSPalTex),
+        */
+        rbLightGenerationCompositor2Alloc(
+            rbLightGenerationVerticalBarsAlloc(g_rbPGreenLavenderHSPalTex, 40, rbTimeFromMs(6), rbTimeFromMs(500)),
+            rbLightGenerationOscilloscopeAlloc(colori(0, 255, 0, 255))),
+        rbLightGenerationCompositor2Alloc(
+            rbLightGenerationVerticalBarsAlloc(g_rbPGreenLavenderHSPalTex, 10, rbTimeFromMs(16), rbTimeFromMs(500)),
+            rbLightGenerationDashedCirclesAlloc(g_rbPBlackWhiteHSPalTex)),
+        rbLightGenerationCompositor2Alloc(
+            rbLightGenerationPulsePlasmaAlloc(g_rbPGreenLavenderHSPalTex),
+            rbLightGenerationOscilloscopeAlloc(colori(127, 127, 127, 255))),
+        rbLightGenerationCompositor2Alloc(
+            rbLightGenerationPulsePlasmaAlloc(g_rbPGreenLavenderHSPalTex),
+            rbLightGenerationPulseCheckerboardAlloc(colori(127, 127, 127, 255))),
+        rbLightGenerationCompositor2Alloc(
+            rbLightGenerationDashedCirclesAlloc(g_rbPGreenLavenderHSPalTex),
+            rbLightGenerationPulseCheckerboardAlloc(colori(127, 127, 127, 255))),
+        rbLightGenerationCompositor2Alloc(
+            rbLightGenerationDashedCirclesAlloc(g_rbPGreenLavenderHSPalTex),
+            rbLightGenerationOscilloscopeAlloc(colori(127, 127, 127, 255))),
+        rbLightGenerationCompositor2Alloc(
+            rbLightGenerationVolumeBarsAlloc(g_rbPBlackRedGoldWhiteFSAlphaPalTex, g_rbPBlackBlueGreenWhiteFSAlphaPalTex),
+            rbLightGenerationSignalLissajousAlloc(colori(255, 63, 63, 255))),
+        rbLightGenerationCompositor2Alloc(
+            rbLightGenerationVolumeBarsAlloc(g_rbPBlackRedGoldWhiteFSAlphaPalTex, g_rbPBlackBlueGreenWhiteFSAlphaPalTex),
+            rbLightGenerationOscilloscopeAlloc(colori(255, 63, 63, 255))),
+    };
+    
+    UNUSED(pGenerators);
     rbLightGenerationSetGenerator(
+        rbLightGenerationTimedRotationAlloc(
+            pGenerators, LENGTHOF(pGenerators)));
+/*
         rbLightGenerationCompositor2Alloc(
             //rbLightGenerationVerticalBarsAlloc(g_rbPBlackPurpleFSAlphaPalTex, 40, rbTimeFromMs(6), rbTimeFromMs(500)),
             rbLightGenerationVolumeBarsAlloc(g_rbPBlackRedGoldWhiteFSAlphaPalTex, g_rbPBlackBlueGreenWhiteFSAlphaPalTex),
             rbLightGenerationSignalLissajousAlloc(colori(0, 255, 0, 255)))
-            );
-/*
-        rbLightGenerationCompositor2Alloc(
-            rbLightGenerationTimedRotationAlloc(
-                pBottomLayerGenerators, LENGTHOF(pBottomLayerGenerators)),
-            rbLightGenerationTimedRotationAlloc(
-                pTopLayerGenerators, LENGTHOF(pTopLayerGenerators))));
 */
 }
 
