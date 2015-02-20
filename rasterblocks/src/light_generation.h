@@ -46,6 +46,8 @@ extern RBTexture2 * g_rbPSeqCircLogoTex24x12;
 extern RBTexture2 * g_rbPSeqCircLogoTex32x16;
 extern RBTexture2 * g_rbPVectorHarmonyLogoTex48x16;
 extern RBTexture2 * g_rbPVectorHarmonyLogoTex24x8;
+extern RBTexture2 * g_rbPInventorLiveLogoBulbTex40x16;
+extern RBTexture2 * g_rbPInventorLiveLogoTextTex40x16;
 
 
 // Light generation subsystem
@@ -71,6 +73,12 @@ void rbLightGenerationSetGenerator(RBLightGenerator * pGenerator);
 
 RBLightGenerator * rbLightGenerationCompositor2Alloc(
     RBLightGenerator * pGenerator0, RBLightGenerator * pGenerator1);
+RBLightGenerator * rbLightGenerationCompositor3Alloc(
+    RBLightGenerator * pGenerator0, RBLightGenerator * pGenerator1,
+    RBLightGenerator * pGenerator2);
+RBLightGenerator * rbLightGenerationCompositor4Alloc(
+    RBLightGenerator * pGenerator0, RBLightGenerator * pGenerator1,
+    RBLightGenerator * pGenerator2, RBLightGenerator * pGenerator3);
 RBLightGenerator * rbLightGenerationStaticImageAlloc(RBTexture2 const * pTex);
 RBLightGenerator * rbLightGenerationImageFilterAlloc(
     RBLightGenerator * pGenerator, RBTexture2 const * pTex);

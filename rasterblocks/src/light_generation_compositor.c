@@ -18,6 +18,24 @@ void rbLightGenerationCompositorGenerate(void * pData,
 RBLightGenerator * rbLightGenerationCompositor2Alloc(
     RBLightGenerator * pGenerator0, RBLightGenerator * pGenerator1)
 {
+    return rbLightGenerationCompositor4Alloc(pGenerator0, pGenerator1, NULL,
+        NULL);
+}
+
+
+RBLightGenerator * rbLightGenerationCompositor3Alloc(
+    RBLightGenerator * pGenerator0, RBLightGenerator * pGenerator1,
+    RBLightGenerator * pGenerator2)
+{
+    return rbLightGenerationCompositor4Alloc(pGenerator0, pGenerator1,
+        pGenerator2, NULL);
+}
+
+
+RBLightGenerator * rbLightGenerationCompositor4Alloc(
+    RBLightGenerator * pGenerator0, RBLightGenerator * pGenerator1,
+    RBLightGenerator * pGenerator2, RBLightGenerator * pGenerator3)
+{
     RBLightGeneratorCompositor * pCompositor =
         (RBLightGeneratorCompositor *)malloc(
             sizeof (RBLightGeneratorCompositor));
@@ -30,6 +48,8 @@ RBLightGenerator * rbLightGenerationCompositor2Alloc(
     
     pCompositor->pGenerators[0] = pGenerator0;
     pCompositor->pGenerators[1] = pGenerator1;
+    pCompositor->pGenerators[2] = pGenerator2;
+    pCompositor->pGenerators[3] = pGenerator3;
     
     return &pCompositor->genDef;
 }
