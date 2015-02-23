@@ -65,6 +65,8 @@
 
 #include "rasterblocks.h"
 
+#include "graphics_util.h"
+
 #include <prussdrv.h>
 #include <pruss_intc_mapping.h>
 
@@ -78,28 +80,19 @@
 
 
 #define RB_TARGET_PRUSS_DEVICE_STARTUP_COMMAND \
-    "echo BB-BONE-PRU-01 > /sys/devices/bone_capemgr.9/slots"
+    "sh -c \"grep -q BB-BONE-PRU-01 /sys/devices/bone_capemgr.9/slots || " \
+    "echo BB-BONE-PRU-01 > /sys/devices/bone_capemgr.9/slots\""
 
 
-static int LOCAL_exampleInit ( unsigned short pruNum );
-static unsigned short LOCAL_examplePassed ( unsigned short pruNum );
-
-/*****************************************************************************
-* Local Variable Definitions                                                 *
-*****************************************************************************/
-
-
-/*****************************************************************************
-* Intertupt Service Routines                                                 *
-*****************************************************************************/
+typedef struct
+{
+    uint32_t status;
+    RBColor colors[1536];
+} RBPrussIoMemoryMap;
 
 
-/*****************************************************************************
-* Global Variable Definitions                                                *
-*****************************************************************************/
+static RBPrussIoMemoryMap * rbPrussIoMemory;
 
-static void *pruDataMem;
-static unsigned int *pruDataMem_int;
 
 #include "pruss_io_bin.h"
 
@@ -110,8 +103,6 @@ static unsigned int *pruDataMem_int;
 void rbPrussIoInitialize(RBConfiguration * pConfig)
 {
     int ret;
-    
-    return;
     
     ret = system(RB_TARGET_PRUSS_DEVICE_STARTUP_COMMAND);
     if(ret != 0) {
@@ -124,7 +115,7 @@ void rbPrussIoInitialize(RBConfiguration * pConfig)
     
     rbInfo("Starting %s example.\n", "PRU_memAccessPRUDataRam");
     /* Initialize the PRU */
-    prussdrv_init ();
+    prussdrv_init();
 
     /* Open PRU Interrupt */
     ret = prussdrv_open(PRU_EVTOUT_0);
@@ -138,67 +129,30 @@ void rbPrussIoInitialize(RBConfiguration * pConfig)
 
     /* Initialize example */
     rbInfo("Initializing example.\n");
-    LOCAL_exampleInit(PRU_NUM);
-
-    /* Execute example on PRU */
+    prussdrv_map_prumem (PRUSS0_PRU0_DATARAM, (void * *)&rbPrussIoMemory);
+    rbPrussIoMemory->status = 0x10101010;
+    for(size_t i = 0; i < LENGTHOF(rbPrussIoMemory->colors); ++i) {
+        rbPrussIoMemory->colors[i] = colori(0xFF, 0x11, 0x00, 0x00);
+    }
+    
+    // Execute example on PRU
     rbInfo("Executing example.\n");
-    prussdrv_exec_code (PRU_NUM, rbPrussIoCode, sizeof rbPrussIoCode);
-
-
-    /* Wait until PRU0 has finished execution */
+    prussdrv_exec_code (0, rbPrussIoCode, sizeof rbPrussIoCode);
+    
+    // Wait until PRU0 has finished execution
     rbInfo("Waiting for HALT command.\n");
     prussdrv_pru_wait_event (PRU_EVTOUT_0);
     rbInfo("PRU completed transfer.\n");
     prussdrv_pru_clear_event (PRU_EVTOUT_0, PRU0_ARM_INTERRUPT);
-
-    /* Check if example passed */
-    if ( LOCAL_examplePassed(PRU_NUM) )
-    {
-        rbInfo("Example executed succesfully.\r\n");
-    }
-    else
-    {
-        rbInfo("Example failed.\r\n");
-    }
+    
+    exit(0);
 }
-
-/*****************************************************************************
-* Local Function Definitions                                                 *
-*****************************************************************************/
-
-static int LOCAL_exampleInit ( unsigned short pruNum )
-{
-    //Initialize pointer to PRU data memory
-    if (pruNum == 0)
-    {
-      prussdrv_map_prumem (PRUSS0_PRU0_DATARAM, &pruDataMem);
-    }
-    else if (pruNum == 1)
-    {
-      prussdrv_map_prumem (PRUSS0_PRU1_DATARAM, &pruDataMem);
-    }
-    pruDataMem_int = (unsigned int*) pruDataMem;
-
-    // Flush the values in the PRU data memory locations
-    pruDataMem_int[1] = 0x00;
-    pruDataMem_int[2] = 0x00;
-
-    return(0);
-}
-
-static unsigned short LOCAL_examplePassed ( unsigned short pruNum )
-{
-  UNUSED(pruNum);
-  return ((pruDataMem_int[1] ==  ADDEND1) & (pruDataMem_int[2] ==  ADDEND1 + ADDEND2));
-}
-
 
 void rbPrussIoShutdown(void)
 {
-    return;
     /* Disable PRU and close memory mapping*/
-    prussdrv_pru_disable (PRU_NUM);
-    prussdrv_exit ();
+    prussdrv_pru_disable(0);
+    prussdrv_exit();
 }
 
 

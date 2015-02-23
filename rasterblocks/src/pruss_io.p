@@ -59,6 +59,21 @@
 .origin 0
 .entrypoint MEMACCESSPRUDATARAM
 
+.struct main_vars_t
+    .u32 repeat_count
+    
+    .u32 colors_count
+    .u32 bits_count
+    
+    .u32 p_set_out
+    .u32 p_clear_out
+    .u32 p_colors
+    .u32 color
+    .u32 data_bit
+    .u32 clock_bit
+    .u32 sync_bit
+.ends
+
 #include "pruss_io.hp"
 
 MEMACCESSPRUDATARAM:
@@ -74,6 +89,7 @@ MEMACCESSPRUDATARAM:
 
 #endif
 
+/*
     //Load 32 bit value in r1
     MOV       r1, 0x0010f012
 
@@ -93,17 +109,16 @@ MEMACCESSPRUDATARAM:
 
     //Store result in into memory location c3(PRU0/1 Local Data)+8 using constant table
     SBCO      r3, CONST_PRUDRAM, 8, 4
+*/
 
 
 #define GPIO0 0x44E07000
-#define GPIO1 0x4804c000
+#define GPIO1 0x4804C000
+#define GPIO2 0x481AC000
+#define GPIO_OE 0x134
 #define GPIO_CLEARDATAOUT 0x190
 #define GPIO_SETDATAOUT 0x194
 
-#define CONST_PRUCFG         C4
-//#define CONST_PRUDRAM        C24
-#define CONST_PRUSHAREDRAM   C28
-//#define CONST_DDR            C31
 
     // Enable OCP master port
     LBCO      r0, CONST_PRUCFG, 4, 4
@@ -122,37 +137,82 @@ MEMACCESSPRUDATARAM:
     MOV       r1, CTPPR_1
     ST32      r0, r1
 
-    //Load values from external DDR Memory into Registers R0/R1/R2
-    LBCO      r0, CONST_DDR, 0, 12
+.enter main_scope
+.assign main_vars_t, r1, *, main
+    mov     main.p_set_out, GPIO2 | GPIO_SETDATAOUT
+    mov     main.p_clear_out, GPIO2 | GPIO_CLEARDATAOUT
+    mov     main.data_bit, 1 << 6
+    mov     main.clock_bit, 1 << 7
+    mov     main.sync_bit, 1 << 8
+    
+    mov     main.repeat_count, 10000
+    
+repeat_loop:
+    mov     main.colors_count, 1536
+    mov     main.p_colors, 0x00000000 + 4
+    
+colors_loop:
+    lbbo    main.color, main.p_colors, 0, 4
+    add     main.p_colors, main.p_colors, 4
+    
+    mov     main.bits_count, 24
+    sbbo    main.sync_bit, main.p_set_out, 0, 4
+    sbbo    main.sync_bit, main.p_clear_out, 0, 4
+    
+bits_loop:
+    sbbo    main.clock_bit, main.p_clear_out, 0, 4
+    
+    qbbs    bits_1, main.color, 0
+    sbbo    main.data_bit, main.p_clear_out, 0, 4
+    jmp     bits_0
+bits_1:
+    sbbo    main.data_bit, main.p_set_out, 0, 4
+    mov     main.color, main.color
+bits_0:
 
-    //Store values from read from the DDR memory into PRU shared RAM
-    SBCO      r0, CONST_PRUSHAREDRAM, 0, 12
+    lsr     main.color, main.color, 1
+    
+    sbbo    main.clock_bit, main.p_set_out, 0, 4
+    
+    sub     main.bits_count, main.bits_count, 1
+    qbne    bits_loop, main.bits_count, 0
+    
+    sub     main.colors_count, main.colors_count, 1
+    qbne    colors_loop, main.colors_count, 0
+    
+    sub     main.repeat_count, main.repeat_count, 1
+    qbne    repeat_loop, main.repeat_count, 0
+    
+.leave main_scope
 
-    // test GP output
-    MOV r1, 10 // loop 10 times
-
-MAINLOOP:
-    MOV r2, 1<<30
-    MOV r3, GPIO0 | GPIO_SETDATAOUT
-    SBBO r2, r3, 0, 4
-
+/* 100ns
     MOV r0, 100000000
 DEL1:
+    MOV r2, 0xFF<<6
+    MOV r3, GPIO2 | GPIO_SETDATAOUT
+    SBBO r2, r3, 0, 4
+    
+    mov r2, r2
+    mov r2, r2
+    mov r2, r2
+    //////////
+    mov r2, r2
+    mov r2, r2
+    //////////
+    
+    MOV r2, 0xFF<<6
+    MOV r3, GPIO2 | GPIO_CLEARDATAOUT
+    SBBO r2, r3, 0, 4
+    
+    mov r2, r2
+    //////////
+    mov r2, r2
+    mov r2, r2
+    //////////
+
     SUB r0, r0, 1
     QBNE DEL1, r0, 0
-
-    MOV R2, 1<<30
-    MOV r3, GPIO0 | GPIO_CLEARDATAOUT
-    SBBO r2, r3, 0, 4
-
-    MOV r0, 100000000
-DEL2:
-    SUB r0, r0, 1
-    QBNE DEL2, r0, 0
-
-    SUB r1, r1, 1
-    QBNE MAINLOOP, r1, 0
-
+*/
 
 #ifdef AM33XX
 
