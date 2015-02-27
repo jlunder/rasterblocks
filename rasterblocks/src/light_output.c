@@ -32,6 +32,9 @@ void rbLightOutputInitialize(RBConfiguration const * pConfig)
     case RBLO_PIXELPUSHER:
         rbLightOutputPixelPusherInitialize(pConfig);
         break;
+    case RBLO_PRUSS:
+        rbLightOutputPrussInitialize(pConfig);
+        break;
     default:
         g_rbLightOutput = RBLO_INVALID;
     	rbFatal("Invalid light output type %d\n", pConfig->lightOutput);
@@ -68,6 +71,9 @@ void rbLightOutputShutdown(void)
         break;
     case RBLO_PIXELPUSHER:
         rbLightOutputPixelPusherShutdown();
+        break;
+    case RBLO_PRUSS:
+        rbLightOutputPrussShutdown();
         break;
     default:
     	break;
@@ -108,6 +114,9 @@ void rbLightOutputShowLights(RBRawLightFrame const * pFrame)
         break;
     case RBLO_PIXELPUSHER:
         rbLightOutputPixelPusherShowLights(&tempFrame);
+        break;
+    case RBLO_PRUSS:
+        rbLightOutputPrussShowLights(&tempFrame);
         break;
     default:
     	break;
@@ -169,6 +178,26 @@ void rbLightOutputSpiDevShutdown(void)
 
 
 void rbLightOutputSpiDevShowLights(RBRawLightFrame const * pFrame)
+{
+    UNUSED(pFrame);
+}
+#endif
+
+
+#ifndef RB_USE_PRUSS_IO
+void rbLightOutputPrussInitialize(RBConfiguration const * pConfig)
+{
+    UNUSED(pConfig);
+    rbFatal("PRUSS output not included in this build!\n");
+}
+
+
+void rbLightOutputPrussShutdown(void)
+{
+}
+
+
+void rbLightOutputPrussShowLights(RBRawLightFrame const * pFrame)
 {
     UNUSED(pFrame);
 }

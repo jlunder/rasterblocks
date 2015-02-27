@@ -11,7 +11,7 @@
 #define RB_DEFAULT_INPUT_FILE "test/909Tom X1.wav"
 
 #define RB_DEFAULT_OUTPUT_PIXELPUSHER "192.168.0.4"
-#define RB_DEFAULT_OUTPUT_SPIDEV ""
+#define RB_DEFAULT_OUTPUT_SPIDEV "/dev/spidev1.0"
 
 
 time_t g_rbConfigFileMTime = 0;
@@ -39,7 +39,10 @@ void rbConfigurationSetDefaults(RBConfiguration * pConfig)
         sizeof pConfig->audioInputParam);
 #endif
     
-#if defined RB_USE_PIXELPUSHER_OUTPUT
+#if defined RB_USE_PRUSS_IO
+    pConfig->lightOutput = RBLO_PRUSS;
+    rbStrlcpy(pConfig->lightOutputParam, "", sizeof pConfig->lightOutputParam);
+#elif defined RB_USE_PIXELPUSHER_OUTPUT
     pConfig->lightOutput = RBLO_PIXELPUSHER;
     rbStrlcpy(pConfig->lightOutputParam, RB_DEFAULT_OUTPUT_PIXELPUSHER,
         sizeof pConfig->lightOutputParam);

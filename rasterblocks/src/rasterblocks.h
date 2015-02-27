@@ -84,6 +84,7 @@ typedef enum {
     RBLO_OPENGL,
     RBLO_PIXELPUSHER,
     RBLO_SPIDEV,
+    RBLO_PRUSS,
 } RBLightOutput;
 
 

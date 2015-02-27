@@ -57,59 +57,9 @@
 // *****************************************************************************/
 
 .origin 0
-.entrypoint MEMACCESSPRUDATARAM
-
-.struct main_vars_t
-    .u32 repeat_count
-    
-    .u32 colors_count
-    .u32 bits_count
-    
-    .u32 p_set_out
-    .u32 p_clear_out
-    .u32 p_colors
-    .u32 color
-    .u32 data_bit
-    .u32 clock_bit
-    .u32 sync_bit
-.ends
+.entrypoint 0
 
 #include "pruss_io.hp"
-
-MEMACCESSPRUDATARAM:
-
-#ifdef AM33XX
-
-    // Configure the block index register for PRU0 by setting c24_blk_index[7:0] and
-    // c25_blk_index[7:0] field to 0x00 and 0x00, respectively.  This will make C24 point
-    // to 0x00000000 (PRU0 DRAM) and C25 point to 0x00002000 (PRU1 DRAM).
-    MOV       r0, 0x00000000
-    MOV       r1, CTBIR_0
-    ST32      r0, r1
-
-#endif
-
-/*
-    //Load 32 bit value in r1
-    MOV       r1, 0x0010f012
-
-    //Load address of PRU data memory in r2
-    MOV       r2, 0x0004
-
-    // Move value from register to the PRU local data memory using registers
-    ST32      r1,r2
-
-    // Load 32 bit value into r3
-    MOV       r3, 0x0000567A
-
-    LBCO      r4, CONST_PRUDRAM, 4, 4 //Load 4 bytes from memory location c3(PRU0/1 Local Data)+4 into r4 using constant table
-
-    // Add r3 and r4
-    ADD       r3, r3, r4
-
-    //Store result in into memory location c3(PRU0/1 Local Data)+8 using constant table
-    SBCO      r3, CONST_PRUDRAM, 8, 4
-*/
 
 
 #define GPIO0 0x44E07000
@@ -120,109 +70,322 @@ MEMACCESSPRUDATARAM:
 #define GPIO_SETDATAOUT 0x194
 
 
-    // Enable OCP master port
-    LBCO      r0, CONST_PRUCFG, 4, 4
-    CLR     r0, r0, 4         // Clear SYSCFG[STANDBY_INIT] to enable OCP master port
-    SBCO      r0, CONST_PRUCFG, 4, 4
+.struct main_vars
+    .u32 status
+.ends
 
-    // Configure the programmable pointer register for PRU0 by setting c28_pointer[15:0]
-    // field to 0x0120.  This will make C28 point to 0x00012000 (PRU shared RAM).
-    MOV     r0, 0x00000120
-    MOV       r1, CTPPR_0
-    ST32      r0, r1
 
-    // Configure the programmable pointer register for PRU0 by setting c31_pointer[15:0]
-    // field to 0x0010.  This will make C31 point to 0x80001000 (DDR memory).
-    MOV     r0, 0x00100000
-    MOV       r1, CTPPR_1
-    ST32      r0, r1
+.struct frame_vars
+    .u32 p_buf
+    
+    .u32 bytes_count
+    .u32 bits_count
+    
+    .u32 p_set_out
+    .u32 p_clear_out
+    .u32 p_bytes
+    .u32 bits
+    .u32 data_bit
+    .u32 clock_bit
+    .u32 sync_bit
+.ends
 
-.enter main_scope
-.assign main_vars_t, r1, *, main
-    mov     main.p_set_out, GPIO2 | GPIO_SETDATAOUT
-    mov     main.p_clear_out, GPIO2 | GPIO_CLEARDATAOUT
-    mov     main.data_bit, 1 << 6
-    mov     main.clock_bit, 1 << 7
-    mov     main.sync_bit, 1 << 8
-    
-    mov     main.repeat_count, 10000
-    
-repeat_loop:
-    mov     main.colors_count, 1536
-    mov     main.p_colors, 0x00000000 + 4
-    
-colors_loop:
-    lbbo    main.color, main.p_colors, 0, 4
-    add     main.p_colors, main.p_colors, 4
-    
-    mov     main.bits_count, 24
-    sbbo    main.sync_bit, main.p_set_out, 0, 4
-    sbbo    main.sync_bit, main.p_clear_out, 0, 4
-    
-bits_loop:
-    sbbo    main.clock_bit, main.p_clear_out, 0, 4
-    
-    qbbs    bits_1, main.color, 0
-    sbbo    main.data_bit, main.p_clear_out, 0, 4
-    jmp     bits_0
-bits_1:
-    sbbo    main.data_bit, main.p_set_out, 0, 4
-    mov     main.color, main.color
-bits_0:
 
-    lsr     main.color, main.color, 1
-    
-    sbbo    main.clock_bit, main.p_set_out, 0, 4
-    
-    sub     main.bits_count, main.bits_count, 1
-    qbne    bits_loop, main.bits_count, 0
-    
-    sub     main.colors_count, main.colors_count, 1
-    qbne    colors_loop, main.colors_count, 0
-    
-    sub     main.repeat_count, main.repeat_count, 1
-    qbne    repeat_loop, main.repeat_count, 0
-    
-.leave main_scope
+#define GLOBAL_STATUS_RUN    0
+#define GLOBAL_STATUS_HALT   1
 
-/* 100ns
-    MOV r0, 100000000
-DEL1:
-    MOV r2, 0xFF<<6
-    MOV r3, GPIO2 | GPIO_SETDATAOUT
-    SBBO r2, r3, 0, 4
-    
-    mov r2, r2
-    mov r2, r2
-    mov r2, r2
-    //////////
-    mov r2, r2
-    mov r2, r2
-    //////////
-    
-    MOV r2, 0xFF<<6
-    MOV r3, GPIO2 | GPIO_CLEARDATAOUT
-    SBBO r2, r3, 0, 4
-    
-    mov r2, r2
-    //////////
-    mov r2, r2
-    mov r2, r2
-    //////////
+#define FRAME_STATUS_MASK    0x03
+#define FRAME_MODE_MASK      0x0C
+#define FRAME_STATUS_IDLE    0x00
+#define FRAME_STATUS_ERROR   0x01
+#define FRAME_STATUS_READY   0x02
+#define FRAME_MODE_2W_2MHZ   0x00
+#define FRAME_MODE_2W_10MHZ  0x04
+#define FRAME_MODE_1W_800KHZ 0x08
+#define FRAME_MODE_PAUSE     0x10
 
-    SUB r0, r0, 1
-    QBNE DEL1, r0, 0
-*/
+#define MIDI_STATUS_EMPTY 0
+#define MIDI_STATUS_FULL  1
+
+
+.struct global_control
+    .u32 status
+.ends
+
+.struct buffer_control
+    .u32 status
+    .u32 address
+    .u32 size
+    .u32 capacity
+.ends
+
+
+#define REGS_BASE  (0)
+#define GLOBAL_OFS (0)
+#define FRAME0_OFS (SIZE(global_control) + SIZE(buffer_control) * 0)
+#define FRAME1_OFS (SIZE(global_control) + SIZE(buffer_control) * 1)
+#define MIDI0_OFS  (SIZE(global_control) + SIZE(buffer_control) * 2)
+#define MIDI1_OFS  (SIZE(global_control) + SIZE(buffer_control) * 3)
+
 
 #ifdef AM33XX
 
-    // Send notification to Host for program completion
-    MOV R31.b0, PRU0_ARM_INTERRUPT+16
-
-#else
-
-    MOV R31.b0, PRU0_ARM_INTERRUPT
+    // Configure the block index register for PRU0 by setting c24_blk_index[7:0] and
+    // c25_blk_index[7:0] field to 0x00 and 0x00, respectively.  This will make C24 point
+    // to 0x00000000 (PRU0 DRAM) and C25 point to 0x00002000 (PRU1 DRAM).
+    mov     r0, 0x00000000
+    mov     r1, CTBIR_0
+    ST32    r0, r1
 
 #endif
 
-    HALT
+    // Enable OCP master port
+    lbco    r0, CONST_PRUCFG, 4, 4
+    clr     r0, r0, 4         // Clear SYSCFG[STANDBY_INIT] to enable OCP master port
+    sbco    r0, CONST_PRUCFG, 4, 4
+
+    // Configure the programmable pointer register for PRU0 by setting c28_pointer[15:0]
+    // field to 0x0120.  This will make C28 point to 0x00012000 (PRU shared RAM).
+    mov     r0, 0x00000120
+    mov     r1, CTPPR_0
+    ST32    r0, r1
+
+    // Configure the programmable pointer register for PRU0 by setting c31_pointer[15:0]
+    // field to 0x0010.  This will make C31 point to 0x80001000 (DDR memory).
+    mov     r0, 0x00100000
+    mov     r1, CTPPR_1
+    ST32    r0, r1
+    
+.enter main
+.assign buffer_control, r4, r7, buf
+.assign main_vars, r8, *, l
+
+main_loop:
+    // Check if FRAME0 has any data ready
+    mov     r0, REGS_BASE + FRAME0_OFS
+    lbbo    buf, r0, 0, SIZE(buf)
+    and     r1, buf.status, FRAME_STATUS_MASK
+    qbeq    output_frame, r1, FRAME_STATUS_READY
+    
+    // Check if FRAME1 has any data ready
+    mov     r0, REGS_BASE + FRAME1_OFS
+    lbbo    buf, r0, 0, SIZE(buf)
+    and     r1, buf.status, FRAME_STATUS_MASK
+    qbeq    output_frame, r1, FRAME_STATUS_READY
+    
+    // Check if we are still in RUN mode globally
+    mov     r0, REGS_BASE + GLOBAL_OFS
+    lbbo    l.status, r0, OFFSET(global_control.status), SIZE(global_control.status)
+    qbeq    main_loop, l.status, GLOBAL_STATUS_RUN
+    
+    // Fell through; nope, halt!
+    // Send notification to host for program completion
+    mov     r31.b0, PRU0_ARM_INTERRUPT+16
+    halt
+    
+output_frame:
+    // A frame is ready! Select the output method and go
+    and     r1, buf.status, FRAME_MODE_MASK
+    qbeq    output_frame_2w_2mhz, r1, FRAME_MODE_2W_2MHZ
+    qbeq    output_frame_2w_10mhz, r1, FRAME_MODE_2W_10MHZ
+    qbeq    output_frame_1w_800khz, r1, FRAME_MODE_1W_800KHZ
+    
+    // Couldn't find valid mode? Report back error status
+    mov     r1, FRAME_STATUS_ERROR
+    sbbo    r1, r0, OFFSET(buf.status), SIZE(buf.status)
+    jmp     main_loop
+    
+.leave main
+
+
+.enter frame
+.assign buffer_control, r4, r7, buf
+.assign frame_vars, r8, *, l
+
+output_frame_2w_2mhz:
+    mov     l.p_buf, r0
+    
+    mov     l.p_set_out, GPIO2 | GPIO_SETDATAOUT
+    mov     l.p_clear_out, GPIO2 | GPIO_CLEARDATAOUT
+    mov     l.data_bit, 1 << 6
+    mov     l.clock_bit, 1 << 7
+    mov     l.sync_bit, 1 << 8
+    
+    // Generate a sync pulse for syncing the oscilloscope
+    sbbo    l.sync_bit, l.p_set_out, 0, 4
+    sbbo    l.sync_bit, l.p_clear_out, 0, 4
+    
+    mov     l.bytes_count, buf.size
+    mov     l.p_bytes, buf.address
+    
+of2m_words_loop:
+    // Fetch the next word -- this might overrun the buffer, should be okay
+    lbbo    r0, l.p_bytes, 0, 4
+    add     l.p_bytes, l.p_bytes, 4
+    // Reverse byte order: data is shifted out most significant bit first, but
+    // least significant byte first...
+    mov     l.bits.b0, r0.b3
+    mov     l.bits.b1, r0.b2
+    mov     l.bits.b2, r0.b1
+    mov     l.bits.b3, r0.b0
+    
+    qble    of2m_full_word, l.bytes_count, 4
+    
+    // Fall through: this is a partial word (1-3 bytes).
+    lsl     l.bits_count, l.bytes_count, 3
+    jmp     of2m_partial_word
+    
+of2m_full_word:
+    mov     l.bits_count, 32
+
+of2m_partial_word:
+    
+of2m_bits_loop:
+    // Clock goes low
+    sbbo    l.clock_bit, l.p_clear_out, 0, 4
+    
+    // Test MSB of our data -- #31
+    qbbs    of2m_bits_1, l.bits, 31
+    // Fall through: bit is clear
+    sbbo    l.data_bit, l.p_clear_out, 0, 4
+    jmp     of2m_bits_0
+of2m_bits_1:
+    // Bit is set
+    sbbo    l.data_bit, l.p_set_out, 0, 4
+    mov     l.bits, l.bits
+of2m_bits_0:
+    
+    // We are shifting the bits out MSB-first, shift left
+    lsl     l.bits, l.bits, 1
+    
+    // Delay to reduce the clock rate to 2MHz
+    mov     r0, 21
+of2m_delay_0_loop:
+    sub     r0, r0, 1
+    qbne    of2m_delay_0_loop, r0, 0
+    
+    // Output should be stable now, clock high
+    sbbo    l.clock_bit, l.p_set_out, 0, 4
+    
+    // Delay to reduce the clock rate to 2MHz (keep the duty cycle even!)
+    mov     r0, 22
+of2m_delay_1_loop:
+    sub     r0, r0, 1
+    qbne    of2m_delay_1_loop, r0, 0
+    
+    // Loop boilerplate for inner loop (shifting out bits of the word)
+    sub     l.bits_count, l.bits_count, 1
+    qbne    of2m_bits_loop, l.bits_count, 0
+    
+    // Loop boilerplate for outer loop (bytes)
+    // Return to main if bytes < 4!
+    qbge    of2m_words_loop_done, l.bytes_count, 4
+    // Subtract after to avoid underflow
+    sub     l.bytes_count, l.bytes_count, 4
+    // Else, continue looping...
+    jmp     of2m_words_loop
+
+of2m_words_loop_done:
+    jmp of_check_pause
+
+
+
+
+output_frame_2w_10mhz:
+    mov     l.p_buf, r0
+    
+    mov     l.p_set_out, GPIO2 | GPIO_SETDATAOUT
+    mov     l.p_clear_out, GPIO2 | GPIO_CLEARDATAOUT
+    mov     l.data_bit, 1 << 6
+    mov     l.clock_bit, 1 << 7
+    mov     l.sync_bit, 1 << 8
+    
+    // Generate a sync pulse for syncing the oscilloscope
+    sbbo    l.sync_bit, l.p_set_out, 0, 4
+    sbbo    l.sync_bit, l.p_clear_out, 0, 4
+    
+    mov     l.bytes_count, buf.size
+    mov     l.p_bytes, buf.address
+    
+of10m_words_loop:
+    // Fetch the next word -- this might overrun the buffer, should be okay
+    lbbo    r0, l.p_bytes, 0, 4
+    add     l.p_bytes, l.p_bytes, 4
+    // Reverse byte order: data is shifted out most significant bit first, but
+    // least significant byte first...
+    mov     l.bits.b0, r0.b3
+    mov     l.bits.b1, r0.b2
+    mov     l.bits.b2, r0.b1
+    mov     l.bits.b3, r0.b0
+    
+    qble    of10m_full_word, l.bytes_count, 4
+    
+    // Fall through: this is a partial word (1-3 bytes).
+    lsl     l.bits_count, l.bytes_count, 3
+    jmp     of10m_partial_word
+    
+of10m_full_word:
+    mov     l.bits_count, 32
+
+of10m_partial_word:
+    
+of10m_bits_loop:
+    // Clock goes low
+    sbbo    l.clock_bit, l.p_clear_out, 0, 4
+    
+    // Test MSB of our data -- #31
+    qbbs    of10m_bits_1, l.bits, 31
+    // Fall through: bit is clear
+    sbbo    l.data_bit, l.p_clear_out, 0, 4
+    jmp     of10m_bits_0
+of10m_bits_1:
+    // Bit is set
+    sbbo    l.data_bit, l.p_set_out, 0, 4
+    mov     l.bits, l.bits
+of10m_bits_0:
+    
+    // We are shifting the bits out MSB-first, shift left
+    lsl     l.bits, l.bits, 1
+    
+    // Output should be stable now, clock high
+    sbbo    l.clock_bit, l.p_set_out, 0, 4
+    
+    // Loop boilerplate for inner loop (shifting out bits of the word)
+    sub     l.bits_count, l.bits_count, 1
+    qbne    of10m_bits_loop, l.bits_count, 0
+    
+    // Loop boilerplate for outer loop (bytes)
+    // Return to main if bytes <= 4!
+    qbgt    of10m_words_loop_done, l.bytes_count, 4
+    // Subtract after to avoid underflow
+    sub     l.bytes_count, l.bytes_count, 4
+    // Else, continue looping...
+    jmp     of10m_words_loop
+
+of10m_words_loop_done:
+    jmp of_check_pause
+
+
+
+output_frame_1w_800khz:
+of_check_pause:
+    // Check if we are supposed to pause at end-of-frame
+    and     r0, buf.status, FRAME_MODE_PAUSE
+    qbeq    no_pause, r0, 0
+    
+    // 200,000 insns = 1ms
+    mov     r0, 100000
+pause_loop:
+    sub     r0, r0, 1
+    qbne    pause_loop, r0, 0
+    
+no_pause:
+    
+    // Indicate that the frame is complete!
+    mov     r1, FRAME_STATUS_IDLE
+    sbbo    r1, l.p_buf, OFFSET(buf.status), SIZE(buf.status)
+    
+    jmp     main_loop
+    
+.leave frame
+
