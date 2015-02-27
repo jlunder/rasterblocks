@@ -21,7 +21,8 @@ ifeq ($(OS), LINUX)
 	endif
 
 	CC=gcc
-	CC_TARGET=arm-linux-gnueabihf-gcc
+	CC_TARGET_PREFIX=arm-linux-gnueabihf-
+	CC_TARGET=$(CC_TARGET_PREFIX)gcc
 	CFLAGS_COMMON=-W -Wall -Werror
 	CFLAGS=-O0 $(CFLAGS_COMMON)
 	CFLAGS_TARGET=-O3 -mtune=cortex-a8 -march=armv7-a $(CFLAGS_COMMON)
@@ -47,6 +48,7 @@ endif
 
 ifneq ($(BUILD_ON_TARGET),)
 	CC_TARGET := $(CC)
+	CC_TARGET_PREFIX :=
 	CFLAGS := $(CFLAGS_TARGET)
 	CPPFLAGS := $(CPPFLAGS_TARGET)
 	LDFLAGS := $(LDFLAGS_TARGET)
@@ -97,9 +99,11 @@ build/%.o: src/%.c
 	@$(MAKEDEPEND)
 	$(CC) -c -g $(CFLAGS) -o $@ $(CPPFLAGS) $<
 
+ifeq ($(TARGET_BUILD),)
 bin/pasm: $(wildcard pasm/*.c)
 	@mkdir -p bin
 	$(CC) -g -Wall -D_UNIX_ -o $@ $(wildcard pasm/*.c) $(LDFLAGS)
+endif
 
 bin/rasterblocks: $(STAGE_LIGHTS_O)
 	@mkdir -p bin
@@ -151,17 +155,17 @@ bin/rasterblocks.target-debug: $(STAGE_LIGHTS_O_TARGET_DEBUG) pruss/lib/libpruss
 	$(CC_TARGET) -o $@ $(STAGE_LIGHTS_O_TARGET_DEBUG) pruss/lib/libprussdrv.a $(LDFLAGS_TARGET)
 
 pruss/lib/libprussdrv.a: $(wildcard pruss/src/*.{c,h}) pruss/src/Makefile
-	CROSS_COMPILE= make -C pruss/src ../lib/libprussdrv.a
+	CROSS_COMPILE=$(CC_TARGET_PREFIX) make -C pruss/src ../lib/libprussdrv.a
 
 pruss/lib/libprussdrvd.a: $(wildcard pruss/src/*.{c,h}) pruss/src/Makefile
-	CROSS_COMPILE= make -C pruss/src ../lib/libprussdrvd.a
+	CROSS_COMPILE=$(CC_TARGET_PREFIX) make -C pruss/src ../lib/libprussdrvd.a
 
 else
 
 # We're in the host build env, use the cross-build script to perform the
 # target build.
 ifneq ($(TARGET_BUILD),)
-bin/rasterblocks.target: precise-chroot
+bin/rasterblocks.target: precise-chroot bin/pasm
 	./target-build
 endif
 
