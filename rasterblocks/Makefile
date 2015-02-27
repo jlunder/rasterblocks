@@ -114,7 +114,7 @@ STAGE_LIGHTS_O_TARGET_DEBUG := $(addprefix build/,$(addsuffix .target-debug.o, $
 STAGE_LIGHTS_D_TARGET := $(addprefix build/,$(addsuffix .target.d, $(STAGE_LIGHTS_SRC)))
 
 
-build/%.target.d: src/%.c src/icons.h src/pruss_io_bin.h
+build/%.target.d: src/%.c src/icons.h src/pruss_io_pru0_bin.h src/pruss_io_pru1_bin.h
 	@mkdir -p build
 	@$(MAKEDEPEND_TARGET)
 
@@ -126,8 +126,11 @@ endif
 endif
 endif
 
-src/pruss_io_bin.h: src/pruss_io.p src/pruss_io.hp bin/pasm
-	bin/pasm -c -CrbPrussIoCode src/pruss_io.p src/pruss_io
+src/pruss_io_pru0_bin.h: src/pruss_io_pru0.p src/pruss_io.hp bin/pasm
+	bin/pasm -c -CrbPrussIoPru0Code src/pruss_io_pru0.p src/pruss_io_pru0
+
+src/pruss_io_pru1_bin.h: src/pruss_io_pru0.p src/pruss_io.hp bin/pasm
+	bin/pasm -c -CrbPrussIoPru1Code src/pruss_io_pru1.p src/pruss_io_pru1
 
 build/%.target.o: src/%.c
 	@mkdir -p build

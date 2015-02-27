@@ -62,12 +62,7 @@
 #include "pruss_io.hp"
 
 
-#define GPIO0 0x44E07000
-#define GPIO1 0x4804C000
-#define GPIO2 0x481AC000
-#define GPIO_OE 0x134
-#define GPIO_CLEARDATAOUT 0x190
-#define GPIO_SETDATAOUT 0x194
+#define REGS_BASE  (0x00000000)
 
 
 .struct main_vars
@@ -90,44 +85,7 @@
     .u32 sync_bit
 .ends
 
-
-#define GLOBAL_STATUS_RUN    0
-#define GLOBAL_STATUS_HALT   1
-
-#define FRAME_STATUS_MASK    0x03
-#define FRAME_MODE_MASK      0x0C
-#define FRAME_STATUS_IDLE    0x00
-#define FRAME_STATUS_ERROR   0x01
-#define FRAME_STATUS_READY   0x02
-#define FRAME_MODE_2W_2MHZ   0x00
-#define FRAME_MODE_2W_10MHZ  0x04
-#define FRAME_MODE_1W_800KHZ 0x08
-#define FRAME_MODE_PAUSE     0x10
-
-#define MIDI_STATUS_EMPTY 0
-#define MIDI_STATUS_FULL  1
-
-
-.struct global_control
-    .u32 status
-.ends
-
-.struct buffer_control
-    .u32 status
-    .u32 address
-    .u32 size
-    .u32 capacity
-.ends
-
-
-#define REGS_BASE  (0)
-#define GLOBAL_OFS (0)
-#define FRAME0_OFS (SIZE(global_control) + SIZE(buffer_control) * 0)
-#define FRAME1_OFS (SIZE(global_control) + SIZE(buffer_control) * 1)
-#define MIDI0_OFS  (SIZE(global_control) + SIZE(buffer_control) * 2)
-#define MIDI1_OFS  (SIZE(global_control) + SIZE(buffer_control) * 3)
-
-
+/*
 #ifdef AM33XX
 
     // Configure the block index register for PRU0 by setting c24_blk_index[7:0] and
@@ -155,7 +113,7 @@
     mov     r0, 0x00100000
     mov     r1, CTPPR_1
     ST32    r0, r1
-    
+    */
 .enter main
 .assign buffer_control, r4, r7, buf
 .assign main_vars, r8, *, l

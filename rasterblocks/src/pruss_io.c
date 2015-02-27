@@ -122,7 +122,9 @@ static RBPrussIoMemoryMap * rbPrussIoDataRam;
 static uint8_t * rbPrussIoSharedRam;
 
 
-#include "pruss_io_bin.h"
+#include "pruss_io_pru0_bin.h"
+#include "pruss_io_pru1_bin.h"
+
 
 /*****************************************************************************
 * Global Function Definitions                                                *
@@ -137,7 +139,7 @@ void rbPrussIoInitialize(RBConfiguration * pConfig)
         rbWarning("Failed to start up PRUSS\n");
     }
 
-    tpruss_intc_initdata pruss_intc_initdata = PRUSS_INTC_INITDATA;
+    tpruss_intc_initdata prussIntCInitData = PRUSS_INTC_INITDATA;
 
     UNUSED(pConfig);
     
@@ -159,7 +161,7 @@ void rbPrussIoInitialize(RBConfiguration * pConfig)
     }
 
     /* Get the interrupt initialized */
-    prussdrv_pruintc_init(&pruss_intc_initdata);
+    prussdrv_pruintc_init(&prussIntCInitData);
 
     /* Initialize example */
     rbInfo("Initializing PRU driver.\n");
@@ -179,7 +181,7 @@ void rbPrussIoInitialize(RBConfiguration * pConfig)
     
     // Execute example on PRU
     rbInfo("Executing PRU code.\n");
-    prussdrv_exec_code (0, rbPrussIoCode, sizeof rbPrussIoCode);
+    prussdrv_exec_code (0, rbPrussIoPru0Code, sizeof rbPrussIoPru0Code);
 }
 
 
