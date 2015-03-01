@@ -452,43 +452,18 @@ RBLightGenerator * rbLightGenerationCreateGeneratorsFromTheme(
             rbLightGenerationVerticalBarsAlloc(pBassPalTex, pTreblePalTex,
                 20, rbTimeFromMs(15), rbTimeFromMs(100)),
             rbLightGenerationDashedCirclesAlloc(pFGPalTex)),
-        rbLightGenerationCompositor3Alloc(
-            rbLightGenerationVerticalBarsAlloc(pBassPalTex, pTreblePalTex,
-                20, rbTimeFromMs(15), rbTimeFromMs(100)),
-            rbLightGenerationImageFilterAlloc(
-                rbLightGenerationBeatFlashAlloc(g_rbPBlackWhiteFSAlphaPalTex),
-                g_rbPInventorLiveLogoBulbTex40x16),
-            rbLightGenerationImageFilterAlloc(
-                rbLightGenerationPulsePlasmaAlloc(g_rbPBlackWhiteHSPalTex),
-                g_rbPInventorLiveLogoTextTex40x16)),
         rbLightGenerationCompositor2Alloc(
             rbLightGenerationPulsePlasmaAlloc(pBassPalTex),
             rbLightGenerationOscilloscopeAlloc(fgColor)),
         rbLightGenerationCompositor2Alloc(
             rbLightGenerationPulsePlasmaAlloc(pBassPalTex),
             rbLightGenerationPulseCheckerboardAlloc(colori(63, 63, 63, 0))),
-        rbLightGenerationCompositor3Alloc(
-            rbLightGenerationPulsePlasmaAlloc(pBassPalTex),
-            rbLightGenerationImageFilterAlloc(
-                rbLightGenerationBeatFlashAlloc(g_rbPBlackWhiteFSAlphaPalTex),
-                g_rbPInventorLiveLogoBulbTex40x16),
-            rbLightGenerationImageFilterAlloc(
-                rbLightGenerationPulsePlasmaAlloc(g_rbPBlackWhiteHSPalTex),
-                g_rbPInventorLiveLogoTextTex40x16)),
         rbLightGenerationCompositor2Alloc(
             rbLightGenerationDashedCirclesAlloc(pBassPalTex),
             rbLightGenerationPulseCheckerboardAlloc(colori(63, 63, 63, 0))),
         rbLightGenerationCompositor2Alloc(
             rbLightGenerationDashedCirclesAlloc(pBassPalTex),
             rbLightGenerationOscilloscopeAlloc(fgColor)),
-        rbLightGenerationCompositor3Alloc(
-            rbLightGenerationDashedCirclesAlloc(pBassPalTex),
-            rbLightGenerationImageFilterAlloc(
-                rbLightGenerationBeatFlashAlloc(g_rbPBlackWhiteFSAlphaPalTex),
-                g_rbPInventorLiveLogoBulbTex40x16),
-            rbLightGenerationImageFilterAlloc(
-                rbLightGenerationPulsePlasmaAlloc(g_rbPBlackWhiteHSPalTex),
-                g_rbPInventorLiveLogoTextTex40x16)),
     };
     
     return rbLightGenerationTimedRotationAlloc(pGenerators,
@@ -506,14 +481,6 @@ RBLightGenerator * rbLightGenerationCreateVUGeneratorsFromTheme(
             rbLightGenerationSignalLissajousAlloc(fgColor)),
         rbLightGenerationCompositor2Alloc(
             rbLightGenerationVolumeBarsAlloc(pBassPalTex, pTreblePalTex),
-            rbLightGenerationOscilloscopeAlloc(fgColor)),
-        rbLightGenerationCompositor3Alloc(
-            rbLightGenerationImageFilterAlloc(
-                rbLightGenerationBeatFlashAlloc(g_rbPBlackWhiteFSAlphaPalTex),
-                g_rbPInventorLiveLogoBulbTex40x16),
-            rbLightGenerationImageFilterAlloc(
-                rbLightGenerationPulsePlasmaAlloc(g_rbPBlackWhiteHSPalTex),
-                g_rbPInventorLiveLogoTextTex40x16),
             rbLightGenerationOscilloscopeAlloc(fgColor)),
     };
     UNUSED(pFGPalTex);
