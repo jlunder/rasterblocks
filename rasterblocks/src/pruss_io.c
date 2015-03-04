@@ -153,7 +153,7 @@ void rbPrussIoInitialize(RBConfiguration * pConfig)
     {
         // Retry -- sometimes on first open after reboot the driver takes a
         // while to come up
-        rbSleep(rbTimeFromMs(1000));
+        rbSleep(rbTimeFromMs(5000));
         ret = prussdrv_open(PRU_EVTOUT_0);
         if(ret != 0) {
             rbFatal("prussdrv_open open failed\n");
@@ -258,7 +258,8 @@ void rbLightOutputPrussShowLights(RBRawLightFrame const * pFrame)
     // actually needed, but hey why not.
     __sync_synchronize();
     rbPrussIoDataRam->frame[buf].status =
-        FRAME_STATUS_READY | FRAME_MODE_2W_2MHZ | FRAME_MODE_PAUSE;
+//        FRAME_STATUS_READY | FRAME_MODE_1W_800KHZ | FRAME_MODE_PAUSE;
+        FRAME_STATUS_READY | FRAME_MODE_2W_10MHZ | FRAME_MODE_PAUSE;
     rbMemoryBarrier();
 }
 

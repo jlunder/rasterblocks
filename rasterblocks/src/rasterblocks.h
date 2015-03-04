@@ -34,13 +34,13 @@
 
 #define RB_PANEL_WIDTH 8
 #define RB_PANEL_HEIGHT 8
-#define RB_NUM_PANELS_PER_STRING 5
+#define RB_NUM_PANELS_PER_STRING 6
 #define RB_NUM_STRINGS 2
 #define RB_NUM_PANELS (RB_NUM_PANELS_PER_STRING * RB_NUM_STRINGS)
 #define RB_NUM_LIGHTS (RB_PANEL_WIDTH * RB_PANEL_HEIGHT * RB_NUM_PANELS)
 
-#define RB_PROJECTION_WIDTH (RB_PANEL_WIDTH * 5)
-#define RB_PROJECTION_HEIGHT (RB_PANEL_HEIGHT * 2)
+#define RB_PROJECTION_WIDTH (RB_PANEL_WIDTH * 4)
+#define RB_PROJECTION_HEIGHT (RB_PANEL_HEIGHT * 3)
 
 #define RB_MAX_CONSECUTIVE_GENTLE_RESTART_NS (10 * 1000000000LLU)
 #define RB_GENTLE_RESTART_DELAY_NS 500000000LLU
@@ -73,6 +73,7 @@ typedef enum {
 
 typedef enum {
     RBAI_INVALID,
+    RBAI_TEST,
     RBAI_FILE,
     RBAI_ALSA,
     RBAI_OPENAL,
@@ -189,7 +190,8 @@ typedef struct {
 
 typedef struct {
     RBVector2 position;
-    RBVector2 orientation;
+    RBVector2 uInc;
+    RBVector2 vInc;
 } RBPanelConfig;
 
 

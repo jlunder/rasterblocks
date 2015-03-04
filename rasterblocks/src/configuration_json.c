@@ -29,7 +29,10 @@ static RBLogLevel getLogLevel(const char* val)
 
 static RBAudioInput getAudioInput(const char* val)
 {
-    if(rbStricmp(val, "FILE") == 0) {
+    if(rbStricmp(val, "TEST") == 0) {
+        return RBAI_TEST;
+    }
+    else if(rbStricmp(val, "FILE") == 0) {
         return RBAI_FILE;
     }
     else if(rbStricmp(val, "OPENAL") == 0) {
@@ -54,6 +57,9 @@ static RBLightOutput getLightOutput(const char* val)
     }
     else if(rbStricmp(val, "SPIDEV") == 0) {
         return RBLO_SPIDEV;
+    }
+    else if(rbStricmp(val, "PRUSS") == 0) {
+        return RBLO_PRUSS;
     }
     else {
         rbError("Invalid audio source type: %s\n",val);

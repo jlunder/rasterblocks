@@ -82,6 +82,9 @@ void rbConfigurationParseArgv(RBConfiguration * config, int argc,
             }
         }
         
+        if(strcmp(argv[i], "-it") == 0) {
+            config->audioInput = RBAI_TEST;
+        }
         if(strcmp(argv[i], "-ia") == 0) {
             if(i + 1 < argc) {
                 ++i;
@@ -120,6 +123,9 @@ void rbConfigurationParseArgv(RBConfiguration * config, int argc,
         }
         if(strcmp(argv[i], "-os") == 0) {
             config->lightOutput = RBLO_SPIDEV;
+        }
+        if(strcmp(argv[i], "-or") == 0) {
+            config->lightOutput = RBLO_PRUSS;
         }
         
         if(strcmp(argv[i], "-b") == 0) {

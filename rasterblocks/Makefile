@@ -99,11 +99,9 @@ build/%.o: src/%.c
 	@$(MAKEDEPEND)
 	$(CC) -c -g $(CFLAGS) -o $@ $(CPPFLAGS) $<
 
-ifeq ($(TARGET_BUILD),)
 bin/pasm: $(wildcard pasm/*.c)
 	@mkdir -p bin
 	$(CC) -g -Wall -D_UNIX_ -o $@ $(wildcard pasm/*.c) $(LDFLAGS)
-endif
 
 bin/rasterblocks: $(STAGE_LIGHTS_O)
 	@mkdir -p bin

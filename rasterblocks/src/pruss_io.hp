@@ -146,12 +146,80 @@
 .endm
 
 
-#define GPIO0 0x44E07000
-#define GPIO1 0x4804C000
-#define GPIO2 0x481AC000
-#define GPIO_OE 0x134
+#define GPIO0             0x44E07000
+#define GPIO1             0x4804C000
+#define GPIO2             0x481AC000
+
+#define GPIO_OE           0x134
 #define GPIO_CLEARDATAOUT 0x190
-#define GPIO_SETDATAOUT 0x194
+#define GPIO_SETDATAOUT   0x194
+
+#define GPIO_CLEARANDSET  0x190
+#define CLEAR_OFS 0
+#define SET_OFS 4
+
+
+#define UART0            0x00028000
+
+#define UART_RBR         0x00
+#define UART_THR         0x00
+#define UART_IER         0x04
+#define UART_IIR         0x08
+#define UART_FCR         0x08
+#define UART_LCR         0x0C
+#define UART_MCR         0x10
+#define UART_LSR         0x14
+#define UART_MSR         0x18
+#define UART_SCR         0x1C
+#define UART_DLL         0x20
+#define UART_DLH         0x24
+#define UART_REVID1      0x28
+#define UART_REVID2      0x2C
+#define UART_PWREMU_MGMT 0x30
+#define UART_MDR         0x34
+
+#define UART_FCR_RXFIFTL1  (0 << 6)
+#define UART_FCR_RXFIFTL4  (1 << 6)
+#define UART_FCR_RXFIFTL8  (2 << 6)
+#define UART_FCR_RXFIFTL14 (3 << 6)
+#define UART_FCR_DMAMODE1  (1 << 3)
+#define UART_FCR_TXCLR     (1 << 2)
+#define UART_FCR_RXCLR     (1 << 1)
+#define UART_FCR_FIFOEN    (1 << 0)
+
+#define UART_LCR_DLAB (1 << 7)
+#define UART_LCR_BC   (1 << 6)
+#define UART_LCR_SP   (1 << 5)
+#define UART_LCR_EPS  (1 << 4)
+#define UART_LCR_PEN  (1 << 3)
+#define UART_LCR_STB  (1 << 2)
+#define UART_LCR_WLS5 (0 << 0)
+#define UART_LCR_WLS6 (1 << 0)
+#define UART_LCR_WLS7 (2 << 0)
+#define UART_LCR_WLS8 (3 << 0)
+
+#define UART_MCR_AFE  (0 << 5)
+#define UART_MCR_LOOP (0 << 4)
+#define UART_MCR_OUT2 (0 << 3)
+#define UART_MCR_OUT1 (0 << 2)
+#define UART_MCR_RTS  (0 << 1)
+
+#define UART_LSR_TEMT_BIT 6
+#define UART_LSR_DR_BIT 0
+#define UART_LSR_RXFIFOE (1 << 7)
+#define UART_LSR_TEMT    (1 << UART_LSR_TEMT_BIT)
+#define UART_LSR_THRE    (1 << 5)
+#define UART_LSR_BI      (1 << 4)
+#define UART_LSR_FE      (1 << 3)
+#define UART_LSR_PE      (1 << 2)
+#define UART_LSR_OE      (1 << 1)
+#define UART_LSR_DR      (1 << UART_LSR_DR_BIT)
+
+#define UART_PWREMU_MGMT_UTRST (1 << 14)
+#define UART_PWREMU_MGMT_URRST (1 << 13)
+#define UART_PWREMU_MGMT_FREE  (1 << 0)
+
+#define UART_MDR_OSM_SEL (1 << 0)
 
 
 #define GLOBAL_STATUS_RUN    0
