@@ -85,105 +85,43 @@
     .u32 sync_bit
 .ends
 
+    // Configure the block index register for PRU0 by setting c24_blk_index[7:0] and
+    // c25_blk_index[7:0] field to 0x00 and 0x00, respectively.  This will make C24 point
+    // to 0x00000000 (PRU0 DRAM) and C25 point to 0x00002000 (PRU1 DRAM).
+    mov     r0, 0x00000000
+    mov     r1, CTBIR_0
+    ST32    r0, r1
+
+    // Enable OCP master port
+    lbco    r0, CONST_PRUCFG, 4, 4
+    clr     r0, r0, 4         // Clear SYSCFG[STANDBY_INIT] to enable OCP master port
+    sbco    r0, CONST_PRUCFG, 4, 4
+
+    // Configure the programmable pointer register for PRU0 by setting c28_pointer[15:0]
+    // field to 0x0120.  This will make C28 point to 0x00012000 (PRU shared RAM).
+    mov     r0, 0x00000120
+    mov     r1, CTPPR_0
+    ST32    r0, r1
+
+    // Configure the programmable pointer register for PRU0 by setting c31_pointer[15:0]
+    // field to 0x0010.  This will make C31 point to 0x80001000 (DDR memory).
+    mov     r0, 0x00100000
+    mov     r1, CTPPR_1
+    ST32    r0, r1
+
 .enter main
 .assign buffer_control, r4, r7, buf
 .assign main_vars, r8, *, l
     
-    /*
-    mov     r3, GPIO2 + GPIO_CLEARANDSET
-    
-    mov     r0, (1 << 6) | (1 << 7) | (1 << 8) 
-    sbbo    r0, r3, CLEAR_OFS, 4
-    mov     r0, 1 << 8
-    sbbo    r0, r3, SET_OFS, 4
-    
-    mov     r2, UART0
-    
-    // Reset UART TX and RX
-    mov     r0.w0, 0
-    sbbo    r0.w0, r2, UART_PWREMU_MGMT, 2
-    
-    // Set baud divisor to 400 for 30kHz MIDI clock
-    mov     r0.b0, (400 & 0xFF)
-    sbbo    r0.b0, r2, UART_DLL, 1
-    mov     r0.b0, (400 >> 8)
-    sbbo    r0.b0, r2, UART_DLH, 1
-    
-    // 16x oversampling
-    mov     r0.b0, 0
-    sbbo    r0.b0, r2, UART_MDR, 1
-    
-    // Clear buffers, enable DMA MODE1 (important?), NO FIFO
-    mov     r0.b0, UART_FCR_RXFIFTL1 | UART_FCR_DMAMODE1 | UART_FCR_TXCLR | UART_FCR_RXCLR
-    sbbo    r0.b0, r2, UART_FCR, 1
-    
-    // Disable all interrupts
-    mov     r0.b0, 0
-    sbbo    r0.b0, r2, UART_IER, 1
-    
-    // Set up LCR: 8N1
-    mov     r0.b0, UART_LCR_WLS8
-    sbbo    r0.b0, r2, UART_LCR, 1
-    
-    // Set up MCR: flow control, RTS disabled; loopback enabled
-    mov     r0.b0, UART_MCR_LOOP
-    sbbo    r0.b0, r2, UART_MCR, 1
-    
-    // Bring UART TX and RX out of reset state
-    mov     r0.w0, UART_PWREMU_MGMT_UTRST | UART_PWREMU_MGMT_URRST
-    sbbo    r0.w0, r2, UART_PWREMU_MGMT, 2
-    
-    mov     r0, 1 << 8
-    sbbo    r0, r3, CLEAR_OFS, 4
-    
-init_flush_rbr_loop:
-    lbbo    r0.b0, r2, UART_LSR, 1
-    qbbc    init_rbr_empty, r0.b0, UART_LSR_DR_BIT
-    lbbo    r0.b0, r2, UART_RBR, 1
-    jmp     init_flush_rbr_loop
-init_rbr_empty:
-    
-//////////////////////
-    mov     r0.b0, 32
-    sbbo    r0.b0, r2, UART_THR, 1
-    
-    mov     r0, 1 << 6
-    sbbo    r0, r3, SET_OFS, 4
-    
-init_wait_for_temt_loop:
-    lbbo    r0.b0, r2, UART_LSR, 1
-    qbbc    init_no_dr, r0.b0, UART_LSR_DR_BIT
-    mov     r1, 1 << 7
-    sbbo    r1, r3, SET_OFS, 4
-init_no_dr:
-    qbbc    init_wait_for_temt_loop, r0.b0, UART_LSR_TEMT_BIT
-    
-    mov     r0, 1 << 6
-    sbbo    r0, r3, CLEAR_OFS, 4
-    
-    lbbo    r0.b0, r2, UART_RBR, 1
-    qbne    init_wrong_char, r0.b0, 32
-    mov     r1, 1 << 6
-    sbbo    r1, r3, SET_OFS, 4
-    jmp     main_loop
-init_wrong_char:
-    mov     r1, 1 << 8
-    sbbo    r1, r3, SET_OFS, 4
-////////////////////////
-    
-    */
-    
-    mov     r0, GPIO2 + GPIO_CLEARANDSET
-    mov     r1, 0xFF << 6
-    mov     r2, REGS_BASE
-    mov     r3, FRAME_STATUS_IDLE
+    mov     r2, GPIO2 + GPIO_CLEARANDSET
+    mov     r3, 0xFF << 6
+    sbbo    r3, r2, CLEAR_OFS, 4
     
 main_loop:
-    sbbo    r1, r0, CLEAR_OFS, 4
-    sbbo    r3, r2, FRAME0_OFS + OFFSET(buf.status), SIZE(buf.status)
-    sbbo    r3, r2, FRAME1_OFS + OFFSET(buf.status), SIZE(buf.status)
-    //sbbo    r0, r3, SET_OFS, 4
-    jmp     main_loop
+    mov     r2, GPIO2 + GPIO_CLEARANDSET
+    mov     r3, 1 << 8
+    sbbo    r3, r2, SET_OFS, 4
+    sbbo    r3, r2, CLEAR_OFS, 4
     
     // Check if FRAME0 has any data ready
     mov     r0, REGS_BASE + FRAME0_OFS
@@ -208,6 +146,11 @@ main_loop:
     halt
     
 output_frame:
+    mov     r2, GPIO2 + GPIO_CLEARANDSET
+    mov     r3, 1 << 9
+    sbbo    r3, r2, SET_OFS, 4
+    sbbo    r3, r2, CLEAR_OFS, 4
+    
     // A frame is ready! Select the output method and go
     and     r1, buf.status, FRAME_MODE_MASK
     qbeq    output_frame_2w_2mhz, r1, FRAME_MODE_2W_2MHZ
@@ -233,7 +176,7 @@ output_frame_2w_2mhz:
     mov     l.p_clear_out, GPIO2 + GPIO_CLEARDATAOUT
     mov     l.data_bit, 1 << 6
     mov     l.clock_bit, 1 << 7
-    mov     l.sync_bit, 1 << 8
+    mov     l.sync_bit, 1 << 10
     
     // Generate a sync pulse for syncing the oscilloscope
     sbbo    l.sync_bit, l.p_set_out, 0, 4
@@ -310,7 +253,6 @@ of2m_words_loop_done:
 
 
 
-
 output_frame_2w_10mhz:
     mov     l.p_buf, r0
     
@@ -318,7 +260,7 @@ output_frame_2w_10mhz:
     mov     l.p_clear_out, GPIO2 | GPIO_CLEARDATAOUT
     mov     l.data_bit, 1 << 6
     mov     l.clock_bit, 1 << 7
-    mov     l.sync_bit, 1 << 8
+    mov     l.sync_bit, 1 << 10
     
     // Generate a sync pulse for syncing the oscilloscope
     sbbo    l.sync_bit, l.p_set_out, 0, 4
@@ -376,14 +318,14 @@ of10m_bits_0:
     
     // Loop boilerplate for outer loop (bytes)
     // Return to main if bytes <= 4!
-    qbgt    of10m_words_loop_done, l.bytes_count, 4
+    qbge    of10m_words_loop_done, l.bytes_count, 4
     // Subtract after to avoid underflow
     sub     l.bytes_count, l.bytes_count, 4
     // Else, continue looping...
     jmp     of10m_words_loop
 
 of10m_words_loop_done:
-    jmp of_check_pause
+    jmp     of_check_pause
 
 
 
@@ -394,7 +336,7 @@ output_frame_1w_800khz:
     mov     l.p_clear_out, GPIO2 | GPIO_CLEARDATAOUT
     mov     l.data_bit, 1 << 6
     mov     l.clock_bit, 1 << 7
-    mov     l.sync_bit, 1 << 8
+    mov     l.sync_bit, 1 << 10
     
     // Generate a sync pulse for syncing the oscilloscope
     sbbo    l.sync_bit, l.p_set_out, 0, 4
@@ -403,9 +345,11 @@ output_frame_1w_800khz:
     mov     l.bytes_count, buf.size
     mov     l.p_bytes, buf.address
     
-    jmp     of800k_words_loop_done
-    
 of800k_words_loop:
+    // Generate a sync pulse for syncing the oscilloscope
+    sbbo    l.sync_bit, l.p_set_out, 0, 4
+    sbbo    l.sync_bit, l.p_clear_out, 0, 4
+    
     // Fetch the next word -- this might overrun the buffer, should be okay
     lbbo    r0, l.p_bytes, 0, 4
     add     l.p_bytes, l.p_bytes, 4
@@ -432,7 +376,7 @@ of800k_bits_loop:
     sbbo    l.data_bit, l.p_set_out, 0, 4
     
     // Delay to reduce the clock rate to 800kHz
-    mov     r0, 30
+    mov     r0, 39
     call    delay
     
     // Test MSB of our data -- #31
@@ -450,14 +394,14 @@ of800k_bits_0:
     lsl     l.bits, l.bits, 1
     
     // Delay to reduce the clock rate to 800kHz
-    mov     r0, 30
+    mov     r0, 40
     call    delay
     
     // Output should be stable now, clock high
-    sbbo    l.clock_bit, l.p_clear_out, 0, 4
+    sbbo    l.data_bit, l.p_clear_out, 0, 4
     
     // Delay to reduce the clock rate to 800kHz
-    mov     r0, 30
+    mov     r0, 32
     call    delay
     
     // Loop boilerplate for inner loop (shifting out bits of the word)
@@ -466,14 +410,14 @@ of800k_bits_0:
     
     // Loop boilerplate for outer loop (bytes)
     // Return to main if bytes <= 4!
-    qbgt    of800k_words_loop_done, l.bytes_count, 4
+    qbge    of800k_words_loop_done, l.bytes_count, 4
     // Subtract after to avoid underflow
     sub     l.bytes_count, l.bytes_count, 4
     // Else, continue looping...
     jmp     of800k_words_loop
-
+    
 of800k_words_loop_done:
-    jmp of_check_pause
+    jmp     of_check_pause
 
 
 

@@ -242,11 +242,31 @@ void rbLightOutputPrussShowLights(RBRawLightFrame const * pFrame)
     rbPrussIoDataRam->frame[buf].size = RB_NUM_LIGHTS * 3;
     i = rbPrussIoDataRam->frame[buf].address - 0x00010000;
     for(size_t l = 0; l < RB_NUM_PANELS; ++l) {
-        for(size_t k = 0; k < RB_PANEL_HEIGHT; ++k) {
+        for(size_t k = 0; k < RB_PANEL_HEIGHT; k += 2) {
             for(size_t j = 0; j < RB_PANEL_WIDTH; ++j) {
+            /*
+                // Color order for WS2801
                 rbPrussIoSharedRam[i + 0] = pFrame->data[l][k][j].b;
                 rbPrussIoSharedRam[i + 1] = pFrame->data[l][k][j].r;
                 rbPrussIoSharedRam[i + 2] = pFrame->data[l][k][j].g;
+                */
+                // Color order for WS2812
+                rbPrussIoSharedRam[i + 0] = pFrame->data[l][k][j].g;
+                rbPrussIoSharedRam[i + 1] = pFrame->data[l][k][j].r;
+                rbPrussIoSharedRam[i + 2] = pFrame->data[l][k][j].b;
+                i += 3;
+            }
+            for(size_t j = RB_PANEL_WIDTH; j > 0; --j) {
+            /*
+                // Color order for WS2801
+                rbPrussIoSharedRam[i + 0] = pFrame->data[l][k][j].b;
+                rbPrussIoSharedRam[i + 1] = pFrame->data[l][k][j].r;
+                rbPrussIoSharedRam[i + 2] = pFrame->data[l][k][j].g;
+                */
+                // Color order for WS2812
+                rbPrussIoSharedRam[i + 0] = pFrame->data[l][k + 1][j - 1].g;
+                rbPrussIoSharedRam[i + 1] = pFrame->data[l][k + 1][j - 1].r;
+                rbPrussIoSharedRam[i + 2] = pFrame->data[l][k + 1][j - 1].b;
                 i += 3;
             }
         }
@@ -258,8 +278,8 @@ void rbLightOutputPrussShowLights(RBRawLightFrame const * pFrame)
     // actually needed, but hey why not.
     __sync_synchronize();
     rbPrussIoDataRam->frame[buf].status =
-//        FRAME_STATUS_READY | FRAME_MODE_1W_800KHZ | FRAME_MODE_PAUSE;
-        FRAME_STATUS_READY | FRAME_MODE_2W_10MHZ | FRAME_MODE_PAUSE;
+        FRAME_STATUS_READY | FRAME_MODE_1W_800KHZ | FRAME_MODE_PAUSE;
+//        FRAME_STATUS_READY | FRAME_MODE_2W_10MHZ;
     rbMemoryBarrier();
 }
 
