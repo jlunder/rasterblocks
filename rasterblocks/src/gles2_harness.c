@@ -556,8 +556,9 @@ void gles2_harness_draw_lights(float time)
             v2add(v2scale(g_rbPanelConfigs[i].position, lightSpacing),
                 projectionOffset);
         RBVector2 xinc =
-            v2scale(g_rbPanelConfigs[i].orientation, lightSpacing);
-        RBVector2 yinc = v2cross(xinc);
+            v2scale(g_rbPanelConfigs[i].uInc, lightSpacing);
+        RBVector2 yinc =
+            v2scale(g_rbPanelConfigs[i].vInc, lightSpacing);
         
         for(size_t j = 0; j < RB_PANEL_HEIGHT; ++j) {
             RBVector2 pos = linePos;
