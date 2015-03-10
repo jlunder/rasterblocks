@@ -88,6 +88,12 @@ static RBPiecewiseLinearColorSegment g_rbPalBlackPurpleRedHS[] = {
     {{127,  15,  15, 255}, 0},
 };
 
+static RBPiecewiseLinearColorSegment g_rbPalBlackPurpleHS[] = {
+    {{  0,   0,   0, 255}, 1},
+    {{ 15,   0,  31, 255}, 1},
+    {{ 95,   0, 127, 255}, 0},
+};
+
 static RBPiecewiseLinearColorSegment g_rbPalBluePurpleGreenHS[] = {
     {{  0,   0,   0, 255}, 1},
     {{  0,  31, 127, 255}, 1},
@@ -258,6 +264,7 @@ RBTexture1 * g_rbPBlackPaleGreenFSAlphaPalTex = NULL;
 RBTexture1 * g_rbPBlackPurpleFSAlphaPalTex = NULL;
 RBTexture1 * g_rbPGreenLavenderHSPalTex = NULL;
 RBTexture1 * g_rbPBlackPurpleRedHSPalTex = NULL;
+RBTexture1 * g_rbPBlackPurpleHSPalTex = NULL;
 RBTexture1 * g_rbPBluePurpleGreenHSPalTex = NULL;
 RBTexture1 * g_rbPBlueGoldHSPalTex = NULL;
 RBTexture1 * g_rbPRedPinkHSPalTex = NULL;
@@ -319,6 +326,7 @@ void rbLightGenerationInitialize(RBConfiguration const * pConfig)
     MAKE_PAL(BlackPurpleFSAlpha);
     MAKE_PAL(GreenLavenderHS);
     MAKE_PAL(BlackPurpleRedHS);
+    MAKE_PAL(BlackPurpleHS);
     MAKE_PAL(BluePurpleGreenHS);
     MAKE_PAL(BlueGoldHS);
     MAKE_PAL(RedPinkHS);
@@ -408,6 +416,88 @@ void rbLightGenerationInitialize(RBConfiguration const * pConfig)
         switch(pConfig->mode) {
         default:
         case 0:
+            pGenerator = rbLightGenerationCompositor2Alloc(
+                rbLightGenerationPlasmaAlloc(g_rbPBlackPurpleHSPalTex),
+                rbLightGenerationOscilloscopeAlloc(yellowGreen));
+            break;
+        case 1:
+            pGenerator = rbLightGenerationCompositor2Alloc(
+                rbLightGenerationVolumeBarsAlloc(
+                    g_rbPBlackRedGoldHSPalTex,
+                    g_rbPBluePurpleGreenHSPalTex),
+                rbLightGenerationOscilloscopeAlloc(yellowGreen));
+            break;
+        case 2:
+            pGenerator = rbLightGenerationCompositor2Alloc(
+                rbLightGenerationVerticalBarsAlloc(
+                    g_rbPRedPinkHSPalTex, g_rbPBlackWhiteHSPalTex,
+                    40, rbTimeFromMs(10), rbTimeFromMs(250)),
+                rbLightGenerationSignalLissajousAlloc(
+                    colori(127, 63, 0, 0)));
+            break;
+        case 3:
+            pGenerator = rbLightGenerationCompositor2Alloc(
+                rbLightGenerationPulsePlasmaAlloc(
+                    g_rbPBluePurpleGreenHSPalTex),
+                rbLightGenerationPulseCheckerboardAlloc(yellowGreen));
+            break;
+        case 4:
+            pGenerator = rbLightGenerationCompositor2Alloc(
+                rbLightGenerationVolumeBarsAlloc(
+                    g_rbPGreenLavenderHSPalTex,
+                    g_rbPGreenLavenderHSPalTex),
+                rbLightGenerationOscilloscopeAlloc(yellowGreen));
+            break;
+        case 5:
+            pGenerator = rbLightGenerationCompositor2Alloc(
+                rbLightGenerationVolumeBarsAlloc(
+                    g_rbPGreenLavenderHSPalTex,
+                    g_rbPGreenLavenderHSPalTex),
+                rbLightGenerationOscilloscopeAlloc(yellowGreen));
+            break;
+        case 6:
+            pGenerator = rbLightGenerationCompositor2Alloc(
+                rbLightGenerationVolumeBarsAlloc(
+                    g_rbPGreenLavenderHSPalTex,
+                    g_rbPGreenLavenderHSPalTex),
+                rbLightGenerationOscilloscopeAlloc(yellowGreen));
+            break;
+        case 7:
+            pGenerator = rbLightGenerationCompositor2Alloc(
+                rbLightGenerationVolumeBarsAlloc(
+                    g_rbPGreenLavenderHSPalTex,
+                    g_rbPGreenLavenderHSPalTex),
+                rbLightGenerationOscilloscopeAlloc(yellowGreen));
+            break;
+        case 8:
+            pGenerator = rbLightGenerationCompositor2Alloc(
+                rbLightGenerationVolumeBarsAlloc(
+                    g_rbPGreenLavenderHSPalTex,
+                    g_rbPGreenLavenderHSPalTex),
+                rbLightGenerationOscilloscopeAlloc(yellowGreen));
+            break;
+        case 9:
+            pGenerator = rbLightGenerationCompositor2Alloc(
+                rbLightGenerationVolumeBarsAlloc(
+                    g_rbPGreenLavenderHSPalTex,
+                    g_rbPGreenLavenderHSPalTex),
+                rbLightGenerationOscilloscopeAlloc(yellowGreen));
+            break;
+        case 10:
+            pGenerator = rbLightGenerationCompositor2Alloc(
+                rbLightGenerationVolumeBarsAlloc(
+                    g_rbPGreenLavenderHSPalTex,
+                    g_rbPGreenLavenderHSPalTex),
+                rbLightGenerationOscilloscopeAlloc(yellowGreen));
+            break;
+        case 11:
+            pGenerator = rbLightGenerationCompositor2Alloc(
+                rbLightGenerationVolumeBarsAlloc(
+                    g_rbPGreenLavenderHSPalTex,
+                    g_rbPGreenLavenderHSPalTex),
+                rbLightGenerationOscilloscopeAlloc(yellowGreen));
+            break;
+        case 12:
             pGenerator = rbLightGenerationCompositor2Alloc(
                 rbLightGenerationVolumeBarsAlloc(
                     g_rbPGreenLavenderHSPalTex,
@@ -541,6 +631,7 @@ void rbLightGenerationShutdown(void)
     FREE_TEX1(g_rbPBlackPurpleFSAlphaPalTex);
     FREE_TEX1(g_rbPGreenLavenderHSPalTex);
     FREE_TEX1(g_rbPBlackPurpleRedHSPalTex);
+    FREE_TEX1(g_rbPBlackPurpleHSPalTex);
     FREE_TEX1(g_rbPBluePurpleGreenHSPalTex);
     FREE_TEX1(g_rbPBlueGoldHSPalTex);
     FREE_TEX1(g_rbPRedPinkHSPalTex);
