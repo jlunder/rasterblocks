@@ -162,6 +162,8 @@ typedef struct {
     // output device path?
     // hot config port/etc.?
     
+    int32_t mode;
+    
     float brightness;
 } RBConfiguration;
 

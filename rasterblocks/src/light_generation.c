@@ -279,6 +279,7 @@ RBTexture2 * g_rbPIconTexs[LENGTHOF(g_rbIconsData)];
 static RBLightGenerator * g_rbPCurrentGenerator = NULL;
 
 
+/*
 static void rbLightGenerationInitializeGenerators(void);
 static RBLightGenerator * rbLightGenerationCreateGeneratorsFromTheme(
     RBTexture1 * pBassPalTex, RBTexture1 * pTreblePalTex,
@@ -286,11 +287,12 @@ static RBLightGenerator * rbLightGenerationCreateGeneratorsFromTheme(
 static RBLightGenerator * rbLightGenerationCreateVUGeneratorsFromTheme(
     RBTexture1 * pBassPalTex, RBTexture1 * pTreblePalTex,
     RBTexture1 * pFGPalTex, RBColor fgColor);
+*/
 
 
-void rbLightGenerationInitialize(RBConfiguration const * config)
+void rbLightGenerationInitialize(RBConfiguration const * pConfig)
 {
-    UNUSED(config);
+    UNUSED(pConfig);
     
     rbLightGenerationShutdown();
 
@@ -399,10 +401,27 @@ void rbLightGenerationInitialize(RBConfiguration const * config)
         }
     }
     
-    rbLightGenerationInitializeGenerators();
+    {
+        RBColor yellowGreen = colori(127, 191, 0, 255);
+        RBLightGenerator * pGenerator;
+    
+        switch(pConfig->mode) {
+        default:
+        case 0:
+            pGenerator = rbLightGenerationCompositor2Alloc(
+                rbLightGenerationVolumeBarsAlloc(
+                    g_rbPGreenLavenderHSPalTex,
+                    g_rbPGreenLavenderHSPalTex),
+                rbLightGenerationOscilloscopeAlloc(yellowGreen));
+            break;
+        }
+        rbLightGenerationSetGenerator(pGenerator);
+    }
+    //rbLightGenerationInitializeGenerators();
 }
 
 
+/*
 void rbLightGenerationInitializeGenerators(void)
 {
     RBLightGenerator * pGenerators[] = {
@@ -488,6 +507,7 @@ RBLightGenerator * rbLightGenerationCreateVUGeneratorsFromTheme(
     return rbLightGenerationTimedRotationAlloc(pGenerators,
         LENGTHOF(pGenerators), rbTimeFromMs(60000));
 }
+*/
 
 
 void rbLightGenerationShutdown(void)

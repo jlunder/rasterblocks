@@ -103,6 +103,9 @@ static void parseJsonObject(RBConfiguration * config,json_object * jobj)
         else if (strcmp(key, "agcStrength") == 0) {
             config->agcStrength = atof(json_object_get_string(val));
         }
+        else if(strcmp(key, "mode") == 0) {
+            config->mode = atoi(json_object_get_string(val));
+        }
         else if (strcmp(key, "brightness") == 0) {
             config->brightness = atof(json_object_get_string(val));
         }

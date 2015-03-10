@@ -62,6 +62,8 @@ void rbConfigurationSetDefaults(RBConfiguration * pConfig)
     pConfig->agcMin = 1e-2f;
     pConfig->agcStrength = 0.5f;
 
+    pConfig->mode = 0;
+
     pConfig->brightness = 1.0f / 16;
 }
 

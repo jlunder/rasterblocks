@@ -173,7 +173,7 @@ ifneq ($(PACKAGE_BUILD),)
 
 ifeq ($(CROSS_BUILD)$(BUILD_ON_TARGET),)
 # Neither the cross-build env nor the target has tools to build a host package
-bin/rasterblocks-1.0_x64.deb: $(wildcard package/DEBIAN/*) $(wildcard nodeserver/*) rasterblocks.service rasterblocks-nodeserver.service bin/rasterblocks
+bin/rasterblocks-1.0_x64.deb: $(wildcard package/DEBIAN/*) $(wildcard nodeserver/*) rasterblocks.service rasterblocks-nodeserver.service rasterblocks-button.service bin/rasterblocks
 	mkdir -p package/usr/lib/rasterblocks
 	mkdir -p package/var/lib/rasterblocks
 	cp -r nodeserver package/usr/lib/rasterblocks/
@@ -182,12 +182,13 @@ bin/rasterblocks-1.0_x64.deb: $(wildcard package/DEBIAN/*) $(wildcard nodeserver
 	cp bin/rasterblocks package/usr/lib/rasterblocks/rasterblocks
 	cp rasterblocks.service package/usr/lib/rasterblocks
 	cp rasterblocks-nodeserver.service package/usr/lib/rasterblocks
+	cp rasterblocks-button.service package/usr/lib/rasterblocks
 	dpkg-deb --build package $@
 endif
 
 ifeq ($(CROSS_BUILD),)
 # The cross-build env doesn't have enough toolchain to build a package
-bin/rasterblocks-1.0_armhf.deb: $(wildcard package/DEBIAN/*) $(wildcard nodeserver/*) rasterblocks.service rasterblocks-nodeserver.service bin/rasterblocks.target
+bin/rasterblocks-1.0_armhf.deb: $(wildcard package/DEBIAN/*) $(wildcard nodeserver/*) rasterblocks.service rasterblocks-nodeserver.service rasterblocks-button.service bin/rasterblocks.target
 	mkdir -p package/usr/lib/rasterblocks
 	mkdir -p package/var/lib/rasterblocks
 	cp -r nodeserver package/usr/lib/rasterblocks/
@@ -196,6 +197,7 @@ bin/rasterblocks-1.0_armhf.deb: $(wildcard package/DEBIAN/*) $(wildcard nodeserv
 	cp bin/rasterblocks.target package/usr/lib/rasterblocks/rasterblocks
 	cp rasterblocks.service package/usr/lib/rasterblocks
 	cp rasterblocks-nodeserver.service package/usr/lib/rasterblocks
+	cp rasterblocks-button.service package/usr/lib/rasterblocks
 	dpkg-deb --build package $@
 endif
 
