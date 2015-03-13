@@ -80,8 +80,8 @@
 
 
 #define RB_TARGET_PRUSS_DEVICE_STARTUP_COMMAND \
-    "sh -c \"grep -q BB-BONE-PRU-01 /sys/devices/bone_capemgr.9/slots || " \
-    "echo BB-BONE-PRU-01 > /sys/devices/bone_capemgr.9/slots\""
+    "sh -c \"grep -q rb-pruss-io /sys/devices/bone_capemgr.9/slots || " \
+    "echo rb-pruss-io > /sys/devices/bone_capemgr.9/slots\""
 
 
 #define GLOBAL_STATUS_RUN    0
@@ -143,28 +143,24 @@ void rbPrussIoInitialize(RBConfiguration * pConfig)
 
     UNUSED(pConfig);
     
-    rbInfo("Starting %s example.\n", "PRU_memAccessPRUDataRam");
-    /* Initialize the PRU */
+    rbInfo("Opening PRUSS driver\n");
     prussdrv_init();
 
-    // Open PRU Interrupt
     ret = prussdrv_open(PRU_EVTOUT_0);
     if(ret != 0)
     {
         // Retry -- sometimes on first open after reboot the driver takes a
         // while to come up
         rbSleep(rbTimeFromMs(5000));
-        ret = prussdrv_open(PRU_EVTOUT_0);
+        ret = system(RB_TARGET_PRUSS_DEVICE_STARTUP_COMMAND);
+        ret = ret || prussdrv_open(PRU_EVTOUT_0);
         if(ret != 0) {
             rbFatal("prussdrv_open open failed\n");
         }
     }
 
-    /* Get the interrupt initialized */
+    rbInfo("Initializing PRUSS memory mapping and data\n");
     prussdrv_pruintc_init(&prussIntCInitData);
-
-    /* Initialize example */
-    rbInfo("Initializing PRU driver.\n");
     prussdrv_map_prumem(PRUSS0_PRU0_DATARAM, (void * *)&rbPrussIoDataRam);
     prussdrv_map_prumem(PRUSS0_SHARED_DATARAM, (void * *)&rbPrussIoSharedRam);
     rbPrussIoDataRam->status = GLOBAL_STATUS_RUN;
@@ -179,8 +175,7 @@ void rbPrussIoInitialize(RBConfiguration * pConfig)
     rbZero(rbPrussIoSharedRam, 1024 * 12);
     rbMemoryBarrier();
     
-    // Execute example on PRU
-    rbInfo("Executing PRU code.\n");
+    rbInfo("Executing PRU code\n");
     prussdrv_exec_code (0, rbPrussIoPru0Code, sizeof rbPrussIoPru0Code);
 }
 
@@ -191,12 +186,11 @@ void rbPrussIoShutdown(void)
     rbMemoryBarrier();
     
     // Wait until PRU0 has finished execution
-    rbInfo("Waiting for HALT command.\n");
+    rbInfo("Waiting for PRU HALT\n");
     prussdrv_pru_wait_event (PRU_EVTOUT_0);
-    rbInfo("PRU completed transfer.\n");
     prussdrv_pru_clear_event (PRU_EVTOUT_0, PRU0_ARM_INTERRUPT);
     
-    /* Disable PRU and close memory mapping*/
+    rbInfo("Closing PRUSS driver\n");
     prussdrv_pru_disable(0);
     prussdrv_exit();
 }

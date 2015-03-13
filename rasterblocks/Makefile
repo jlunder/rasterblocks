@@ -55,6 +55,8 @@ ifneq ($(BUILD_ON_TARGET),)
 	INSTALL_DIR := /usr/local/lib/rasterblocks
 endif
 
+DT_NAME=rb-pruss-io-00A0
+
 MAKEDEPEND=@set -e; rm -f $@; \
 	$(CC) -M $(CPPFLAGS) $< > $@.$$$$; \
 	sed 's,\($*\)\.o[ :]*,build/\1.o $@ : ,g' < $@.$$$$ > $@; \
@@ -158,12 +160,15 @@ pruss/lib/libprussdrv.a: $(wildcard pruss/src/*.{c,h}) pruss/src/Makefile
 pruss/lib/libprussdrvd.a: $(wildcard pruss/src/*.{c,h}) pruss/src/Makefile
 	CROSS_COMPILE=$(CC_TARGET_PREFIX) make -C pruss/src ../lib/libprussdrvd.a
 
+bin/$(DT_NAME).dtbo: $(DT_NAME).dts
+	dtc -I dts -O dtb -o $@ -b 0 -@ $<
+
 else
 
 # We're in the host build env, use the cross-build script to perform the
 # target build.
 ifneq ($(TARGET_BUILD),)
-bin/rasterblocks.target: precise-chroot bin/pasm
+bin/rasterblocks.target bin/$(DT_NAME).dtbo: precise-chroot bin/pasm
 	./target-build
 endif
 
@@ -171,34 +176,32 @@ endif
 
 ifneq ($(PACKAGE_BUILD),)
 
+bin/package: $(wildcard package/DEBIAN/*) $(wildcard nodeserver/*) rasterblocks.service rasterblocks-nodeserver.service rasterblocks-button.service bin/$(DT_NAME).dtbo
+	rm -rf bin/package
+	cp -r package bin/package
+	mkdir -p bin/package/usr/lib/rasterblocks
+	mkdir -p bin/package/var/lib/rasterblocks
+	mkdir -p bin/package/lib/firmware
+	cp -r nodeserver bin/package/usr/lib/rasterblocks/
+	cp rasterblocks.service bin/package/usr/lib/rasterblocks
+	cp rasterblocks-nodeserver.service bin/package/usr/lib/rasterblocks
+	cp rasterblocks-button.service bin/package/usr/lib/rasterblocks
+	cp bin/$(DT_NAME).dtbo bin/package/lib/firmware
+
 ifeq ($(CROSS_BUILD)$(BUILD_ON_TARGET),)
 # Neither the cross-build env nor the target has tools to build a host package
-bin/rasterblocks-1.0_x64.deb: $(wildcard package/DEBIAN/*) $(wildcard nodeserver/*) rasterblocks.service rasterblocks-nodeserver.service rasterblocks-button.service bin/rasterblocks
-	mkdir -p package/usr/lib/rasterblocks
-	mkdir -p package/var/lib/rasterblocks
-	cp -r nodeserver package/usr/lib/rasterblocks/
-	rm -r package/usr/lib/rasterblocks/nodeserver/node_modules
-	cp config/host_config.json package/usr/lib/rasterblocks/config.json
-	cp bin/rasterblocks package/usr/lib/rasterblocks/rasterblocks
-	cp rasterblocks.service package/usr/lib/rasterblocks
-	cp rasterblocks-nodeserver.service package/usr/lib/rasterblocks
-	cp rasterblocks-button.service package/usr/lib/rasterblocks
-	dpkg-deb --build package $@
+bin/rasterblocks-1.0_x64.deb: bin/package bin/rasterblocks
+	cp bin/rasterblocks bin/package/usr/lib/rasterblocks/rasterblocks
+	cp config/host_config.json bin/package/usr/lib/rasterblocks/config.json
+	dpkg-deb --build bin/package $@
 endif
 
 ifeq ($(CROSS_BUILD),)
 # The cross-build env doesn't have enough toolchain to build a package
-bin/rasterblocks-1.0_armhf.deb: $(wildcard package/DEBIAN/*) $(wildcard nodeserver/*) rasterblocks.service rasterblocks-nodeserver.service rasterblocks-button.service bin/rasterblocks.target
-	mkdir -p package/usr/lib/rasterblocks
-	mkdir -p package/var/lib/rasterblocks
-	cp -r nodeserver package/usr/lib/rasterblocks/
-	rm -rf package/usr/lib/rasterblocks/nodeserver/node_modules
-	cp config/target_config.json package/usr/lib/rasterblocks/config.json
-	cp bin/rasterblocks.target package/usr/lib/rasterblocks/rasterblocks
-	cp rasterblocks.service package/usr/lib/rasterblocks
-	cp rasterblocks-nodeserver.service package/usr/lib/rasterblocks
-	cp rasterblocks-button.service package/usr/lib/rasterblocks
-	dpkg-deb --build package $@
+bin/rasterblocks-1.0_armhf.deb: bin/package bin/rasterblocks.target
+	cp bin/rasterblocks.target bin/package/usr/lib/rasterblocks/rasterblocks
+	cp config/target_config.json bin/package/usr/lib/rasterblocks/config.json
+	dpkg-deb --build bin/package $@
 endif
 
 endif
@@ -206,10 +209,8 @@ endif
 cleanall: clean
 	-sudo umount precise-chroot/home/rasterblocks
 	sudo rm -rf precise-chroot
-	rm -rf package/usr
-	rm -rf package/var
 
 clean:
-	@rm -f build/* bin/*
+	@rm -rf build/* bin/*
 	@rm -f src/icons.h
 
