@@ -54,7 +54,7 @@ extern RBTexture2 * g_rbPInventorLiveLogoTextTex40x16;
 void rbLightGenerationInitialize(RBConfiguration const * pConfig);
 void rbLightGenerationShutdown(void);
 void rbLightGenerationGenerate(RBAnalyzedAudio const * pAnalysis,
-    RBTexture2 * pFrame);
+    RBControls * pControls, RBTexture2 * pFrame);
 
 static inline void rbLightGenerationGeneratorFree(
     RBLightGenerator * pGenerator)

@@ -79,9 +79,10 @@
 #define AM33XX
 
 
-#define RB_TARGET_PRUSS_DEVICE_STARTUP_COMMAND \
-    "sh -c \"grep -q rb-pruss-io /sys/devices/bone_capemgr.9/slots || " \
-    "echo rb-pruss-io > /sys/devices/bone_capemgr.9/slots\""
+#define RB_PRUSS_IO_DEVICE_STARTUP_COMMAND \
+    "sh -c \"modprobe uio_pruss && " \
+    "(grep -q rb-pruss-io /sys/devices/bone_capemgr.9/slots || " \
+    "echo rb-pruss-io > /sys/devices/bone_capemgr.9/slots)\""
 
 
 #define GLOBAL_STATUS_RUN    0
@@ -132,9 +133,20 @@ static uint8_t * rbPrussIoSharedRam;
 
 void rbPrussIoInitialize(RBConfiguration * pConfig)
 {
+    UNUSED(pConfig);
+}
+
+
+void rbPrussIoShutdown(void)
+{
+}
+
+
+void rbLightOutputPrussInitialize(RBConfiguration const * pConfig)
+{
     int ret;
     
-    ret = system(RB_TARGET_PRUSS_DEVICE_STARTUP_COMMAND);
+    ret = system(RB_PRUSS_IO_DEVICE_STARTUP_COMMAND);
     if(ret != 0) {
         rbWarning("Failed to start up PRUSS\n");
     }
@@ -152,7 +164,7 @@ void rbPrussIoInitialize(RBConfiguration * pConfig)
         // Retry -- sometimes on first open after reboot the driver takes a
         // while to come up
         rbSleep(rbTimeFromMs(5000));
-        ret = system(RB_TARGET_PRUSS_DEVICE_STARTUP_COMMAND);
+        ret = system(RB_PRUSS_IO_DEVICE_STARTUP_COMMAND);
         ret = ret || prussdrv_open(PRU_EVTOUT_0);
         if(ret != 0) {
             rbFatal("prussdrv_open open failed\n");
@@ -180,7 +192,7 @@ void rbPrussIoInitialize(RBConfiguration * pConfig)
 }
 
 
-void rbPrussIoShutdown(void)
+void rbLightOutputPrussShutdown(void)
 {
     rbPrussIoDataRam->status = GLOBAL_STATUS_HALT;
     rbMemoryBarrier();
@@ -193,17 +205,6 @@ void rbPrussIoShutdown(void)
     rbInfo("Closing PRUSS driver\n");
     prussdrv_pru_disable(0);
     prussdrv_exit();
-}
-
-
-void rbLightOutputPrussInitialize(RBConfiguration const * pConfig)
-{
-    UNUSED(pConfig);
-}
-
-
-void rbLightOutputPrussShutdown(void)
-{
 }
 
 

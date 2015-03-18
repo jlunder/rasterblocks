@@ -3,6 +3,7 @@
 #include "audio_input.h"
 #include "audio_analysis.h"
 #include "configuration.h"
+#include "control_input.h"
 #include "graphics_util.h"
 #include "light_generation.h"
 #include "light_output.h"
@@ -50,6 +51,7 @@ static char const * const g_rbLogLevelNames[RBLL_COUNT] = {
 static char const * const g_rbSubsystemNames[RBS_COUNT] = {
     "MAIN",
     "CONFIGURATION",
+    "CONTROL_INPUT",
     "AUDIO_INPUT",
     "AUDIO_ANALYSIS",
     "LIGHT_GENERATION",
@@ -305,6 +307,12 @@ void rbInitialize(int argc, char * argv[])
     rbPrussIoInitialize(&g_rbConfiguration);
 #endif
     
+    rbChangeSubsystem(RBS_MAIN);
+    rbInfo("Initializing control input\n");
+    rbChangeSubsystem(RBS_CONTROL_INPUT);
+    rbControlInputInitialize(&g_rbConfiguration);
+    
+    rbChangeSubsystem(RBS_MAIN);
     rbInfo("Initializing audio input\n");
     rbChangeSubsystem(RBS_AUDIO_INPUT);
     rbAudioInputInitialize(&g_rbConfiguration);
@@ -358,6 +366,9 @@ void rbShutdown(void)
     
     rbChangeSubsystem(RBS_AUDIO_INPUT);
     rbAudioInputShutdown();
+    
+    rbChangeSubsystem(RBS_CONTROL_INPUT);
+    rbControlInputShutdown();
     
 #ifdef RB_USE_PRUSS_IO
     rbPrussIoShutdown();
@@ -429,6 +440,7 @@ void rbProcessSubsystems(bool * pConfigChanged)
 {
     RBSubsystem lastSubsystem = rbChangeSubsystem(RBS_MAIN);
     RBRawAudio rawAudio;
+    RBControls controls;
     RBAnalyzedAudio analysis;
     RBTexture2 * pFrame =
         rbTexture2Alloc(RB_PROJECTION_WIDTH, RB_PROJECTION_HEIGHT);
@@ -436,14 +448,20 @@ void rbProcessSubsystems(bool * pConfigChanged)
     rbChangeSubsystem(RBS_AUDIO_INPUT);
     rbAudioInputBlockingRead(&rawAudio);
     
+    // Do light output and control input right after audio input to stabilize
+    // timings
     rbChangeSubsystem(RBS_LIGHT_OUTPUT);
     rbLightOutputShowLights(&g_rbLastFrameLightData);
     
+    rbChangeSubsystem(RBS_CONTROL_INPUT);
+    rbControlInputRead(&controls);
+    
+    // Everything else is bulk data processing, not timing critical
     rbChangeSubsystem(RBS_AUDIO_ANALYSIS);
     rbAudioAnalysisAnalyze(&rawAudio, &analysis);
     
     rbChangeSubsystem(RBS_LIGHT_GENERATION);
-    rbLightGenerationGenerate(&analysis, pFrame);
+    rbLightGenerationGenerate(&analysis, &controls, pFrame);
     
     rbChangeSubsystem(RBS_MAIN);
     rbProjectLightData(pFrame, &g_rbLastFrameLightData);
@@ -497,6 +515,9 @@ void rbProcessConfigChanged(void)
     
     // Command-line params should override config file
     rbConfigurationParseArgv(&g_rbConfiguration, g_rbSavedArgc, g_rbSavedArgv);
+    
+    rbChangeSubsystem(RBS_CONTROL_INPUT);
+    rbControlInputInitialize(&g_rbConfiguration);
     
     rbChangeSubsystem(RBS_AUDIO_INPUT);
     rbAudioInputInitialize(&g_rbConfiguration);

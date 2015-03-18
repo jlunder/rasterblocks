@@ -8,6 +8,7 @@
 static RBAudioInput g_rbAudioInput = RBAI_INVALID;
 static uint64_t g_rbAudioVideoFrameCount = 0;
 
+static RBTimer g_rbAudioTestFrameTimer;
 static RBTimer g_rbAudioTestHighBeatTimer;
 static RBTimer g_rbAudioTestLowBeatTimer;
 static size_t g_rbAudioTestHighSamplesSinceTrigger;
@@ -24,6 +25,8 @@ void rbAudioInputInitialize(RBConfiguration const * config)
     switch(config->audioInput) {
     case RBAI_TEST:
         g_rbAudioInput = RBAI_TEST;
+        rbStartTimer(&g_rbAudioTestFrameTimer,
+            rbTimeFromMs(1000 / RB_VIDEO_FRAME_RATE));
         rbStartTimer(&g_rbAudioTestHighBeatTimer, rbTimeFromMs(500 / 4));
         rbStartTimer(&g_rbAudioTestLowBeatTimer, rbTimeFromMs(500));
         g_rbAudioTestHighSamplesSinceTrigger = 0;
@@ -102,6 +105,14 @@ void rbAudioInputBlockingRead(RBRawAudio * audio)
                             RB_AUDIO_SAMPLE_RATE);
             ++g_rbAudioTestHighSamplesSinceTrigger;
             ++g_rbAudioTestLowSamplesSinceTrigger;
+        }
+        {
+            RBTime timeLeft = rbGetTimeLeft(g_rbAudioTestFrameTimer);
+            if(timeLeft > 0) {
+                rbSleep(timeLeft);
+            }
+            rbStartTimer(&g_rbAudioTestFrameTimer,
+                rbTimeFromMs(1000 / RB_VIDEO_FRAME_RATE) + timeLeft);
         }
         break;
     case RBAI_ALSA:

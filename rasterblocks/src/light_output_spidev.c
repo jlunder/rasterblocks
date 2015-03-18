@@ -22,8 +22,8 @@
 #define RB_TARGET_MAX_SPI_OPEN_RETRY 5
 #define RB_TARGET_SPI_DEVICE "/dev/spidev1.0"
 #define RB_TARGET_SPI_DEVICE_STARTUP_COMMAND \
-    "sh -c 'grep -q BB-SPIDEV0 /sys/devices/bone_capemgr.*/slots || " \
-    "echo BB-SPIDEV0 > /sys/devices/bone_capemgr.*/slots'"
+    "sh -c 'grep -q BB-SPIDEV0 /sys/devices/bone_capemgr.9/slots || " \
+    "echo BB-SPIDEV0 > /sys/devices/bone_capemgr.9/slots'"
 #define RB_TARGET_SPI_DEVICE_STARTUP_WAIT_NS 2000000000LLU
 
 

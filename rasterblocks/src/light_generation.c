@@ -656,8 +656,10 @@ void rbLightGenerationShutdown(void)
 
 
 void rbLightGenerationGenerate(RBAnalyzedAudio const * pAnalysis,
-    RBTexture2 * pFrame)
+    RBControls * pControls, RBTexture2 * pFrame)
 {
+    UNUSED(pControls);
+    
     if(g_rbPCurrentGenerator != NULL) {
         rbLightGenerationGeneratorGenerate(g_rbPCurrentGenerator, pAnalysis,
             pFrame);

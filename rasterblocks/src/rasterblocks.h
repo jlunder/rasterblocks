@@ -32,6 +32,9 @@
 
 #define RB_CHLADNI_SIZE 64
 
+#define RB_NUM_CONTROLLERS 10
+#define RB_NUM_TRIGGERS 10
+
 #define RB_PANEL_WIDTH 8
 #define RB_PANEL_HEIGHT 8
 #define RB_NUM_PANELS_PER_STRING 6
@@ -62,6 +65,7 @@ typedef enum {
 typedef enum {
     RBS_MAIN,
     RBS_CONFIGURATION,
+    RBS_CONTROL_INPUT,
     RBS_AUDIO_INPUT,
     RBS_AUDIO_ANALYSIS,
     RBS_LIGHT_GENERATION,
@@ -171,6 +175,12 @@ typedef struct {
 typedef struct {
     float audio[RB_AUDIO_FRAMES_PER_VIDEO_FRAME][RB_AUDIO_CHANNELS];
 } RBRawAudio;
+
+
+typedef struct {
+    float controllers[RB_NUM_CONTROLLERS];
+    float triggers[RB_NUM_TRIGGERS];
+} RBControls;
 
 
 typedef struct {
