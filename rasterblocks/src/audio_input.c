@@ -107,7 +107,7 @@ void rbAudioInputBlockingRead(RBRawAudio * audio)
             ++g_rbAudioTestLowSamplesSinceTrigger;
         }
         {
-            RBTime timeLeft = rbGetTimeLeft(g_rbAudioTestFrameTimer);
+            RBTime timeLeft = rbGetTimeLeft(&g_rbAudioTestFrameTimer);
             if(timeLeft > 0) {
                 rbSleep(timeLeft);
             }

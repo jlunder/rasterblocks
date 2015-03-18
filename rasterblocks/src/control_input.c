@@ -62,7 +62,7 @@ void rbControlInputMidiParserInitialize(RBControlInputMidiParser * pParser)
 void rbControlInputMidiParserParseByte(RBControlInputMidiParser * pParser,
     RBControls * pControls, uint8_t incomingByte)
 {
-    rbWarning("Parsing byte: %02X\n", incomingByte);
+    //rbInfo("Parsing byte: %02X\n", incomingByte);
     
     if((incomingByte & RB_MIDI_STATUS_FILTER) == RB_MIDI_STATUS_FILTER) {
         // Realtime messages are out-of-band -- they don't affect state or
@@ -79,6 +79,7 @@ void rbControlInputMidiParserParseByte(RBControlInputMidiParser * pParser,
         else {
             // Resync
             if((pParser->state != RBCIMPS_CLEAR) &&
+                    (pParser->state != RBCIMPS_RUNNING_STATUS) &&
                     !((pParser->state == RBCIMPS_SYSEX) &&
                         (incomingByte == RB_MIDI_STATUS_SYSTEM_EOX))) {
                 rbDebugInfo("MIDI status interrupting message!\n");
@@ -108,6 +109,7 @@ void rbControlInputMidiParserParseByte(RBControlInputMidiParser * pParser,
             rbDebugInfo("MIDI message without status!\n");
             break;
         case RBCIMPS_STATUS:
+        case RBCIMPS_RUNNING_STATUS:
             pParser->state = RBCIMPS_PARAM_0;
             pParser->message[1] = incomingByte;
             break;
@@ -154,6 +156,7 @@ void rbControlInputMidiParserParseByteProcessMessage(
         // Nothing to process!
         break;
     case RBCIMPS_STATUS:
+    case RBCIMPS_RUNNING_STATUS:
         if((status & RB_MIDI_STATUS_TYPE_MASK) ==
                 RB_MIDI_STATUS_TYPE_SYSTEM) {
             switch(status) {
@@ -175,8 +178,7 @@ void rbControlInputMidiParserParseByteProcessMessage(
         case RB_MIDI_STATUS_SYSTEM_MTC_QUARTER_FRAME:
         case RB_MIDI_STATUS_SYSTEM_SONG_SELECT:
             // Discard!
-            // Go back to STATUS state to handle running status
-            pParser->state = RBCIMPS_STATUS;
+            pParser->state = RBCIMPS_RUNNING_STATUS;
             break;
         case RB_MIDI_STATUS_SYSTEM_SONG_POSITION_POINTER:
             // This message wants 2 bytes of payload, wait for more.
@@ -186,8 +188,7 @@ void rbControlInputMidiParserParseByteProcessMessage(
             if((status & RB_MIDI_STATUS_TYPE_MASK) ==
                     RB_MIDI_STATUS_TYPE_CHANNEL_AFTERTOUCH)
             {
-                // Go back to STATUS state to handle running status
-                pParser->state = RBCIMPS_STATUS;
+                pParser->state = RBCIMPS_RUNNING_STATUS;
             }
             // Everything else wants more payload.
         }
@@ -202,6 +203,8 @@ void rbControlInputMidiParserParseByteProcessMessage(
                             RB_NUM_TRIGGERS))) {
                     pControls->triggers[pParser->message[1] -
                         RB_MIDI_TRIGGER_START_NOTE] = true;
+                    rbInfo("Trigger %d triggered\n",
+                        pParser->message[1] - RB_MIDI_TRIGGER_START_NOTE);
                 }
             }
             break;
@@ -212,7 +215,7 @@ void rbControlInputMidiParserParseByteProcessMessage(
                             RB_NUM_TRIGGERS))) {
                 pControls->controllers[pParser->message[1] -
                     RB_MIDI_CONTROLLER_START_CONTROLLER] =
-                        (float)pParser->message[1] * 2.0f / 127.0f + 1.0f;
+                        (float)pParser->message[2] * 2.0f / 127.0f - 1.0f;
                 rbInfo("Controller %d change: %.2f\n",
                     pParser->message[1] - RB_MIDI_CONTROLLER_START_CONTROLLER,
                     pControls->controllers[pParser->message[1] -
@@ -223,8 +226,7 @@ void rbControlInputMidiParserParseByteProcessMessage(
             // Ignore.
             break;
         }
-        // Go back to STATUS state to handle running status
-        pParser->state = RBCIMPS_STATUS;
+        pParser->state = RBCIMPS_RUNNING_STATUS;
         break;
     }
 }
