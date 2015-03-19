@@ -8,10 +8,10 @@ if [ ! -d precise-chroot ]; then
 fi
 
 # bind rasterblocks dir to chroot
-echo "Binding build folder to home dir in cross-build env"
-sudo umount ./
 sudo mkdir -p precise-chroot/home/rasterblocks
-sudo mount --bind ./ ./precise-chroot/home/rasterblocks
+#echo "Binding build folder to home dir in cross-build env"
+sudo umount ./
+#sudo mount --bind ./ ./precise-chroot/home/rasterblocks
 
 # add universe repo for gcc-arm-linux-gnueabihf
 if ! grep 'deb http://archive.ubuntu.com/ubuntu precise universe' precise-chroot/etc/apt/sources.list; then

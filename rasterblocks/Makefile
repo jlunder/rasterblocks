@@ -68,7 +68,7 @@ MAKEDEPEND_TARGET=@set -e; rm -f $@; \
 	rm -f $@.$$$$
 
 
-.PHONY: all cleanall clean
+.PHONY: all cleanall clean clean-dtc
 
 ifneq ($(PACKAGE_BUILD),)
 all: bin/rasterblocks-1.0_armhf.deb
@@ -101,9 +101,32 @@ build/%.o: src/%.c
 	@$(MAKEDEPEND)
 	$(CC) -c -g $(CFLAGS) -o $@ $(CPPFLAGS) $<
 
-bin/pasm: $(wildcard pasm/*.c)
+ifeq ($(CROSS_BUILD),)
+# Don't build these tools with the cross-compiler!
+
+# We build pasm ourselves instead of using the shipped makefile.
+bin/pasm: $(wildcard pasm/*.{c,h})
 	@mkdir -p bin
 	$(CC) -g -Wall -D_UNIX_ -o $@ $(wildcard pasm/*.c) $(LDFLAGS)
+
+# This is super hacky. Instead of using the shipped makefiles for dtc, we
+# build it ourselves using this makefile. Fortunately the build is very
+# simple.
+# Things to note:
+# - Instead of using lex/yacc, we add a target to just copy the shipped
+#   preprocessed files (the dtc/% target)
+# - There are 4 binaries in this source: dtc, fdtdump and a couple others. The
+#   $(patsubst dtc/fdt%.c,,... strips those extras out of the list of source!
+# - There's an extra clean-dtc target to remove the lex/yacc .c/.h files
+dtc/%: dtc/%_shipped
+	cp $< $@
+bin/dtc: $(wildcard dtc/*.c dtc/*.h) $(patsubst %_shipped,%,$(wildcard dtc/*_shipped)) $(wildcard dtc/libfdt/*.c dtc/libfdt/*.h)
+	@mkdir -p bin
+	$(CC) -g -Wall -o $@ -I dtc/libfdt $(patsubst dtc/fdt%.c,,$(patsubst %.h,,$(sort $^)))
+clean-dtc:
+	rm -f $(patsubst %_shipped,%,$(wildcard dtc/*.c_shipped dtc/*.h_shipped))
+
+endif
 
 bin/rasterblocks: $(STAGE_LIGHTS_O)
 	@mkdir -p bin
@@ -160,15 +183,15 @@ pruss/lib/libprussdrv.a: $(wildcard pruss/src/*.{c,h}) pruss/src/Makefile
 pruss/lib/libprussdrvd.a: $(wildcard pruss/src/*.{c,h}) pruss/src/Makefile
 	CROSS_COMPILE=$(CC_TARGET_PREFIX) make -C pruss/src ../lib/libprussdrvd.a
 
-bin/$(DT_NAME).dtbo: $(DT_NAME).dts
-	dtc -I dts -O dtb -o $@ -b 0 -@ $<
+bin/$(DT_NAME).dtbo: $(DT_NAME).dts bin/dtc
+	bin/dtc -I dts -O dtb -o $@ -b 0 -@ $<
 
 else
 
 # We're in the host build env, use the cross-build script to perform the
 # target build.
 ifneq ($(TARGET_BUILD),)
-bin/rasterblocks.target bin/$(DT_NAME).dtbo: precise-chroot bin/pasm
+bin/rasterblocks.target bin/$(DT_NAME).dtbo: precise-chroot bin/pasm bin/dtc
 	./target-build
 endif
 
@@ -210,7 +233,7 @@ cleanall: clean
 	-sudo umount precise-chroot/home/rasterblocks
 	sudo rm -rf precise-chroot
 
-clean:
+clean: clean-dtc
 	@rm -rf build/* bin/*
 	@rm -f src/icons.h
 
