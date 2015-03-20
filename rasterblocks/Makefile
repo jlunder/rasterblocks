@@ -156,7 +156,7 @@ endif
 src/pruss_io_pru0_bin.h: src/pruss_io_pru0.p src/pruss_io.hp bin/pasm
 	bin/pasm -c -CrbPrussIoPru0Code src/pruss_io_pru0.p src/pruss_io_pru0
 
-src/pruss_io_pru1_bin.h: src/pruss_io_pru0.p src/pruss_io.hp bin/pasm
+src/pruss_io_pru1_bin.h: src/pruss_io_pru1.p src/pruss_io.hp bin/pasm
 	bin/pasm -c -CrbPrussIoPru1Code src/pruss_io_pru1.p src/pruss_io_pru1
 
 build/%.target.o: src/%.c

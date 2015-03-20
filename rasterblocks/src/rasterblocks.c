@@ -89,6 +89,7 @@ static void rbProjectLightData(RBTexture2 * pProjFrame,
 static void rbProcessConfigChanged(void);
 static void rbProcessGentleRestart(void);
 
+
 RBSubsystem rbChangeSubsystem(RBSubsystem subsystem)
 {
     RBSubsystem lastSubsystem = g_rbCurrentSubsystem;

@@ -4,17 +4,13 @@
 
 #include "graphics_util.h"
 
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/unistd.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <termios.h>
-#include <unistd.h>
+#include <signal.h>
+
+
+static bool g_rbUserStopRequest = false;
+
+
+static void rbSigintHandler(int sigNum);
 
 
 int main(int argc, char * argv[])
@@ -23,9 +19,11 @@ int main(int argc, char * argv[])
     
     clock_gettime(CLOCK_MONOTONIC, &lastts);
     
+    signal(SIGINT, rbSigintHandler);
+    
     rbInitialize(argc, argv);
 
-    while(true)
+    while(!g_rbUserStopRequest)
     {
         struct timespec ts;
         uint64_t time_ns;
@@ -37,9 +35,25 @@ int main(int argc, char * argv[])
         lastts = ts;
         
         rbProcess(time_ns);
+        // Make sure we reload g_rbUserStopRequest right before looping
+        rbMemoryBarrier();
     }
     
+    rbShutdown();
+    
     exit(EXIT_SUCCESS);
+}
+
+
+void rbSigintHandler(int sigNum)
+{
+    UNUSED(sigNum);
+    if(g_rbUserStopRequest) {
+        // Hmm, not shutting down fast enough? User really wants us dead
+        abort();
+    }
+    g_rbUserStopRequest = true;
+    rbMemoryBarrier();
 }
 
 

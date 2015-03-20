@@ -101,6 +101,9 @@
 #define MIDI_STATUS_EMPTY 0
 #define MIDI_STATUS_FULL  1
 
+#define RB_PRUSS_IO_FRAME_BUF_SIZE_BYTES (1024 * 6)
+#define RB_PRUSS_IO_SHARED_RAM_LOCAL_BASE 0x00010000
+
 
 typedef struct {
     uint32_t status;
@@ -116,8 +119,6 @@ typedef struct
     RBPrussIoBufferRegs midi[2];
 } RBPrussIoMemoryMap;
 
-
-#define rbMemoryBarrier() asm volatile("": : :"memory")
 
 static RBPrussIoMemoryMap * rbPrussIoDataRam;
 static uint8_t * rbPrussIoSharedRam;
@@ -177,18 +178,19 @@ void rbLightOutputPrussInitialize(RBConfiguration const * pConfig)
     prussdrv_map_prumem(PRUSS0_SHARED_DATARAM, (void * *)&rbPrussIoSharedRam);
     rbPrussIoDataRam->status = GLOBAL_STATUS_RUN;
     rbPrussIoDataRam->frame[0].status = FRAME_STATUS_IDLE;
-    rbPrussIoDataRam->frame[0].address = 0x00010000;
+    rbPrussIoDataRam->frame[0].address = RB_PRUSS_IO_SHARED_RAM_LOCAL_BASE +
+        RB_PRUSS_IO_FRAME_BUF_SIZE_BYTES * 0;
     rbPrussIoDataRam->frame[0].size = 0;
-    rbPrussIoDataRam->frame[0].capacity = 1024 * 6;
     rbPrussIoDataRam->frame[1].status = FRAME_STATUS_IDLE;
-    rbPrussIoDataRam->frame[1].address = 0x00010000 + 1024 * 6;
+    rbPrussIoDataRam->frame[1].address = RB_PRUSS_IO_SHARED_RAM_LOCAL_BASE +
+        RB_PRUSS_IO_FRAME_BUF_SIZE_BYTES * 1;
     rbPrussIoDataRam->frame[1].size = 0;
-    rbPrussIoDataRam->frame[1].capacity = 1024 * 6;
     rbZero(rbPrussIoSharedRam, 1024 * 12);
     rbMemoryBarrier();
     
     rbInfo("Executing PRU code\n");
     prussdrv_exec_code (0, rbPrussIoPru0Code, sizeof rbPrussIoPru0Code);
+    prussdrv_exec_code (1, rbPrussIoPru1Code, sizeof rbPrussIoPru1Code);
 }
 
 
@@ -233,40 +235,59 @@ void rbLightOutputPrussShowLights(RBRawLightFrame const * pFrame)
     }
     
     // Fill output buffer in PRUSS RAM first...
-    rbAssert(RB_NUM_LIGHTS * 3 < rbPrussIoDataRam->frame[buf].capacity);
-    rbPrussIoDataRam->frame[buf].size = RB_NUM_LIGHTS * 3;
-    i = rbPrussIoDataRam->frame[buf].address - 0x00010000;
-    for(size_t l = 0; l < RB_NUM_PANELS; ++l) {
+    rbAssert((RB_NUM_PANELS_PER_STRING * RB_PANEL_WIDTH *
+        RB_PANEL_HEIGHT * 3) < (RB_PRUSS_IO_FRAME_BUF_SIZE_BYTES / 8));
+    rbPrussIoDataRam->frame[buf].size =
+        RB_NUM_PANELS_PER_STRING * RB_PANEL_WIDTH * RB_PANEL_HEIGHT * 3;
+    i = RB_PRUSS_IO_FRAME_BUF_SIZE_BYTES * buf;
+    rbPrussIoDataRam->frame[buf].address =
+        RB_PRUSS_IO_SHARED_RAM_LOCAL_BASE + i;
+    for(size_t l = 0; l < RB_NUM_PANELS_PER_STRING; ++l) {
         for(size_t k = 0; k < RB_PANEL_HEIGHT; k += 2) {
             for(size_t j = 0; j < RB_PANEL_WIDTH; ++j) {
-            /*
-                // Color order for WS2801
-                rbPrussIoSharedRam[i + 0] = pFrame->data[l][k][j].b;
-                rbPrussIoSharedRam[i + 1] = pFrame->data[l][k][j].r;
-                rbPrussIoSharedRam[i + 2] = pFrame->data[l][k][j].g;
-                */
-                // Color order for WS2812
-                rbPrussIoSharedRam[i + 0] = pFrame->data[l][k][j].g;
-                rbPrussIoSharedRam[i + 1] = pFrame->data[l][k][j].r;
-                rbPrussIoSharedRam[i + 2] = pFrame->data[l][k][j].b;
-                i += 3;
+                uint64_t r = 0;
+                uint64_t g = 0;
+                uint64_t b = 0;
+                
+                for(size_t m = 0; m < RB_NUM_STRINGS; ++m) {
+                    r |= (uint64_t)pFrame->data[
+                        RB_NUM_PANELS_PER_STRING * m + l][k][j].r << (m * 8);
+                    g |= (uint64_t)pFrame->data[
+                        RB_NUM_PANELS_PER_STRING * m + l][k][j].g << (m * 8);
+                    b |= (uint64_t)pFrame->data[
+                        RB_NUM_PANELS_PER_STRING * m + l][k][j].b << (m * 8);
+                }
+                // Color order for WS2812 -- 2801 is brg
+                *(uint64_t *)&rbPrussIoSharedRam[i +  0] = g;
+                *(uint64_t *)&rbPrussIoSharedRam[i +  8] = r;
+                *(uint64_t *)&rbPrussIoSharedRam[i + 16] = b;
+                i += 3 * 8;
             }
             for(size_t j = RB_PANEL_WIDTH; j > 0; --j) {
-            /*
-                // Color order for WS2801
-                rbPrussIoSharedRam[i + 0] = pFrame->data[l][k][j].b;
-                rbPrussIoSharedRam[i + 1] = pFrame->data[l][k][j].r;
-                rbPrussIoSharedRam[i + 2] = pFrame->data[l][k][j].g;
-                */
+                uint64_t r = 0;
+                uint64_t g = 0;
+                uint64_t b = 0;
+                
+                for(size_t m = 0; m < RB_NUM_STRINGS; ++m) {
+                    r |= (uint64_t)pFrame->data[
+                        RB_NUM_PANELS_PER_STRING * m + l][k + 1][j - 1].r <<
+                            (m * 8);
+                    g |= (uint64_t)pFrame->data[
+                        RB_NUM_PANELS_PER_STRING * m + l][k + 1][j - 1].g <<
+                            (m * 8);
+                    b |= (uint64_t)pFrame->data[
+                        RB_NUM_PANELS_PER_STRING * m + l][k + 1][j - 1].b <<
+                            (m * 8);
+                }
                 // Color order for WS2812
-                rbPrussIoSharedRam[i + 0] = pFrame->data[l][k + 1][j - 1].g;
-                rbPrussIoSharedRam[i + 1] = pFrame->data[l][k + 1][j - 1].r;
-                rbPrussIoSharedRam[i + 2] = pFrame->data[l][k + 1][j - 1].b;
-                i += 3;
+                *(uint64_t *)&rbPrussIoSharedRam[i +  0] = g;
+                *(uint64_t *)&rbPrussIoSharedRam[i +  8] = r;
+                *(uint64_t *)&rbPrussIoSharedRam[i + 16] = b;
+                i += 3 * 8;
             }
         }
     }
-    rbAssert(i <= 1024 * 12);
+    rbAssert(i <= RB_PRUSS_IO_FRAME_BUF_SIZE_BYTES * 2);
     // Ensure all data is committed to memory before kicking off the PRUSS
     rbMemoryBarrier();
     // Do a full memory barrier just to be safe... pretty sure this is not

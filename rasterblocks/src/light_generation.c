@@ -661,8 +661,15 @@ void rbLightGenerationGenerate(RBAnalyzedAudio const * pAnalysis,
     UNUSED(pControls);
     
     if(g_rbPCurrentGenerator != NULL) {
+        float b = pControls->controllers[0] * 0.5f + 0.5f;
+        
         rbLightGenerationGeneratorGenerate(g_rbPCurrentGenerator, pAnalysis,
             pFrame);
+        for(size_t j = 0; j < t2geth(pFrame); ++j) {
+            for(size_t i = 0; i < t2getw(pFrame); ++i) {
+                t2sett(pFrame, i, j, cscalef(t2gett(pFrame, i, j), b));
+            }
+        }
     }
     else {
         for(size_t j = 0; j < t2geth(pFrame); ++j) {

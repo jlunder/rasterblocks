@@ -37,8 +37,8 @@
 
 #define RB_PANEL_WIDTH 8
 #define RB_PANEL_HEIGHT 8
-#define RB_NUM_PANELS_PER_STRING 6
-#define RB_NUM_STRINGS 2
+#define RB_NUM_PANELS_PER_STRING 3
+#define RB_NUM_STRINGS 4
 #define RB_NUM_PANELS (RB_NUM_PANELS_PER_STRING * RB_NUM_STRINGS)
 #define RB_NUM_LIGHTS (RB_PANEL_WIDTH * RB_PANEL_HEIGHT * RB_NUM_PANELS)
 
@@ -382,6 +382,10 @@ static inline float rbRandomF(void)
     static float const randMul = 1.0f / ((float)RAND_MAX + 1.0f);
     return rand() * randMul;
 }
+
+
+#define rbMemoryBarrier() asm volatile("": : :"memory")
+
 
 #ifdef NDEBUG
 #define rbAssert(assertExpr) do {} while(false)
