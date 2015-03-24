@@ -184,6 +184,8 @@ typedef struct {
 
 
 typedef struct {
+    RBControls controls;
+    
     float rawAudio[RB_AUDIO_FRAMES_PER_VIDEO_FRAME];
     float bassAudio[RB_AUDIO_FRAMES_PER_VIDEO_FRAME];
     float trebleAudio[RB_AUDIO_FRAMES_PER_VIDEO_FRAME];
@@ -262,6 +264,10 @@ void rbStartTimer(RBTimer * pTimer, RBTime period);
 static inline void rbStopTimer(RBTimer * pTimer)
 {
     rbStartTimer(pTimer, 0);
+}
+
+static inline RBTime rbGetTimerPeriod(RBTimer * pTimer) {
+    return pTimer->period;
 }
 
 int32_t rbGetTimerPeriods(RBTimer * pTimer);

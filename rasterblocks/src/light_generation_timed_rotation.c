@@ -11,6 +11,7 @@ typedef struct
     size_t lastGenerator;
     RBTimer rotationTimer;
     RBTimer transitionTimer;
+    int32_t triggerNum;
     RBLightGenerator * pGenerators[64];
 } RBLightGeneratorTimedRotation;
 
@@ -24,7 +25,8 @@ void rbLightGenerationTimedRotationGenerate(void * pData,
 
 
 RBLightGenerator * rbLightGenerationTimedRotationAlloc(
-    RBLightGenerator * pGenerators[], size_t numGenerators, RBTime interval)
+    RBLightGenerator * pGenerators[], size_t numGenerators, RBTime interval,
+    int32_t triggerNum)
 {
     RBLightGeneratorTimedRotation * pTimedRotation =
         (RBLightGeneratorTimedRotation *)malloc(
@@ -49,6 +51,8 @@ RBLightGenerator * rbLightGenerationTimedRotationAlloc(
     rbStartTimer(&pTimedRotation->rotationTimer, interval);
     rbStopTimer(&pTimedRotation->transitionTimer);
     
+    pTimedRotation->triggerNum = triggerNum;
+    
     return &pTimedRotation->genDef;
 }
 
@@ -70,8 +74,11 @@ void rbLightGenerationTimedRotationGenerate(void * pData,
 {
     RBLightGeneratorTimedRotation * pTimedRotation =
         (RBLightGeneratorTimedRotation *)pData;
+    bool triggered = pTimedRotation->triggerNum >= 0 &&
+        pAnalysis->controls.triggers[pTimedRotation->triggerNum];
     
-    if(rbGetTimerPeriodsAndReset(&pTimedRotation->rotationTimer) != 0) {
+    if(triggered ||
+            (rbGetTimerPeriodsAndReset(&pTimedRotation->rotationTimer) != 0)) {
         pTimedRotation->lastGenerator = pTimedRotation->curGenerator;
         do {
             pTimedRotation->curGenerator =
@@ -80,6 +87,10 @@ void rbLightGenerationTimedRotationGenerate(void * pData,
             pTimedRotation->curGenerator == pTimedRotation->lastGenerator);
         rbStartTimer(&pTimedRotation->transitionTimer,
             rbTimeFromMs(RB_TRANSITION_TIME_MS));
+        if(triggered) {
+            rbStartTimer(&pTimedRotation->rotationTimer,
+                rbGetTimerPeriod(&pTimedRotation->rotationTimer));
+        }
     }
     
     if(rbTimerElapsed(&pTimedRotation->transitionTimer)) {

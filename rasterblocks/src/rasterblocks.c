@@ -441,7 +441,6 @@ void rbProcessSubsystems(bool * pConfigChanged)
 {
     RBSubsystem lastSubsystem = rbChangeSubsystem(RBS_MAIN);
     RBRawAudio rawAudio;
-    RBControls controls;
     RBAnalyzedAudio analysis;
     RBTexture2 * pFrame =
         rbTexture2Alloc(RB_PROJECTION_WIDTH, RB_PROJECTION_HEIGHT);
@@ -455,14 +454,14 @@ void rbProcessSubsystems(bool * pConfigChanged)
     rbLightOutputShowLights(&g_rbLastFrameLightData);
     
     rbChangeSubsystem(RBS_CONTROL_INPUT);
-    rbControlInputRead(&controls);
+    rbControlInputRead(&analysis.controls);
     
     // Everything else is bulk data processing, not timing critical
     rbChangeSubsystem(RBS_AUDIO_ANALYSIS);
     rbAudioAnalysisAnalyze(&rawAudio, &analysis);
     
     rbChangeSubsystem(RBS_LIGHT_GENERATION);
-    rbLightGenerationGenerate(&analysis, &controls, pFrame);
+    rbLightGenerationGenerate(&analysis, pFrame);
     
     rbChangeSubsystem(RBS_MAIN);
     rbProjectLightData(pFrame, &g_rbLastFrameLightData);

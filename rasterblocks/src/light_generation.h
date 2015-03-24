@@ -54,7 +54,7 @@ extern RBTexture2 * g_rbPInventorLiveLogoTextTex40x16;
 void rbLightGenerationInitialize(RBConfiguration const * pConfig);
 void rbLightGenerationShutdown(void);
 void rbLightGenerationGenerate(RBAnalyzedAudio const * pAnalysis,
-    RBControls * pControls, RBTexture2 * pFrame);
+    RBTexture2 * pFrame);
 
 static inline void rbLightGenerationGeneratorFree(
     RBLightGenerator * pGenerator)
@@ -86,7 +86,8 @@ RBLightGenerator * rbLightGenerationRescaleAlloc(
     RBLightGenerator * pGenerator, size_t srcWidth, size_t srcHeight);
 
 RBLightGenerator * rbLightGenerationTimedRotationAlloc(
-    RBLightGenerator * pGenerators[], size_t numGenerators, RBTime interval);
+    RBLightGenerator * pGenerators[], size_t numGenerators, RBTime interval,
+    int32_t controllerNum);
 /*
 void rbLightGenerationTimedRotationPauseRotation(
     RBLightGenerator * pTRGenerator);

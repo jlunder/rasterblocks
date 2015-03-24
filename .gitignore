@@ -6,6 +6,8 @@
 *.o.*
 *.d
 *.d.*
+.DS_Store
+._.*
 rasterblocks/bin/*
 rasterblocks/build/*
 rasterblocks/precise-chroot
