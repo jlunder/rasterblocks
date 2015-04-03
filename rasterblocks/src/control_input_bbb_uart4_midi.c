@@ -18,7 +18,6 @@
 #define RB_CONTROL_INPUT_BBB_UART4_STARTUP_COMMAND \
     "sh -c 'grep -q BB-UART4 /sys/devices/bone_capemgr.9/slots || " \
     "echo BB-UART4 > /sys/devices/bone_capemgr.9/slots'"
-#define RB_MIDI_BAUD 30000
 
 
 static RBControlInputMidiParser g_rbMidiParser;

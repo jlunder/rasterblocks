@@ -7,7 +7,10 @@
 const unsigned int rbPrussIoPru0Code[] =  {
      0x2a000000,
      0x240000e0,
-     0xf1002088,
-     0x5700e8fe,
-     0x2a000000 };
+     0xf100208c,
+     0xe104208c,
+     0x5701ecfd,
+     0x5100ec02,
+     0x2a000000,
+     0x21000100 };
 

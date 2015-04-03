@@ -5,11 +5,15 @@
 #include "pruss_io.hp"
 
 
-#define REGS_BASE  (0x00002000)
+#define REGS_BASE  (0x00000000)
+
+#define CONTROL_OFS (0)
+#define LIGHT_0_OFS (SIZE(pru_control) + SIZE(buffer_control) * 0)
+#define LIGHT_1_OFS (SIZE(pru_control) + SIZE(buffer_control) * 1)
 
 
 .struct main_vars
-    .u32 status
+    .u32 mode
 .ends
 
 
@@ -67,8 +71,8 @@
     sbbo    r0, r1, 0, 4
 
 .enter main
-.assign buffer_control, r4, r7, buf
-.assign main_vars, r8, *, l
+.assign buffer_control, r4, r11, buf
+.assign main_vars, r12, *, l
     
 main_loop:
 /*
@@ -81,51 +85,66 @@ inc_loop:
     set     r30.t7
     clr     r30.t7
     
-    // Check if FRAME0 has any data ready
-    mov     r0, REGS_BASE + FRAME0_OFS
-    lbbo    buf, r0, 0, SIZE(buf)
-    and     r1, buf.status, FRAME_STATUS_MASK
-    qbeq    output_frame, r1, FRAME_STATUS_READY
-    
-    // Check if FRAME1 has any data ready
-    mov     r0, REGS_BASE + FRAME1_OFS
-    lbbo    buf, r0, 0, SIZE(buf)
-    and     r1, buf.status, FRAME_STATUS_MASK
-    qbeq    output_frame, r1, FRAME_STATUS_READY
-    
     // Check if we are still in RUN mode globally
-    mov     r0, REGS_BASE + GLOBAL_OFS
-    lbbo    l.status, r0, OFFSET(global_control.status), SIZE(global_control.status)
-    qbeq    main_loop, l.status, GLOBAL_STATUS_RUN
+    mov     r0, REGS_BASE + CONTROL_OFS
+    lbbo    l.mode, r0, OFFSET(pru_control.mode), SIZE(pru_control.mode)
+    // First, acknowledge that we've read the requested mode
+    sbbo    l.mode, r0, OFFSET(pru_control.status), SIZE(pru_control.status)
+    // Run mode? Check the buffers to see if there's anything work available
+    qbeq    main_run, l.mode, PRU_MODE_RUN
+    // Pause mode? Don't do anything, just keep checking mode
+    qbeq    main_loop, l.mode, PRU_MODE_PAUSE
     
     // Fell through; nope, halt!
     // Send notification to host for program completion
     mov     r31.b0, PRU0_ARM_INTERRUPT+16
     halt
     
-output_frame:
-    mov     r2, GPIO2 + GPIO_CLEARANDSET
-    mov     r3, 1 << 9
-    sbbo    r3, r2, SET_OFS, 4
-    sbbo    r3, r2, CLEAR_OFS, 4
+main_run:
+    // Check if FRAME0 has any data ready
+    mov     r0, REGS_BASE + LIGHT_0_OFS
+    lbbo    buf.owner, r0, OFFSET(buf.owner), SIZE(buf.owner)
+    qbeq    output_frame, buf.owner, OWNER_PRU1
     
-    // A frame is ready! Select the output method and go
-    and     r1, buf.status, FRAME_MODE_MASK
-    qbeq    output_frame_2w_2mhz, r1, FRAME_MODE_2W_2MHZ
-    qbeq    output_frame_2w_10mhz, r1, FRAME_MODE_2W_10MHZ
-    qbeq    output_frame_1w_800khz, r1, FRAME_MODE_1W_800KHZ
+    // Check if FRAME1 has any data ready
+    mov     r0, REGS_BASE + LIGHT_1_OFS
+    lbbo    buf.owner, r0, OFFSET(buf.owner), SIZE(buf.owner)
+    qbeq    output_frame, buf.owner, OWNER_PRU1
+    
+    // Nada, return to main loop
+    jmp     main_loop
+    
+    
+output_frame:
+    // A frame is ready!
+    
+    // Previously we only loaded ownership data, fetch the whole control struct
+    lbbo    buf, r0, 0, SIZE(buf)
+    
+    // During processing, our status is "nominal". This also makes our default
+    // status success.
+    mov     buf.status, STATUS_BUSY
+    sbbo    buf.status, r0, OFFSET(buf.status), SIZE(buf.status)
+    
+    // Select the output method and go
+    and     r1, buf.command, COMMAND_LIGHT_MODE_MASK
+    qbeq    output_frame_2w_2mhz, r1, COMMAND_LIGHT_MODE_2W_2MHZ
+    qbeq    output_frame_2w_10mhz, r1, COMMAND_LIGHT_MODE_2W_10MHZ
+    qbeq    output_frame_1w_800khz, r1, COMMAND_LIGHT_MODE_1W_800KHZ
     
     // Couldn't find valid mode? Report back error status
-    mov     r1, FRAME_STATUS_ERROR
-    sbbo    r1, r0, OFFSET(buf.status), SIZE(buf.status)
+    mov     buf.status, STATUS_ERROR_COMMAND
+    sbbo    buf.status, r0, OFFSET(buf.status), SIZE(buf.status)
+    mov     buf.owner, OWNER_HOST
+    sbbo    buf.owner, r0, OFFSET(buf.owner), SIZE(buf.owner)
     jmp     main_loop
     
 .leave main
 
 
 .enter frame
-.assign buffer_control, r4, r7, buf
-.assign frame_vars, r8, *, l
+.assign buffer_control, r4, r11, buf
+.assign frame_vars, r12, *, l
 
 output_frame_2w_2mhz:
 output_frame_2w_10mhz:
@@ -137,7 +156,8 @@ output_frame_1w_800khz:
     mov     l.p_set_out, GPIO2 | GPIO_SETDATAOUT
     mov     l.p_clear_out, GPIO2 | GPIO_CLEARDATAOUT
     
-    mov     l.bytes_count, buf.size
+    // Divide "size" by 8: we output groups of 8 bytes at a time
+    lsr     l.bytes_count, buf.size, 3
     mov     l.p_bytes, buf.address
     
     mov     l.pat0x08040201, 0x08040201
@@ -156,14 +176,6 @@ of800k_words_loop:
     
 of800k_bits_loop:
     mov     r30.w0, 0x004B//0x01FB
-    
-    /*
-    lsr     r0.b0, l.bits_0.b0, 7
-    lsr     r0.b1, l.bits_0.b1, 6
-    lsr     r0.b2, l.bits_0.b2, 4
-    lsr     r0.b3, l.bits_0.b3, 3
-    and     r0, r0, l.pat0x10080201
-    */
     
     // This next stanza repacks the 7th bits of each byte in l.bits_0,1 into
     // r0.w0, with each 7th bit assigned to one of the bit positions of the
@@ -231,11 +243,10 @@ of800k_bits_loop:
     
     jmp     of_check_pause
 
-
-
 of_check_pause:
     // Check if we are supposed to pause at end-of-frame
-    and     r0, buf.status, FRAME_MODE_PAUSE
+    mov     r1, COMMAND_LIGHT_END_FRAME_PAUSE
+    and     r0, buf.status, r1
     qbeq    no_pause, r0, 0
     
     // 200,000 insns = 1ms
@@ -243,10 +254,13 @@ of_check_pause:
     call    delay
     
 no_pause:
+    // Frame output normally
+    mov     buf.status, STATUS_NOMINAL
+    sbbo    buf.status, l.p_buf, OFFSET(buf.status), SIZE(buf.status)
     
     // Indicate that the frame is complete!
-    mov     r1, FRAME_STATUS_IDLE
-    sbbo    r1, l.p_buf, OFFSET(buf.status), SIZE(buf.status)
+    mov     buf.owner, OWNER_HOST
+    sbbo    buf.owner, l.p_buf, OFFSET(buf.owner), SIZE(buf.owner)
     
     jmp     main_loop
     
