@@ -28,6 +28,9 @@
 #define RB_MIDI_CONTROLLER_START_CONTROLLER 0x46
 
 
+static RBControlInput g_rbControlInput;
+
+
 static void rbControlInputMidiParserParseByteProcessRealtime(
     RBControlInputMidiParser * pParser, RBControls * pControls,
     uint8_t incomingByte);
@@ -37,19 +40,57 @@ static void rbControlInputMidiParserParseByteProcessMessage(
 
 void rbControlInputInitialize(RBConfiguration const * pConfig)
 {
-    rbControlInputBbbUart4MidiInitialize(pConfig);
+    g_rbControlInput = pConfig->controlInput;
+    switch(g_rbControlInput) {
+    case RBCI_NONE:
+    case RBCI_TEST:
+        break;
+    case RBCI_BBB_UART4_MIDI:
+        rbControlInputBbbUart4MidiInitialize(pConfig);
+        break;
+    case RBCI_PRUSS_MIDI:
+        rbControlInputPrussMidiInitialize(pConfig);
+        break;
+    default:
+        g_rbControlInput = RBCI_INVALID;
+    	rbFatal("Invalid control input type %d\n", pConfig->controlInput);
+    	break;
+    }
 }
 
 
 void rbControlInputShutdown(void)
 {
-    rbControlInputBbbUart4MidiShutdown();
+    switch(g_rbControlInput) {
+    default:
+    case RBCI_NONE:
+    case RBCI_TEST:
+        break;
+    case RBCI_BBB_UART4_MIDI:
+        rbControlInputBbbUart4MidiShutdown();
+        break;
+    case RBCI_PRUSS_MIDI:
+        rbControlInputPrussMidiShutdown();
+        break;
+    }
 }
 
 
 void rbControlInputRead(RBControls * pControls)
 {
-    rbControlInputBbbUart4MidiRead(pControls);
+    switch(g_rbControlInput) {
+    default:
+    case RBCI_NONE:
+    case RBCI_TEST:
+        rbZero(pControls, sizeof *pControls);
+        break;
+    case RBCI_BBB_UART4_MIDI:
+        rbControlInputBbbUart4MidiRead(pControls);
+        break;
+    case RBCI_PRUSS_MIDI:
+        rbControlInputPrussMidiRead(pControls);
+        break;
+    }
 }
 
 
@@ -236,6 +277,7 @@ void rbControlInputMidiParserParseByteProcessMessage(
 void rbControlInputBbbUart4MidiInitialize(RBConfiguration const * pConfig)
 {
     UNUSED(pConfig);
+    rbFatal("BBB UART4 MIDI input not included in this build!");
 }
 
 
@@ -245,6 +287,26 @@ void rbControlInputBbbUart4MidiShutdown(void)
 
 
 void rbControlInputBbbUart4MidiRead(RBControls * pControls)
+{
+    UNUSED(pControls);
+}
+#endif
+
+
+#ifndef RB_USE_PRUSS_IO
+void rbControlInputPrussMidiInitialize(RBConfiguration const * pConfig)
+{
+    UNUSED(pConfig);
+    rbFatal("PRUSS MIDI input not included in this build!");
+}
+
+
+void rbControlInputPrussMidiShutdown(void)
+{
+}
+
+
+void rbControlInputPrussMidiRead(RBControls * pControls)
 {
     UNUSED(pControls);
 }

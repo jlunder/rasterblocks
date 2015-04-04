@@ -32,6 +32,7 @@
     .u32 pat0x80402010
 .ends
 
+main_entry:
     // Configure the block index register for PRU0 by setting c24_blk_index[7:0] and
     // c25_blk_index[7:0] field to 0x00 and 0x00, respectively.  This will make C24 point
     // to 0x00000000 (PRU0 DRAM) and C25 point to 0x00002000 (PRU1 DRAM).
@@ -94,6 +95,8 @@ inc_loop:
     qbeq    main_run, l.mode, PRU_MODE_RUN
     // Pause mode? Don't do anything, just keep checking mode
     qbeq    main_loop, l.mode, PRU_MODE_PAUSE
+    // Init? ...why now, that's very weird. Reinit though.
+    qbeq    main_entry, l.mode, PRU_MODE_INIT
     
     // Fell through; nope, halt!
     // Send notification to host for program completion
@@ -254,7 +257,7 @@ of_check_pause:
     call    delay
     
 no_pause:
-    // Frame output normally
+    // Frame output finished normally
     mov     buf.status, STATUS_NOMINAL
     sbbo    buf.status, l.p_buf, OFFSET(buf.status), SIZE(buf.status)
     

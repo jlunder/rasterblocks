@@ -166,9 +166,10 @@
 #define UART_MDR_OSM_SEL (1 << 0)
 
 
-#define PRU_MODE_RUN    0
+#define PRU_MODE_INIT   0
 #define PRU_MODE_PAUSE  1
-#define PRU_MODE_HALT   2
+#define PRU_MODE_RUN    2
+#define PRU_MODE_HALT   3
 
 #define STATUS_NOMINAL       0
 #define STATUS_ERROR_COMMAND 0x00000001

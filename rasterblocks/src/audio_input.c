@@ -17,12 +17,12 @@ static float g_rbAudioTestHighPhase;
 static float g_rbAudioTestLowPhase;
 
 
-void rbAudioInputInitialize(RBConfiguration const * config)
+void rbAudioInputInitialize(RBConfiguration const * pConfig)
 {
     // In case of reinit, shut down first
     rbAudioInputShutdown();
     
-    switch(config->audioInput) {
+    switch(pConfig->audioInput) {
     case RBAI_TEST:
         g_rbAudioInput = RBAI_TEST;
         rbStartTimer(&g_rbAudioTestFrameTimer,
@@ -36,18 +36,22 @@ void rbAudioInputInitialize(RBConfiguration const * config)
         break;
     case RBAI_ALSA:
     case RBAI_OPENAL:
-        rbVerify(rbAudioDeviceInitialize(config->audioInputParam,
+        rbVerify(rbAudioDeviceInitialize(pConfig->audioInputParam,
             RBADM_INPUT));
         g_rbAudioInput = RBAI_ALSA;
         break;
     case RBAI_FILE:
-        rbVerify(rbAudioFileInitialize((char *)config->audioInputParam));
+        rbVerify(rbAudioFileInitialize((char *)pConfig->audioInputParam));
         rbAudioDeviceInitialize(NULL, RBADM_OUTPUT);
         g_rbAudioInput = RBAI_FILE;
         break;
+    case RBAI_PRUSS:
+        rbAudioInputPrussInitialize(pConfig);
+        g_rbAudioInput = RBAI_PRUSS;
+        break;
     default:
         g_rbAudioInput = RBAI_INVALID;
-    	rbFatal("Invalid audio input type %d\n", config->audioInput);
+    	rbFatal("Invalid audio input type %d\n", pConfig->audioInput);
     	break;
     }
 }
@@ -70,6 +74,9 @@ void rbAudioInputShutdown(void)
         rbAudioDeviceShutdown();
         rbAudioFileShutdown();
         break;
+    case RBAI_PRUSS:
+        rbAudioInputPrussShutdown();
+        break;
     default:
     	rbFatal("Invalid audio source type %d\n", g_rbAudioInput);
     	break;
@@ -79,7 +86,7 @@ void rbAudioInputShutdown(void)
 }
 
 
-void rbAudioInputBlockingRead(RBRawAudio * audio)
+void rbAudioInputBlockingRead(RBRawAudio * pAudio)
 {
     switch(g_rbAudioInput) {
     case RBAI_TEST:
@@ -89,12 +96,12 @@ void rbAudioInputBlockingRead(RBRawAudio * audio)
         if(rbGetTimerPeriodsAndReset(&g_rbAudioTestLowBeatTimer) > 0) {
             g_rbAudioTestLowSamplesSinceTrigger = 0;
         }
-        for(size_t i = 0; i < LENGTHOF(audio->audio); ++i) {
+        for(size_t i = 0; i < LENGTHOF(pAudio->audio); ++i) {
             g_rbAudioTestHighPhase = fmodf(g_rbAudioTestHighPhase +
                 2.0f * RB_PI * 1000.0f / RB_AUDIO_SAMPLE_RATE, 2.0f * RB_PI);
             g_rbAudioTestLowPhase = fmodf(g_rbAudioTestLowPhase +
                 2.0f * RB_PI * 50.0f / RB_AUDIO_SAMPLE_RATE, 2.0f * RB_PI);
-            audio->audio[i][0] = audio->audio[i][1] =
+            pAudio->audio[i][0] = pAudio->audio[i][1] =
                 sinf(g_rbAudioTestHighPhase) * 0.3f *
                     powf(0.001f,
                         (float)g_rbAudioTestHighSamplesSinceTrigger /
@@ -117,10 +124,13 @@ void rbAudioInputBlockingRead(RBRawAudio * audio)
         break;
     case RBAI_ALSA:
     case RBAI_OPENAL:
-        rbAudioDeviceBlockingRead(audio);
+        rbAudioDeviceBlockingRead(pAudio);
         break;
     case RBAI_FILE:
-        rbAudioFileReadLooping(audio);
+        rbAudioFileReadLooping(pAudio);
+        break;
+    case RBAI_PRUSS:
+        rbAudioInputPrussBlockingRead(pAudio);
         break;
     default:
     	// RBAIS_INVALID is not legal here: we must be init'd
@@ -131,16 +141,16 @@ void rbAudioInputBlockingRead(RBRawAudio * audio)
     if(rbInfoEnabled()) {
         float totalPower = 0.0f;
         float peak = 0.0f;
-        for(size_t i = 0; i < LENGTHOF(audio->audio); ++i) {
-            for(size_t j = 0; j < LENGTHOF(audio->audio[i]); ++j) {
-                float s = audio->audio[i][j];
+        for(size_t i = 0; i < LENGTHOF(pAudio->audio); ++i) {
+            for(size_t j = 0; j < LENGTHOF(pAudio->audio[i]); ++j) {
+                float s = pAudio->audio[i][j];
                 if(fabsf(s) > peak) {
                     peak = fabsf(s);
                 }
                 totalPower += s * s;
             }
         }
-        totalPower = sqrtf(totalPower / LENGTHOF(audio->audio));
+        totalPower = sqrtf(totalPower / LENGTHOF(pAudio->audio));
         rbInfo("Audio for video frame %llu; peak = %.4f, power = %.4f\n",
             g_rbAudioVideoFrameCount, peak, totalPower);
     }
@@ -168,3 +178,24 @@ void rbAudioFileReadLooping(RBRawAudio * pAudio)
     UNUSED(pAudio);
 }
 #endif
+
+
+#ifndef RB_USE_PRUSS_IO
+void rbAudioInputPrussInitialize(RBConfiguration const * pConfig)
+{
+    UNUSED(pConfig);
+    rbFatal("PRUSS audio input not included in this build!\n");
+}
+
+
+void rbAudioInputPrussShutdown(void)
+{
+}
+
+
+void rbAudioInputPrussBlockingRead(RBRawAudio * pAudio)
+{
+}
+#endif // RB_USE_PRUSS_IO
+
+

@@ -86,7 +86,17 @@ typedef enum {
     RBAI_FILE,
     RBAI_ALSA,
     RBAI_OPENAL,
+    RBAI_PRUSS,
 } RBAudioInput;
+
+
+typedef enum {
+    RBCI_INVALID,
+    RBCI_NONE,
+    RBCI_TEST,
+    RBCI_BBB_UART4_MIDI,
+    RBCI_PRUSS_MIDI,
+} RBControlInput;
 
 
 typedef enum {
@@ -156,6 +166,8 @@ typedef struct {
     //
     RBAudioInput audioInput;
     char audioInputParam[PATH_MAX];
+    
+    RBControlInput controlInput;
     
     RBLightOutput lightOutput;
     char lightOutputParam[PATH_MAX];

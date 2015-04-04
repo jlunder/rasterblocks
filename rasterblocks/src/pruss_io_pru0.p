@@ -1,3 +1,4 @@
+.setcallreg r3.w0
 .origin 0
 .entrypoint 0
 
@@ -25,35 +26,140 @@
 
 #define ADC_FIFO0DATA   (ADC_BASE + 0x0100)
 
-.struct main_vars
-    .u32 mode
+.struct run_vars
+    .u32 p_audio_buf
+    .u32 p_midi_buf
+    .u32 status
 .ends
 
-.enter main
-.assign buffer_control, r4, r11, buf
-.assign main_vars, r12, *, l
-
-    // Actually, just don't do anything right now.
-    halt
+    // On startup, we always briefly enter the pause state.
     
-    // Leave this loop skeleton for later when we do want to do something...
+pause_entry:
+    // Shut down/reset ADC, UART
+    //TODO
     
-main_loop:
+    // Echo back the status to indicate we are in the requested mode
+    mov     r0, REGS_BASE + CONTROL_OFS
+    mov     r1, PRU_MODE_PAUSE
+    sbbo    r1, r0, OFFSET(pru_control.status), SIZE(pru_control.status)
+    
+pause_loop:
     // Check if we are still in RUN mode globally
     mov     r0, REGS_BASE + CONTROL_OFS
-    lbbo    l.mode, r0, OFFSET(pru_control.mode), SIZE(pru_control.mode)
-    sbbo    l.mode, r0, OFFSET(pru_control.status), SIZE(pru_control.status)
-    qbeq    main_loop, l.mode, PRU_MODE_PAUSE
-    qbeq    main_run, l.mode, PRU_MODE_RUN
-    
-    // Fell through; nope, halt!
-    // Send notification to host for program completion
-    //mov     r31.b0, PRU1_ARM_INTERRUPT+16
+    lbbo    r1, r0, OFFSET(pru_control.mode), SIZE(pru_control.mode)
+    // So, what is that mode?
+    qbeq    run_entry, r1, PRU_MODE_RUN
+    qbeq    pause_loop, r1, PRU_MODE_PAUSE
+    // Fell through; must be halt!
+    jmp     halt_entry
+
+halt_entry:
+    mov     r0, REGS_BASE + CONTROL_OFS
+    mov     r1, PRU_MODE_HALT
+    sbbo    r1, r0, OFFSET(pru_control.status), SIZE(pru_control.status)
     halt
 
-main_run:
-    jmp     main_loop
+.enter run
+.assign buffer_control, r4, r11, audio_buf
+.assign buffer_control, r12, r19, midi_buf
+.assign run_vars, r20, *, l
 
+run_entry:
+    mov     r3, 0
+    mov     l.status, STATUS_NOMINAL
+    // We haven't acquired any buffers yet, so first things first means
+    // jumping into the middle of the loop, actually...
+    jmp     run_acquire_buffers
+
+run_loop:
+    // Check if we are still in RUN mode globally
+    mov     r0, REGS_BASE + CONTROL_OFS
+    lbbo    r1, r0, OFFSET(pru_control.mode), SIZE(pru_control.mode)
+    // So, what is that mode?
+    qbeq    run_run, r1, PRU_MODE_RUN
+    // Fell through; must be halt or pause. Go to pause to trigger peripheral
+    // shutdown; this is a bit of a hack, but eh.
+    jmp     pause_entry
+
+run_run:
+    // Our main loop consists of polling our peripherals. None of this code is
+    // particularly time-critical: even if we're sampling at 96kHz, we still
+    // get ~2,000 cycles between ADC events, which is probably about 10x our
+    // current worst case, even with all the possible memory stalls.
+    
+    // Poll buffer capacity: need to be swapped?
+    qbge    run_swap_buffers, audio_buf.capacity, audio_buf.size
+run_poll_peripherals:
+    // Poll ADC
+    //TODO
+    // Poll UART
+    //TODO
+    
+    //TODO remove this test code
+    mov     r0, 100000
+delay_loop:
+    sub     r0, r0, 1
+    qbne    delay_loop, r0, 0
+    
+    mov     r2.w0, 0x0101
+    add     r3.w0, r3.w0, r2.w0
+    add     r3.w2, r3.w2, r2.w0
+    add     r2, audio_buf.address, audio_buf.size
+    sbbo    r3, r2, 0, 4
+    add     audio_buf.size, audio_buf.size, 4
+    
+    jmp     run_loop
+    
+run_swap_buffers:
+    // First, hand the buffers we're currently working with over to the host
+    sbbo    audio_buf, l.p_audio_buf, 0, SIZE(audio_buf)
+    sbbo    midi_buf, l.p_midi_buf, 0, SIZE(midi_buf)
+    // Make sure ownership is transferred LAST! This is important
+    mov     audio_buf.owner, OWNER_HOST
+    sbbo    audio_buf.owner, l.p_audio_buf, OFFSET(audio_buf.owner), SIZE(audio_buf.owner)
+    mov     midi_buf.owner, OWNER_HOST
+    sbbo    midi_buf.owner, l.p_audio_buf, OFFSET(audio_buf.owner), SIZE(audio_buf.owner)
+    
+run_acquire_buffers:
+    // Buffer 0 available?
+    mov     l.p_audio_buf, REGS_BASE + AUDIO_0_OFS
+    lbbo    audio_buf.owner, l.p_audio_buf, OFFSET(audio_buf.owner), SIZE(audio_buf.owner)
+    // Audio buffer owned by us?
+    qbne    run_check_buffer_1, audio_buf.owner, OWNER_PRU0
+    // Yes, check MIDI buffer as well
+    mov     l.p_midi_buf, REGS_BASE + MIDI_0_OFS
+    lbbo    midi_buf.owner, l.p_midi_buf, OFFSET(midi_buf.owner), SIZE(midi_buf.owner)
+    qbne    run_check_buffer_1, midi_buf.owner, OWNER_PRU0
+    // Fell through, both are ours, roll with this one!
+    jmp     run_read_buffers
+    
+run_check_buffer_1:
+    // Buffer 1 available?
+    mov     l.p_audio_buf, REGS_BASE + AUDIO_1_OFS
+    lbbo    audio_buf.owner, l.p_audio_buf, OFFSET(audio_buf.owner), SIZE(audio_buf.owner)
+    // Audio buffer owned by us?
+    qbne    run_no_buffers_available, audio_buf.owner, OWNER_PRU0
+    // Yes, check MIDI buffer as well
+    mov     l.p_midi_buf, REGS_BASE + MIDI_1_OFS
+    lbbo    midi_buf.owner, l.p_midi_buf, OFFSET(midi_buf.owner), SIZE(midi_buf.owner)
+    qbne    run_no_buffers_available, midi_buf.owner, OWNER_PRU0
+    // Fell through, both are ours, roll with this one!
+    jmp     run_read_buffers
+    
+run_no_buffers_available:
+    // Nothing available! Uh oh.
+    or      l.status, l.status, STATUS_ERROR_OVERRUN
+    jmp     run_acquire_buffers
+    
+run_read_buffers:
+    lbbo    audio_buf, l.p_audio_buf, OFFSET(audio_buf), SIZE(audio_buf)
+    lbbo    midi_buf, l.p_midi_buf, OFFSET(midi_buf), SIZE(midi_buf)
+    // Remember our last status: this is how we transfer back info about
+    // overruns, etc.
+    mov     audio_buf.status, l.status
+    mov     midi_buf.status, l.status
+    mov     l.status, STATUS_NOMINAL
+    jmp     run_poll_peripherals
 /*
 
 #define PRU0_ARM_INTERRUPT 19

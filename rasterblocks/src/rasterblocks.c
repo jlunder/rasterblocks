@@ -372,6 +372,7 @@ void rbShutdown(void)
     rbControlInputShutdown();
     
 #ifdef RB_USE_PRUSS_IO
+    rbChangeSubsystem(RBS_MAIN);
     rbPrussIoShutdown();
 #endif
     
@@ -445,6 +446,20 @@ void rbProcessSubsystems(bool * pConfigChanged)
     RBTexture2 * pFrame =
         rbTexture2Alloc(RB_PROJECTION_WIDTH, RB_PROJECTION_HEIGHT);
     
+#ifdef RB_USE_PRUSS_IO
+    // Input poll causes the PRUSS I/O system to effectively do a blocking
+    // read of audio if the PRUSS audio is enabled, and a non-blocking read
+    // of available MIDI data if PRUSS MIDI control input is enabled.
+    // If they're both enabled they're read in sync.
+    // That these systems are coupled is kind of inevitable: the problem of
+    // syncing input is kind of a fundamental one, and it's actually a little
+    // bit suboptimal that the UART4 MIDI is decoupled from e.g. the ALSA
+    // audio input timing.
+    // This should probably be treated in a more universal way; that's
+    // something for a future rearchitecting exercise...
+    rbChangeSubsystem(RBS_MAIN);
+    rbPrussIoReadInput();
+#endif
     rbChangeSubsystem(RBS_AUDIO_INPUT);
     rbAudioInputBlockingRead(&rawAudio);
     

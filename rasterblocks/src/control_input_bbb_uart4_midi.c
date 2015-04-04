@@ -58,6 +58,7 @@ void rbControlInputBbbUart4MidiInitialize(RBConfiguration const * pConfig)
     rbVerify(ioctl(g_rbUartFd, TCSETS2, &tio) == 0);
     rbInfo("Successfully set UART4 to MIDI speed\n");
     
+    rbZero(&g_rbLastControls, sizeof g_rbLastControls);
     rbControlInputMidiParserInitialize(&g_rbMidiParser);
 }
 

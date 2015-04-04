@@ -38,6 +38,14 @@ void rbConfigurationSetDefaults(RBConfiguration * pConfig)
     rbStrlcpy(pConfig->audioInputParam, RB_DEFAULT_INPUT_FILE,
         sizeof pConfig->audioInputParam);
 #endif
+
+#if defined RB_USE_PRUSS_IO
+    pConfig->controlInput = RBCI_PRUSS_MIDI;
+#elif defined RB_USE_BBB_UART4_MIDI
+    pConfig->controlInput = RBCI_BBB_UART4_MIDI;
+#else
+    pConfig->controlInput = RBCI_NONE;
+#endif
     
 #if defined RB_USE_PRUSS_IO
     pConfig->lightOutput = RBLO_PRUSS;
@@ -76,7 +84,7 @@ void rbConfigurationParseArgv(RBConfiguration * config, int argc,
             config->logLevel = RBLL_INFO;
         }
         
-        if(strcmp(argv[i], "-c") == 0) {
+        else if(strcmp(argv[i], "-fc") == 0) {
             if(i + 1 < argc) {
                 ++i;
                 snprintf(config->configPath,
@@ -84,10 +92,10 @@ void rbConfigurationParseArgv(RBConfiguration * config, int argc,
             }
         }
         
-        if(strcmp(argv[i], "-it") == 0) {
+        else if(strcmp(argv[i], "-it") == 0) {
             config->audioInput = RBAI_TEST;
         }
-        if(strcmp(argv[i], "-ia") == 0) {
+        else if(strcmp(argv[i], "-ia") == 0) {
             if(i + 1 < argc) {
                 ++i;
                 config->audioInput = RBAI_ALSA;
@@ -95,7 +103,7 @@ void rbConfigurationParseArgv(RBConfiguration * config, int argc,
                     sizeof config->audioInputParam);
             }
         }
-        if(strcmp(argv[i], "-io") == 0) {
+        else if(strcmp(argv[i], "-io") == 0) {
             if(i + 1 < argc) {
                 ++i;
                 config->audioInput = RBAI_OPENAL;
@@ -103,7 +111,7 @@ void rbConfigurationParseArgv(RBConfiguration * config, int argc,
                     sizeof config->audioInputParam);
             }
         }
-        if(strcmp(argv[i], "-if") == 0) {
+        else if(strcmp(argv[i], "-if") == 0) {
             if(i + 1 < argc) {
                 ++i;
                 config->audioInput = RBAI_FILE;
@@ -111,11 +119,27 @@ void rbConfigurationParseArgv(RBConfiguration * config, int argc,
                     sizeof config->audioInputParam);
             }
         }
+        else if(strcmp(argv[i], "-ir") == 0) {
+            config->audioInput = RBAI_PRUSS;
+        }
         
-        if(strcmp(argv[i], "-og") == 0) {
+        else if(strcmp(argv[i], "-cn") == 0) {
+            config->controlInput = RBCI_NONE;
+        }
+        else if(strcmp(argv[i], "-ct") == 0) {
+            config->controlInput = RBCI_TEST;
+        }
+        else if(strcmp(argv[i], "-cu") == 0) {
+            config->controlInput = RBCI_BBB_UART4_MIDI;
+        }
+        else if(strcmp(argv[i], "-cr") == 0) {
+            config->controlInput = RBCI_PRUSS_MIDI;
+        }
+        
+        else if(strcmp(argv[i], "-og") == 0) {
             config->lightOutput = RBLO_OPENGL;
         }
-        if(strcmp(argv[i], "-op") == 0) {
+        else if(strcmp(argv[i], "-op") == 0) {
             if(i + 1 < argc) {
                 ++i;
                 config->lightOutput = RBLO_PIXELPUSHER;
@@ -123,14 +147,14 @@ void rbConfigurationParseArgv(RBConfiguration * config, int argc,
                     sizeof config->lightOutputParam);
             }
         }
-        if(strcmp(argv[i], "-os") == 0) {
+        else if(strcmp(argv[i], "-os") == 0) {
             config->lightOutput = RBLO_SPIDEV;
         }
-        if(strcmp(argv[i], "-or") == 0) {
+        else if(strcmp(argv[i], "-or") == 0) {
             config->lightOutput = RBLO_PRUSS;
         }
         
-        if(strcmp(argv[i], "-b") == 0) {
+        else if(strcmp(argv[i], "-b") == 0) {
             if(i + 1 < argc) {
                 ++i;
                 config->brightness = atof(argv[i]);

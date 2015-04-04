@@ -34,6 +34,10 @@ void rbControlInputBbbUart4MidiInitialize(RBConfiguration const * pConfig);
 void rbControlInputBbbUart4MidiShutdown(void);
 void rbControlInputBbbUart4MidiRead(RBControls * pControls);
 
+void rbControlInputPrussMidiInitialize(RBConfiguration const * pConfig);
+void rbControlInputPrussMidiShutdown(void);
+void rbControlInputPrussMidiRead(RBControls * pControls);
+
 
 #endif
 
