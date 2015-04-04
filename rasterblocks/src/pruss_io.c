@@ -431,6 +431,17 @@ void rbPrussIoReadInput(void)
                 "??",
             pControl->status);
     }
+    /*
+    {
+        char bb[10000];
+        char * pb = bb;
+        size_t size = (pControl->size > 20)?20:pControl->size;
+        for(size_t i = 0; i < size; ++i) {
+            pb += snprintf(pb, sizeof bb - (pb - bb), "%02X ", g_rbPrussIoAudioInputBufs[oldestBuf][i]);
+        }
+        rbInfo("Input audio[%d]: %s\n", pControl->size, bb);
+    }
+    */
     rbInfo("Reading buffer %d: %d bytes/capacity %d\n", oldestBuf, pControl->size, pControl->capacity);
     rbAssert(pControl->size == sizeof g_rbPrussIoCapturedAudio);
     memcpy(g_rbPrussIoCapturedAudio, g_rbPrussIoAudioInputBufs[oldestBuf],
@@ -486,6 +497,8 @@ void rbLightOutputPrussShowLights(RBRawLightFrame const * pFrame)
     rbAssert(numLightStrings <= RB_PRUSS_IO_NUM_STRINGS);
     rbAssert(g_rbPrussIoLightOutputRunning);
     
+    rbAssert(numLightsPerString * numLightStrings > 0);
+    
     rbMemoryBarrier();
     // Check for free buffers
     for(size_t i = 0; i < RB_PRUSS_IO_NUM_BUFFERS; ++i) {
@@ -535,6 +548,7 @@ void rbLightOutputPrussShowLights(RBRawLightFrame const * pFrame)
         for(size_t k = 0; k < numLightStrings; ++k) {
             size_t addr = numLightsPerString * k + j;
             size_t shift = k * 8;
+            (void)addr;
             r |= (uint64_t)pFrame->data[addr].r << shift;
             g |= (uint64_t)pFrame->data[addr].g << shift;
             b |= (uint64_t)pFrame->data[addr].b << shift;
@@ -547,6 +561,16 @@ void rbLightOutputPrussShowLights(RBRawLightFrame const * pFrame)
         
         i += 3 * RB_PRUSS_IO_NUM_STRINGS;
     }
+    /*
+    {
+        char bb[10000];
+        char * pb = bb;
+        for(size_t i = 0; i < g_rbPrussIoDataRam->pru1.control.lightOutput[buf].size; ++i) {
+            pb += snprintf(pb, sizeof bb - (pb - bb), "%02X ", g_rbPrussIoLightOutputBufs[buf][i]);
+        }
+        rbInfo("Output data[%d]: %s\n", g_rbPrussIoDataRam->pru1.control.lightOutput[buf].size, bb);
+    }
+    */
     rbAssert(i == g_rbPrussIoDataRam->pru1.control.lightOutput[buf].size);
     
     g_rbPrussIoDataRam->pru1.control.lightOutput[buf].command =

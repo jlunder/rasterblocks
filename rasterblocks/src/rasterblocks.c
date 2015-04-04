@@ -111,9 +111,10 @@ void rbComputeLightPositionsFromPanelList(RBVector2 * pLightPositions,
     for(size_t k = 0; k < numPanels; ++k) {
         RBVector2 scanPos = pPanelConfigs[k].position;
         RBVector2 uInc = pPanelConfigs[k].uInc;
+        RBVector2 uDec = v2scale(uInc, -1.0f);
         RBVector2 vInc = pPanelConfigs[k].vInc;
         
-        for(size_t j = 0; j < RB_PANEL_HEIGHT; ++j) {
+        for(size_t j = 0; j < RB_PANEL_HEIGHT; j += 2) {
             RBVector2 pos = scanPos;
             
             for(size_t i = 0; i < RB_PANEL_WIDTH; ++i) {
@@ -121,7 +122,16 @@ void rbComputeLightPositionsFromPanelList(RBVector2 * pLightPositions,
                 pLightPositions[l++] = pos;
                 pos = v2add(pos, uInc);
             }
-            scanPos = v2add(scanPos, vInc);
+            if((j + 1) >= RB_PANEL_HEIGHT) {
+                break;
+            }
+            pos = v2add(v2add(pos, vInc), uDec);
+            for(size_t i = 0; i < RB_PANEL_WIDTH; ++i) {
+                rbAssert(l < numLightPositions);
+                pLightPositions[l++] = pos;
+                pos = v2add(pos, uDec);
+            }
+            scanPos = v2add(scanPos, v2scale(vInc, 2.0f));
         }
     }
     

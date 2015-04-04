@@ -83,6 +83,13 @@ void rbLightOutputShowLights(RBRawLightFrame const * pFrame)
     RBRawLightFrame tempFrame;
     size_t biasOffset = rbRandomI(LENGTHOF(g_rbBiasData) - numLights);
     
+    if(numLights == 0) {
+        // This happens for the first frame after init because we display the
+        // frame from the previous cycle -- and for the first cycle, there is
+        // none.
+        return;
+    }
+    
     tempFrame.numLightStrings = pFrame->numLightStrings;
     tempFrame.numLightsPerString = pFrame->numLightsPerString;
     

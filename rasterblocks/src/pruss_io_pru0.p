@@ -101,11 +101,15 @@ delay_loop:
     sub     r0, r0, 1
     qbne    delay_loop, r0, 0
     
-    mov     r2.w0, 0x0101
-    add     r3.w0, r3.w0, r2.w0
-    add     r3.w2, r3.w2, r2.w0
+    add     r3.w0, r3.w0, 7
+    mov     r2.w0, 0x07FF
+    mov     r2.w2, 0x0400
+    and     r3.w0, r3.w0, r2.w0
+    add     r3.w0, r3.w0, r2.w2
+    mov     r3.w2, r3.w0
     add     r2, audio_buf.address, audio_buf.size
     sbbo    r3, r2, 0, 4
+    sub     r3.w0, r3.w0, r2.w2
     add     audio_buf.size, audio_buf.size, 4
     
     jmp     run_loop
