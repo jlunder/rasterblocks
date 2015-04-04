@@ -258,35 +258,35 @@ void rbPrussIoStartPrussInitializeTransferBuffers(void)
     // PRU0 structures: PRU0 handles audio and MIDI input
     bufferOffset = sizeof g_rbPrussIoDataRam->pru0.control;
     for(size_t i = 0; i < RB_PRUSS_IO_NUM_BUFFERS; ++i) {
+        RBPrussIoTransferControl * pControl =
+            &g_rbPrussIoDataRam->pru0.control.audioInput[i];
         bufferCapacity = RB_AUDIO_FRAMES_PER_VIDEO_FRAME *
             RB_PRUSS_IO_AUDIO_CHANNELS * sizeof (uint16_t);
-        g_rbPrussIoDataRam->pru0.control.audioInput[i].owner = RB_OWNER_PRU0;
-        g_rbPrussIoDataRam->pru0.control.audioInput[i].frameNum = i;
-        g_rbPrussIoDataRam->pru0.control.audioInput[i].command =
-            RB_COMMAND_AUDIO_IDLE;
-        g_rbPrussIoDataRam->pru0.control.audioInput[i].status = RB_STATUS_NOMINAL;
-        g_rbPrussIoDataRam->pru0.control.audioInput[i].address =
-            RB_MAKE_PRU0_ADDRESS_DATARAM0(bufferOffset);
+        pControl->owner = RB_OWNER_PRU0;
+        pControl->frameNum = i;
+        pControl->command = RB_COMMAND_AUDIO_READ;
+        pControl->status = RB_STATUS_NOMINAL;
+        pControl->address = RB_MAKE_PRU0_ADDRESS_DATARAM0(bufferOffset);
         g_rbPrussIoAudioInputBufs[i] =
             RB_MAKE_HOST_ADDRESS_DATARAM0(bufferOffset);
-        g_rbPrussIoDataRam->pru0.control.audioInput[i].size = 0;
-        g_rbPrussIoDataRam->pru0.control.audioInput[i].capacity = bufferCapacity;
+        pControl->size = 0;
+        pControl->capacity = bufferCapacity;
         rbAssert(bufferOffset + bufferCapacity <= RB_DATARAM_SIZE);
         bufferOffset += bufferCapacity;
     }
     for(size_t i = 0; i < RB_PRUSS_IO_NUM_BUFFERS; ++i) {
+        RBPrussIoTransferControl * pControl =
+            &g_rbPrussIoDataRam->pru0.control.midiInput[i];
         bufferCapacity = RB_MIDI_MAX_CHARS_PER_VIDEO_FRAME;
-        g_rbPrussIoDataRam->pru0.control.midiInput[i].owner = RB_OWNER_PRU0;
-        g_rbPrussIoDataRam->pru0.control.midiInput[i].frameNum = i;
-        g_rbPrussIoDataRam->pru0.control.midiInput[i].command =
-            RB_COMMAND_MIDI_IDLE;
-        g_rbPrussIoDataRam->pru0.control.midiInput[i].status = RB_STATUS_NOMINAL;
-        g_rbPrussIoDataRam->pru0.control.midiInput[i].address =
-            RB_MAKE_PRU0_ADDRESS_DATARAM0(bufferOffset);
+        pControl->owner = RB_OWNER_PRU0;
+        pControl->frameNum = i;
+        pControl->command = RB_COMMAND_MIDI_READ;
+        pControl->status = RB_STATUS_NOMINAL;
+        pControl->address = RB_MAKE_PRU0_ADDRESS_DATARAM0(bufferOffset);
         g_rbPrussIoMidiInputBufs[i] =
             RB_MAKE_HOST_ADDRESS_DATARAM0(bufferOffset);
-        g_rbPrussIoDataRam->pru0.control.midiInput[i].size = 0;
-        g_rbPrussIoDataRam->pru0.control.midiInput[i].capacity = bufferCapacity;
+        pControl->size = 0;
+        pControl->capacity = bufferCapacity;
         rbAssert(bufferOffset + bufferCapacity <= RB_DATARAM_SIZE);
         bufferOffset += bufferCapacity;
     }
@@ -294,21 +294,21 @@ void rbPrussIoStartPrussInitializeTransferBuffers(void)
     // PRU1 structures: PRU1 handles light output
     bufferOffset = 0;
     for(size_t i = 0; i < RB_PRUSS_IO_NUM_BUFFERS; ++i) {
+        RBPrussIoTransferControl * pControl =
+            &g_rbPrussIoDataRam->pru1.control.lightOutput[i];
         bufferCapacity = RB_SHAREDRAM_SIZE / 2;
         rbAssert(bufferCapacity >= (RB_NUM_PANELS_PER_STRING * RB_PANEL_WIDTH *
             RB_PANEL_HEIGHT * 3 * RB_PRUSS_IO_NUM_STRINGS));
-        g_rbPrussIoDataRam->pru1.control.lightOutput[i].owner = RB_OWNER_HOST;
-        g_rbPrussIoDataRam->pru1.control.lightOutput[i].frameNum = 0;
-        g_rbPrussIoDataRam->pru1.control.lightOutput[i].command =
-            RB_COMMAND_LIGHT_IDLE;
-        g_rbPrussIoDataRam->pru1.control.lightOutput[i].status =
-            RB_STATUS_NOMINAL;
-        g_rbPrussIoDataRam->pru1.control.lightOutput[i].address =
+        pControl->owner = RB_OWNER_HOST;
+        pControl->frameNum = 0;
+        pControl->command = RB_COMMAND_LIGHT_IDLE;
+        pControl->status = RB_STATUS_NOMINAL;
+        pControl->address =
             RB_MAKE_PRU1_ADDRESS_SHAREDRAM((RB_SHAREDRAM_SIZE / 2) * (i + 0));
         g_rbPrussIoLightOutputBufs[i] =
             RB_MAKE_HOST_ADDRESS_SHAREDRAM((RB_SHAREDRAM_SIZE / 2) * (i + 0));
-        g_rbPrussIoDataRam->pru1.control.lightOutput[i].size = 0;
-        g_rbPrussIoDataRam->pru1.control.lightOutput[i].capacity = bufferCapacity;
+        pControl->size = 0;
+        pControl->capacity = bufferCapacity;
         rbAssert(bufferOffset + bufferCapacity <= RB_SHAREDRAM_SIZE);
         bufferOffset += bufferCapacity;
     }
@@ -334,10 +334,6 @@ void rbPrussIoStopPruss(void)
         }
         rbSleep(rbTimeFromMs(RB_PRUSS_IO_BUSY_WAIT_MS));
     }
-    /*
-    prussdrv_pru_wait_event(PRU_EVTOUT_0);
-    prussdrv_pru_clear_event(PRU_EVTOUT_0, PRU0_ARM_INTERRUPT);
-    */
     
     rbInfo("Closing PRUSS driver\n");
     prussdrv_pru_disable(0);
@@ -393,16 +389,64 @@ void rbPrussIoStopPrussInputIfNotInUse(void)
 
 void rbPrussIoReadInput(void)
 {
-    g_rbPrussIoCapturedMidiSize = 0;
+    uint32_t oldestBufFrameNum;
+    size_t oldestBuf = RB_PRUSS_IO_NUM_BUFFERS;
+    RBPrussIoTransferControl * pControl;
     
-    if(g_rbPrussIoAudioInputRunning) {
-        //TODO implement
-        UNUSED(g_rbPrussIoCapturedAudio);
+    if(!g_rbPrussIoAudioInputRunning && !g_rbPrussIoMidiInputRunning) {
+        return;
     }
-    if(g_rbPrussIoMidiInputRunning) {
-        //TODO implement
-        UNUSED(g_rbPrussIoCapturedMidi);
+    
+    do {
+        rbMemoryBarrier();
+        for(size_t i = 0; i < RB_PRUSS_IO_NUM_BUFFERS; ++i) {
+            if(g_rbPrussIoDataRam->pru0.control.audioInput[i].owner ==
+                    RB_OWNER_HOST) {
+                // We are only looking for the *oldest* buffer.
+                //TODO that frameNum < ... test is slightly bogus, it will do
+                // the wrong thing when frameNum overflows
+                if((oldestBuf == RB_PRUSS_IO_NUM_BUFFERS) ||
+                        (g_rbPrussIoDataRam->pru0.control.audioInput[i]
+                            .frameNum < oldestBufFrameNum)) {
+                    oldestBuf = i;
+                    oldestBufFrameNum = g_rbPrussIoDataRam->pru0.control
+                        .audioInput[i].frameNum;
+                }
+            }
+        }
+        if(oldestBuf == RB_PRUSS_IO_NUM_BUFFERS) {
+            //TODO use PRU interrupts here for min latency
+            /*
+            prussdrv_pru_wait_event(PRU_EVTOUT_0);
+            prussdrv_pru_clear_event(PRU_EVTOUT_0, PRU0_ARM_INTERRUPT);
+            */
+            rbSleep(rbTimeFromMs(1));
+        }
+    } while(oldestBuf == RB_PRUSS_IO_NUM_BUFFERS);
+    
+    // Gather status flags
+    pControl = &g_rbPrussIoDataRam->pru0.control.audioInput[oldestBuf];
+    if(pControl->status != RB_STATUS_NOMINAL) {
+        rbWarning("PRUSS audio reports error: %s (0x%X)\n",
+            ((pControl->status & RB_STATUS_ERROR_OVERRUN) != 0) ? "overrun" :
+                "??",
+            pControl->status);
     }
+    rbInfo("Reading buffer %d: %d bytes/capacity %d\n", oldestBuf, pControl->size, pControl->capacity);
+    rbAssert(pControl->size == sizeof g_rbPrussIoCapturedAudio);
+    memcpy(g_rbPrussIoCapturedAudio, g_rbPrussIoAudioInputBufs[oldestBuf],
+        sizeof g_rbPrussIoCapturedAudio);
+    pControl->status = RB_STATUS_NOMINAL;
+    pControl->command = RB_COMMAND_AUDIO_READ;
+    pControl->frameNum = g_rbPrussIoNextInputFrameNum++;
+    pControl->size = 0;
+    rbMemoryBarrier();
+    pControl->owner = RB_OWNER_PRU0;
+    
+    //TODO implement
+    //TODO Ideally, we would capture multiple frames 
+    UNUSED(g_rbPrussIoCapturedMidi);
+    g_rbPrussIoCapturedMidiSize = 0;
 }
 
 

@@ -96,7 +96,7 @@ run_poll_peripherals:
     //TODO
     
     //TODO remove this test code
-    mov     r0, 100000
+    mov     r0, 2000
 delay_loop:
     sub     r0, r0, 1
     qbne    delay_loop, r0, 0
