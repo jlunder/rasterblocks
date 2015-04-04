@@ -12,6 +12,7 @@
 
 // see http://linuxprograms.wordpress.com/2010/08/19/json_parser_json-c/
 
+
 static RBLogLevel getLogLevel(const char* val)
 {
     if(rbStricmp(val, "INFO") == 0) {
@@ -28,6 +29,7 @@ static RBLogLevel getLogLevel(const char* val)
         return RBLL_INFO;
     }
 }
+
 
 static RBAudioInput getAudioInput(const char* val)
 {
@@ -52,6 +54,7 @@ static RBAudioInput getAudioInput(const char* val)
     }
 }
 
+
 static RBControlInput getControlInput(const char* val)
 {
     if(rbStricmp(val, "NONE") == 0) {
@@ -72,6 +75,7 @@ static RBControlInput getControlInput(const char* val)
     }
 }
 
+
 static RBLightOutput getLightOutput(const char* val)
 {
     if(rbStricmp(val, "OPENGL") == 0) {
@@ -91,6 +95,7 @@ static RBLightOutput getLightOutput(const char* val)
         return RBLO_INVALID;
     }
 }
+
 
 static void parsePanelList(RBConfiguration * pConfig, json_object * jobj)
 {
@@ -119,6 +124,7 @@ static void parsePanelList(RBConfiguration * pConfig, json_object * jobj)
     rbComputeLightPositionsFromPanelList(pConfig->lightPositions,
         RB_MAX_LIGHTS, panelConfigs, numPanels);
 }
+
 
 static void parseConfigObject(RBConfiguration * pConfig, json_object * jobj)
 {
@@ -180,10 +186,14 @@ static void parseConfigObject(RBConfiguration * pConfig, json_object * jobj)
             rbVerify(pConfig->numLightsPerString <= RB_MAX_LIGHTS);
         }
         else if(strcmp(key, "panels") == 0) {
-            parsePanelList(pConfig, json_object_object_get(jobj, key));
+            json_object * jel = NULL;
+            if(json_object_object_get_ex(jobj, key, &jel)) {
+                parsePanelList(pConfig, jel);
+            }
         }
     }
 }
+
 
 void rbParseJson(RBConfiguration * pConfig, char* filename) {
     char * buffer = 0;
@@ -217,3 +227,5 @@ void rbParseJson(RBConfiguration * pConfig, char* filename) {
         rbError("Failed to read %s\n", filename);
     }
 }
+
+

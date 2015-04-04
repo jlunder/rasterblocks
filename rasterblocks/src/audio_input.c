@@ -195,6 +195,7 @@ void rbAudioInputPrussShutdown(void)
 
 void rbAudioInputPrussBlockingRead(RBRawAudio * pAudio)
 {
+    UNUSED(pAudio);
 }
 #endif // RB_USE_PRUSS_IO
 

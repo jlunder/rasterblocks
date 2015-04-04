@@ -524,11 +524,11 @@ void gles2_harness_draw_lights(float time)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     if(projectionAspect < g_aspectRatio) {
-        overallScale = lightSpacing * (RB_PROJECTION_HEIGHT + 2);
+        overallScale = lightSpacing * (projectionHeight + 2);
     }
     else {
         overallScale =
-            lightSpacing * (RB_PROJECTION_WIDTH + 2) / g_aspectRatio;
+            lightSpacing * (projectionWidth + 2) / g_aspectRatio;
     }
     
     glusLookAtf(viewMatrix,
@@ -556,7 +556,9 @@ void gles2_harness_draw_lights(float time)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
     for(size_t i = 0; i < numLights; ++i) {
-        RBVector2 pos = rbGetConfiguration()->lightPositions[i];
+        RBVector2 pos = v2add(projectionOffset,
+            v2scale(rbGetConfiguration()->lightPositions[i], lightSpacing));
+        
         glusMatrix4x4Identityf(modelMatrix);
         glusMatrix4x4Translatef(modelMatrix, pos.x, pos.y, 0);
         glusMatrix4x4Scalef(modelMatrix, lightSize, lightSize,
@@ -566,11 +568,14 @@ void gles2_harness_draw_lights(float time)
 
         glUniform4f(g_colorLocation,
             gles2_harness_red_transform(
-                gles2_harness_frame.data[i][j][k].r * (gles2_harness_brightness / 255.0f)),
+                gles2_harness_frame.data[i].r *
+                    (gles2_harness_brightness / 255.0f)),
             gles2_harness_green_transform(
-                gles2_harness_frame.data[i][j][k].g * (gles2_harness_brightness / 255.0f)),
+                gles2_harness_frame.data[i].g *
+                    (gles2_harness_brightness / 255.0f)),
             gles2_harness_blue_transform(
-                gles2_harness_frame.data[i][j][k].b * (gles2_harness_brightness / 255.0f)),
+                gles2_harness_frame.data[i].b *
+                    (gles2_harness_brightness / 255.0f)),
             0.0f);
 
         glDrawArrays(GL_TRIANGLES, 0, 36);
