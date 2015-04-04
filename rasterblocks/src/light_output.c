@@ -10,8 +10,7 @@ static RBLightOutput g_rbLightOutput = RBLO_INVALID;
 
 static float g_rbColorTransform[256];
 
-static float g_rbBiasFrame[RB_NUM_BIAS_FRAMES][RB_PANEL_HEIGHT][RB_PANEL_WIDTH];
-static size_t g_rbBiasCounter;
+static float g_rbBiasData[RB_NUM_BIAS_FRAMES * RB_MAX_LIGHTS];
 
 
 void rbLightOutputInitialize(RBConfiguration const * pConfig)
@@ -48,15 +47,9 @@ void rbLightOutputInitialize(RBConfiguration const * pConfig)
         g_rbColorTransform[i] = g_rbCieTable[i] * brightness;
     }
     
-    for(size_t k = 0; k < RB_NUM_BIAS_FRAMES; ++k) {
-        for(size_t j = 0; j < RB_PANEL_HEIGHT; ++j) {
-            for(size_t i = 0; i < RB_PANEL_WIDTH; ++i) {
-                g_rbBiasFrame[k][j][i] = rbRandomF();
-            }
-        }
+    for(size_t i = 0; i < RB_NUM_BIAS_FRAMES * RB_MAX_LIGHTS; ++i) {
+        g_rbBiasData[i] = rbRandomF();
     }
-    
-    g_rbBiasCounter = 0;
 }
 
 
@@ -85,24 +78,22 @@ void rbLightOutputShutdown(void)
 
 void rbLightOutputShowLights(RBRawLightFrame const * pFrame)
 {
+    size_t const numLights =
+        pFrame->numLightsPerString * pFrame->numLightStrings;
     RBRawLightFrame tempFrame;
+    size_t biasOffset = rbRandomI(LENGTHOF(g_rbBiasData) - numLights);
     
-    g_rbBiasCounter++;
-    for(size_t k = 0; k < RB_NUM_PANELS; ++k) {
-        size_t bias = (g_rbBiasCounter + k) % RB_NUM_BIAS_FRAMES;
-        for(size_t j = 0; j < RB_PANEL_HEIGHT; ++j) {
-            for(size_t i = 0; i < RB_PANEL_WIDTH; ++i) {
-                tempFrame.data[k][j][i].r = floorf(
-                    g_rbColorTransform[pFrame->data[k][j][i].r] +
-                        g_rbBiasFrame[bias][j][i]);
-                tempFrame.data[k][j][i].g = floorf(
-                    g_rbColorTransform[pFrame->data[k][j][i].g] +
-                        g_rbBiasFrame[bias][j][i]);
-                tempFrame.data[k][j][i].b = floorf(
-                    g_rbColorTransform[pFrame->data[k][j][i].b] +
-                        g_rbBiasFrame[bias][j][i]);
-            }
-        }
+    tempFrame.numLightStrings = pFrame->numLightStrings;
+    tempFrame.numLightsPerString = pFrame->numLightsPerString;
+    
+    for(size_t i = 0; i < numLights; ++i) {
+        float const bias = g_rbBiasData[biasOffset + i];
+        tempFrame.data[i].r = floorf(
+            g_rbColorTransform[pFrame->data[i].r] + bias);
+        tempFrame.data[i].g = floorf(
+            g_rbColorTransform[pFrame->data[i].g] + bias);
+        tempFrame.data[i].b = floorf(
+            g_rbColorTransform[pFrame->data[i].b] + bias);
     }
     
     switch(g_rbLightOutput) {

@@ -40,15 +40,11 @@
 #define RB_NUM_CONTROLLERS 10
 #define RB_NUM_TRIGGERS 10
 
+#define RB_MAX_LIGHTS 2048
+#define RB_MAX_LIGHT_STRINGS 8
+
 #define RB_PANEL_WIDTH 8
 #define RB_PANEL_HEIGHT 8
-#define RB_NUM_PANELS_PER_STRING 3
-#define RB_NUM_STRINGS 4
-#define RB_NUM_PANELS (RB_NUM_PANELS_PER_STRING * RB_NUM_STRINGS)
-#define RB_NUM_LIGHTS (RB_PANEL_WIDTH * RB_PANEL_HEIGHT * RB_NUM_PANELS)
-
-#define RB_PROJECTION_WIDTH (RB_PANEL_WIDTH * 4)
-#define RB_PROJECTION_HEIGHT (RB_PANEL_HEIGHT * 3)
 
 #define RB_MAX_CONSECUTIVE_GENTLE_RESTART_NS (10 * 1000000000LLU)
 #define RB_GENTLE_RESTART_DELAY_NS 500000000LLU
@@ -186,6 +182,11 @@ typedef struct {
     int32_t mode;
     
     float brightness;
+    int32_t projectionWidth;
+    int32_t projectionHeight;
+    size_t numLightStrings;
+    size_t numLightsPerString;
+    RBVector2 lightPositions[RB_MAX_LIGHTS];
 } RBConfiguration;
 
 
@@ -227,11 +228,10 @@ typedef struct {
 
 
 typedef struct {
-    RBColor data[RB_NUM_PANELS][RB_PANEL_HEIGHT][RB_PANEL_WIDTH];
+    size_t numLightStrings;
+    size_t numLightsPerString;
+    RBColor data[RB_MAX_LIGHTS];
 } RBRawLightFrame;
-
-
-RBPanelConfig const g_rbPanelConfigs[RB_NUM_PANELS];
 
 
 // Tell the main program which subsystem is currently running (in this thread).
@@ -251,6 +251,11 @@ void rbRequestImmediateRestart(void);
 // Returns true if we are in the middle of a subsystem rb*Initialize() due to
 // a gentle restart; false if this is first-time init.
 bool rbIsRestarting(void);
+
+RBConfiguration const * rbGetConfiguration(void);
+void rbComputeLightPositionsFromPanelList(RBVector2 * pLightPositions,
+    size_t numLightPositions, RBPanelConfig const * pPanelConfigs,
+    size_t numPanels);
 
 static inline RBTime rbTimeFromMs(int32_t ms)
 {

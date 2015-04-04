@@ -507,13 +507,17 @@ void gles2_harness_draw_lights(float time)
     // Lights are about 1" wide, in meters, and our boxes are 2u wide
     GLfloat const lightSize = 0.050 / 2.0f; //0.025f / 2.0f;
     float const lightSpacing = 0.0254f * 3.0f; // 3 inch spacing, in meters
-    float const projectionAspect =
-        (float)RB_PROJECTION_WIDTH / (float)RB_PROJECTION_HEIGHT;
+    size_t const numLights = gles2_harness_frame.numLightStrings *
+        gles2_harness_frame.numLightsPerString;
+    float const projectionWidth = (float)rbGetConfiguration()->projectionWidth;
+    float const projectionHeight =
+        (float)rbGetConfiguration()->projectionHeight;
+    float const projectionAspect = projectionWidth / projectionHeight;
     float overallScale = 1.0f;
     
     RBVector2 projectionOffset = vector2(
-        -lightSpacing * (RB_PROJECTION_WIDTH - 1) * 0.5f,
-        -lightSpacing * (RB_PROJECTION_HEIGHT - 1) * 0.5f);
+        -lightSpacing * (projectionWidth - 1) * 0.5f,
+        -lightSpacing * (projectionHeight - 1) * 0.5f);
     
     GLUS_UNUSED(time);
     
@@ -551,42 +555,25 @@ void gles2_harness_draw_lights(float time)
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
-    for(size_t i = 0; i < RB_NUM_PANELS; ++i) {
-        RBVector2 linePos =
-            v2add(v2scale(g_rbPanelConfigs[i].position, lightSpacing),
-                projectionOffset);
-        RBVector2 xinc =
-            v2scale(g_rbPanelConfigs[i].uInc, lightSpacing);
-        RBVector2 yinc =
-            v2scale(g_rbPanelConfigs[i].vInc, lightSpacing);
-        
-        for(size_t j = 0; j < RB_PANEL_HEIGHT; ++j) {
-            RBVector2 pos = linePos;
-            
-            for(size_t k = 0; k < RB_PANEL_WIDTH; ++k) {
-                glusMatrix4x4Identityf(modelMatrix);
-                glusMatrix4x4Translatef(modelMatrix, pos.x, pos.y, 0);
-                glusMatrix4x4Scalef(modelMatrix, lightSize, lightSize,
-                    lightSize);
-                glUniformMatrix4fv(g_modelMatrixLocation, 1, GL_FALSE,
-                    modelMatrix);
+    for(size_t i = 0; i < numLights; ++i) {
+        RBVector2 pos = rbGetConfiguration()->lightPositions[i];
+        glusMatrix4x4Identityf(modelMatrix);
+        glusMatrix4x4Translatef(modelMatrix, pos.x, pos.y, 0);
+        glusMatrix4x4Scalef(modelMatrix, lightSize, lightSize,
+            lightSize);
+        glUniformMatrix4fv(g_modelMatrixLocation, 1, GL_FALSE,
+            modelMatrix);
 
-                glUniform4f(g_colorLocation,
-                    gles2_harness_red_transform(
-                        gles2_harness_frame.data[i][j][k].r * (gles2_harness_brightness / 255.0f)),
-                    gles2_harness_green_transform(
-                        gles2_harness_frame.data[i][j][k].g * (gles2_harness_brightness / 255.0f)),
-                    gles2_harness_blue_transform(
-                        gles2_harness_frame.data[i][j][k].b * (gles2_harness_brightness / 255.0f)),
-                    0.0f);
+        glUniform4f(g_colorLocation,
+            gles2_harness_red_transform(
+                gles2_harness_frame.data[i][j][k].r * (gles2_harness_brightness / 255.0f)),
+            gles2_harness_green_transform(
+                gles2_harness_frame.data[i][j][k].g * (gles2_harness_brightness / 255.0f)),
+            gles2_harness_blue_transform(
+                gles2_harness_frame.data[i][j][k].b * (gles2_harness_brightness / 255.0f)),
+            0.0f);
 
-                glDrawArrays(GL_TRIANGLES, 0, 36);
-                
-                pos = v2add(pos, xinc);
-            }
-            
-            linePos = v2add(linePos, yinc);
-        }
+        glDrawArrays(GL_TRIANGLES, 0, 36);
     }
     
     glDisableVertexAttribArray(g_vertexLocation);

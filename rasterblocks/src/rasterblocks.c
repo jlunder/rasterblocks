@@ -10,38 +10,6 @@
 #include "pruss_io.h"
 
 
-RBPanelConfig const g_rbPanelConfigs[RB_NUM_PANELS] = {
-    {{ 8.0f,  0.0f}, { 1.0f,  0.0f}, { 0.0f,  1.0f}},
-    {{ 8.0f,  8.0f}, { 1.0f,  0.0f}, { 0.0f,  1.0f}},
-    {{ 8.0f, 16.0f}, { 1.0f,  0.0f}, { 0.0f,  1.0f}},
-    {{ 7.0f, 23.0f}, {-1.0f,  0.0f}, { 0.0f, -1.0f}},
-    {{ 7.0f, 15.0f}, {-1.0f,  0.0f}, { 0.0f, -1.0f}},
-    {{ 7.0f,  7.0f}, {-1.0f,  0.0f}, { 0.0f, -1.0f}},
-    
-    {{24.0f,  0.0f}, { 1.0f,  0.0f}, { 0.0f,  1.0f}},
-    {{24.0f,  8.0f}, { 1.0f,  0.0f}, { 0.0f,  1.0f}},
-    {{24.0f, 16.0f}, { 1.0f,  0.0f}, { 0.0f,  1.0f}},
-    {{23.0f, 23.0f}, {-1.0f,  0.0f}, { 0.0f, -1.0f}},
-    {{23.0f, 15.0f}, {-1.0f,  0.0f}, { 0.0f, -1.0f}},
-    {{23.0f,  7.0f}, {-1.0f,  0.0f}, { 0.0f, -1.0f}},
-    /*
-    {{ 0.0f,  7.0f}, { 0.0f, -1.0f}, { 1.0f,  0.0f}},
-    {{ 8.0f,  7.0f}, { 0.0f, -1.0f}, { 1.0f,  0.0f}},
-    {{ 0.0f, 15.0f}, { 0.0f, -1.0f}, { 1.0f,  0.0f}},
-    {{ 8.0f, 15.0f}, { 0.0f, -1.0f}, { 1.0f,  0.0f}},
-    {{ 0.0f, 23.0f}, { 0.0f, -1.0f}, { 1.0f,  0.0f}},
-    {{ 8.0f, 23.0f}, { 0.0f, -1.0f}, { 1.0f,  0.0f}},
-    
-    {{16.0f,  7.0f}, { 0.0f, -1.0f}, { 1.0f,  0.0f}},
-    {{24.0f,  7.0f}, { 0.0f, -1.0f}, { 1.0f,  0.0f}},
-    {{16.0f, 15.0f}, { 0.0f, -1.0f}, { 1.0f,  0.0f}},
-    {{24.0f, 15.0f}, { 0.0f, -1.0f}, { 1.0f,  0.0f}},
-    {{16.0f, 23.0f}, { 0.0f, -1.0f}, { 1.0f,  0.0f}},
-    {{24.0f, 23.0f}, { 0.0f, -1.0f}, { 1.0f,  0.0f}},
-    */
-};
-
-
 static char const * const g_rbLogLevelNames[RBLL_COUNT] = {
     "INFO",
     "WARN",
@@ -122,6 +90,44 @@ void rbRequestImmediateRestart(void)
 bool rbIsRestarting(void)
 {
     return g_rbIsRestarting;
+}
+
+
+RBConfiguration const * rbGetConfiguration(void)
+{
+    return &g_rbConfiguration;
+}
+
+
+void rbComputeLightPositionsFromPanelList(RBVector2 * pLightPositions,
+    size_t numLightPositions, RBPanelConfig const * pPanelConfigs,
+    size_t numPanels)
+{
+    size_t l = 0;
+    
+    rbAssert(numLightPositions >=
+        numPanels * RB_PANEL_WIDTH * RB_PANEL_HEIGHT);
+    
+    for(size_t k = 0; k < numPanels; ++k) {
+        RBVector2 scanPos = pPanelConfigs[k].position;
+        RBVector2 uInc = pPanelConfigs[k].uInc;
+        RBVector2 vInc = pPanelConfigs[k].vInc;
+        
+        for(size_t j = 0; j < RB_PANEL_HEIGHT; ++j) {
+            RBVector2 pos = scanPos;
+            
+            for(size_t i = 0; i < RB_PANEL_WIDTH; ++i) {
+                rbAssert(l < numLightPositions);
+                pLightPositions[l++] = pos;
+                pos = v2add(pos, uInc);
+            }
+            scanPos = v2add(scanPos, vInc);
+        }
+    }
+    
+    while(l < numLightPositions) {
+        pLightPositions[l++] = vector2(0.0f, 0.0f);
+    }
 }
 
 
@@ -444,7 +450,8 @@ void rbProcessSubsystems(bool * pConfigChanged)
     RBRawAudio rawAudio;
     RBAnalyzedAudio analysis;
     RBTexture2 * pFrame =
-        rbTexture2Alloc(RB_PROJECTION_WIDTH, RB_PROJECTION_HEIGHT);
+        rbTexture2Alloc(g_rbConfiguration.projectionWidth,
+            g_rbConfiguration.projectionHeight);
     
 #ifdef RB_USE_PRUSS_IO
     // Input poll causes the PRUSS I/O system to effectively do a blocking
@@ -494,30 +501,20 @@ void rbProcessSubsystems(bool * pConfigChanged)
 }
 
 
-void rbProjectLightData(RBTexture2 * pProjFrame,
-    RBRawLightFrame * pRawFrame)
+void rbProjectLightData(RBTexture2 * pProjFrame, RBRawLightFrame * pRawFrame)
 {
-    for(size_t i = 0; i < RB_NUM_PANELS; ++i) {
-        RBVector2 scanPos = g_rbPanelConfigs[i].position;
-        RBVector2 xinc = g_rbPanelConfigs[i].uInc;
-        RBVector2 yinc = g_rbPanelConfigs[i].vInc;
-        
-        scanPos = vector2(scanPos.x / (t2getw(pProjFrame) - 1),
-            scanPos.y / (t2geth(pProjFrame) - 1));
-        xinc = vector2(xinc.x / (t2getw(pProjFrame) - 1),
-            xinc.y / (t2geth(pProjFrame) - 1));
-        yinc = vector2(yinc.x / (t2getw(pProjFrame) - 1),
-            yinc.y / (t2geth(pProjFrame) - 1));
-        
-        for(size_t j = 0; j < RB_PANEL_HEIGHT; ++j) {
-            RBVector2 pos = scanPos;
-            
-            for(size_t k = 0; k < RB_PANEL_WIDTH; ++k) {
-                pRawFrame->data[i][j][k] = colorct(t2samplc(pProjFrame, pos));
-                pos = v2add(pos, xinc);
-            }
-            scanPos = v2add(scanPos, yinc);
-        }
+    float xScale = 1.0f / (t2getw(pProjFrame) - 1);
+    float yScale = 1.0f / (t2geth(pProjFrame) - 1);
+    
+    pRawFrame->numLightStrings = g_rbConfiguration.numLightStrings;
+    pRawFrame->numLightsPerString = g_rbConfiguration.numLightsPerString;
+    for(size_t i = 0;
+            i < pRawFrame->numLightStrings * pRawFrame->numLightsPerString;
+            ++i) {
+        RBVector2 pos = vector2(
+            g_rbConfiguration.lightPositions[i].x * xScale,
+            g_rbConfiguration.lightPositions[i].y * yScale);
+        pRawFrame->data[i] = colorct(t2samplc(pProjFrame, pos));
     }
 }
 

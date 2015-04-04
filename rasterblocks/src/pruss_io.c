@@ -252,7 +252,7 @@ void rbPrussIoStartPrussInitializeTransferBuffers(void)
     g_rbPrussIoDataRam->pru1.control.status = RB_MODE_INIT;
     
     rbAssert(RB_PRUSS_IO_NUM_BUFFERS == 2);
-    rbAssert(RB_PRUSS_IO_NUM_STRINGS >= RB_NUM_STRINGS);
+    rbAssert(RB_PRUSS_IO_NUM_STRINGS >= RB_MAX_LIGHT_STRINGS);
     rbAssert(RB_PRUSS_IO_AUDIO_CHANNELS == RB_AUDIO_CHANNELS);
     
     // PRU0 structures: PRU0 handles audio and MIDI input
@@ -297,8 +297,7 @@ void rbPrussIoStartPrussInitializeTransferBuffers(void)
         RBPrussIoTransferControl * pControl =
             &g_rbPrussIoDataRam->pru1.control.lightOutput[i];
         bufferCapacity = RB_SHAREDRAM_SIZE / 2;
-        rbAssert(bufferCapacity >= (RB_NUM_PANELS_PER_STRING * RB_PANEL_WIDTH *
-            RB_PANEL_HEIGHT * 3 * RB_PRUSS_IO_NUM_STRINGS));
+        rbAssert(bufferCapacity >= RB_MAX_LIGHTS * 3);
         pControl->owner = RB_OWNER_HOST;
         pControl->frameNum = 0;
         pControl->command = RB_COMMAND_LIGHT_IDLE;
@@ -479,9 +478,12 @@ void rbLightOutputPrussShutdown(void)
 
 void rbLightOutputPrussShowLights(RBRawLightFrame const * pFrame)
 {
+    size_t const numLightStrings = pFrame->numLightStrings;
+    size_t const numLightsPerString = pFrame->numLightsPerString;
     size_t buf;
     size_t i;
     
+    rbAssert(numLightStrings <= RB_PRUSS_IO_NUM_STRINGS);
     rbAssert(g_rbPrussIoLightOutputRunning);
     
     rbMemoryBarrier();
@@ -520,57 +522,31 @@ void rbLightOutputPrussShowLights(RBRawLightFrame const * pFrame)
     g_rbPrussIoDataRam->pru1.control.lightOutput[buf].frameNum =
         g_rbPrussIoNextOutputFrameNum++;
     g_rbPrussIoDataRam->pru1.control.lightOutput[buf].size =
-        RB_NUM_PANELS_PER_STRING * RB_PANEL_WIDTH * RB_PANEL_HEIGHT * 3 *
-        RB_PRUSS_IO_NUM_STRINGS;
+        numLightsPerString * RB_PRUSS_IO_NUM_STRINGS * 3;
     rbAssert(g_rbPrussIoDataRam->pru1.control.lightOutput[buf].size <=
         g_rbPrussIoDataRam->pru1.control.lightOutput[buf].capacity);
-    i = 0;
-    for(size_t l = 0; l < RB_NUM_PANELS_PER_STRING; ++l) {
-        for(size_t k = 0; k < RB_PANEL_HEIGHT; k += 2) {
-            for(size_t j = 0; j < RB_PANEL_WIDTH; ++j) {
-                uint64_t r = 0;
-                uint64_t g = 0;
-                uint64_t b = 0;
-                
-                for(size_t m = 0; m < RB_NUM_STRINGS; ++m) {
-                    r |= (uint64_t)pFrame->data[
-                        RB_NUM_PANELS_PER_STRING * m + l][k][j].r << (m * 8);
-                    g |= (uint64_t)pFrame->data[
-                        RB_NUM_PANELS_PER_STRING * m + l][k][j].g << (m * 8);
-                    b |= (uint64_t)pFrame->data[
-                        RB_NUM_PANELS_PER_STRING * m + l][k][j].b << (m * 8);
-                }
-                // Color order for WS2812 -- 2801 is brg
-                *(uint64_t *)&g_rbPrussIoLightOutputBufs[buf][i +  0] = g;
-                *(uint64_t *)&g_rbPrussIoLightOutputBufs[buf][i +  8] = r;
-                *(uint64_t *)&g_rbPrussIoLightOutputBufs[buf][i + 16] = b;
-                i += 3 * 8;
-            }
-            for(size_t j = RB_PANEL_WIDTH; j > 0; --j) {
-                uint64_t r = 0;
-                uint64_t g = 0;
-                uint64_t b = 0;
-                
-                for(size_t m = 0; m < RB_NUM_STRINGS; ++m) {
-                    r |= (uint64_t)pFrame->data[
-                        RB_NUM_PANELS_PER_STRING * m + l][k + 1][j - 1].r <<
-                            (m * 8);
-                    g |= (uint64_t)pFrame->data[
-                        RB_NUM_PANELS_PER_STRING * m + l][k + 1][j - 1].g <<
-                            (m * 8);
-                    b |= (uint64_t)pFrame->data[
-                        RB_NUM_PANELS_PER_STRING * m + l][k + 1][j - 1].b <<
-                            (m * 8);
-                }
-                // Color order for WS2812
-                *(uint64_t *)&g_rbPrussIoLightOutputBufs[buf][i +  0] = g;
-                *(uint64_t *)&g_rbPrussIoLightOutputBufs[buf][i +  8] = r;
-                *(uint64_t *)&g_rbPrussIoLightOutputBufs[buf][i + 16] = b;
-                i += 3 * 8;
-            }
-        }
-    }
     
+    i = 0;
+    for(size_t j = 0; j < numLightsPerString; ++j) {
+        uint64_t r = 0;
+        uint64_t g = 0;
+        uint64_t b = 0;
+        
+        for(size_t k = 0; k < numLightStrings; ++k) {
+            size_t addr = numLightsPerString * k + j;
+            size_t shift = k * 8;
+            r |= (uint64_t)pFrame->data[addr].r << shift;
+            g |= (uint64_t)pFrame->data[addr].g << shift;
+            b |= (uint64_t)pFrame->data[addr].b << shift;
+        }
+        
+        // Color order for WS2812 is grb -- 2801 is brg
+        *(uint64_t *)&g_rbPrussIoLightOutputBufs[buf][i +  0] = g;
+        *(uint64_t *)&g_rbPrussIoLightOutputBufs[buf][i +  8] = r;
+        *(uint64_t *)&g_rbPrussIoLightOutputBufs[buf][i + 16] = b;
+        
+        i += 3 * RB_PRUSS_IO_NUM_STRINGS;
+    }
     rbAssert(i == g_rbPrussIoDataRam->pru1.control.lightOutput[buf].size);
     
     g_rbPrussIoDataRam->pru1.control.lightOutput[buf].command =
