@@ -79,9 +79,12 @@
 #define RB_COMMAND_LIGHT_1W_800KHZ       0x0003
 #define RB_COMMAND_LIGHT_END_FRAME_PAUSE 0x0100
 
-#define RB_STATUS_NOMINAL       0
-#define RB_STATUS_ERROR_COMMAND 0x00000001
-#define RB_STATUS_ERROR_OVERRUN 0x00000002
+#define RB_STATUS_NOMINAL           0
+#define RB_STATUS_ERROR_COMMAND     0x00000001
+#define RB_STATUS_ERROR_OVERRUN     0x00000002
+#define RB_STATUS_ERROR_ADC_DESYNC  0x00000004
+#define RB_STATUS_ERROR_ADC_TIMEOUT 0x00000008
+#define RB_STATUS_ERROR_ADC_NO_DATA 0x00000010
 
 
 typedef struct {
@@ -431,7 +434,7 @@ void rbPrussIoReadInput(void)
                 "??",
             pControl->status);
     }
-    /*
+    
     {
         char bb[10000];
         char * pb = bb;
@@ -441,7 +444,7 @@ void rbPrussIoReadInput(void)
         }
         rbInfo("Input audio[%d]: %s\n", pControl->size, bb);
     }
-    */
+    
     rbInfo("Reading buffer %d: %d bytes/capacity %d\n", oldestBuf, pControl->size, pControl->capacity);
     rbAssert(pControl->size == sizeof g_rbPrussIoCapturedAudio);
     memcpy(g_rbPrussIoCapturedAudio, g_rbPrussIoAudioInputBufs[oldestBuf],

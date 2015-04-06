@@ -8,26 +8,31 @@
 	manufacturer = "jlunder";
 	version = "00A0";
 
+	// TSCADC and the AIN* pins are not included here even though we
+	// access that hardware from the PRU. We just use the shipped BB-ADC
+	// dtbo additionally, like we do with SPIDEV.
 	exclusive-use =
+		// Light serial data outs
 		"P8.27",
 		"P8.39",
 		"P8.40",
 		"P8.41",
 		"P8.42",
-		"P8.43",
+		// P8.43/pru1 r30.t2 hooked up to user button, don't use
 		"P8.44",
 		"P8.45",
 		"P8.46",
-		"pr1_pru1_pru_r30_0",
-		"pr1_pru1_pru_r30_1",
-		"pr1_pru1_pru_r31_2",
-		"pr1_pru1_pru_r30_3",
-		"pr1_pru1_pru_r30_4",
-		"pr1_pru1_pru_r30_5",
-		"pr1_pru1_pru_r30_6",
-		"pr1_pru1_pru_r30_7",
-		"pr1_pru1_pru_r30_8",
-		"pru0";
+
+		// Light serial clock out
+		"P8.29",
+
+		// Timing debug output for PRU0
+		"P9.27",
+
+		// The PRUs themselves.. don't know why anyone would label
+		// them separately, you can't have any old PRU code coexist
+		"pru0",
+		"pru1";
 
 	fragment@0 {
 		target = <&am33xx_pinmux>;
@@ -36,13 +41,14 @@
 				pinctrl-single,pins = <
 					0x0A0 0x0D  // P8_45: Mode 5 = pr1_pru1_pru_r30, disable pulldown, rx
 					0x0A4 0x0D  // P8_46: Mode 5 = pr1_pru1_pru_r30, disable pulldown, rx
-					0x0A8 0x3E  // P8_43: Mode 6 = pr1_pru1_pru_r31, disable pullup, enable rx
+					// 0x0A8 0x3E  // P8_43: Mode 6 = pr1_pru1_pru_r31, disable pullup, enable rx
 					0x0AC 0x0D  // P8_44: Mode 5 = pr1_pru1_pru_r30, disable pulldown, rx
 					0x0B0 0x0D  // P8_41: Mode 5 = pr1_pru1_pru_r30, disable pulldown, rx
 					0x0B4 0x0D  // P8_42: Mode 5 = pr1_pru1_pru_r30, disable pulldown, rx
 					0x0B8 0x0D  // P8_39: Mode 5 = pr1_pru1_pru_r30, disable pulldown, rx
 					0x0BC 0x0D  // P8_40: Mode 5 = pr1_pru1_pru_r30, disable pulldown, rx
 					0x0E0 0x0D  // P8_27: Mode 5 = pr1_pru1_pru_r30, disable pulldown, rx
+					0x1A4 0x0D  // P9_27: Mode 5 = pr1_pru0_pru_r30, disable pulldown, rx
 					>;
 			};
 		};

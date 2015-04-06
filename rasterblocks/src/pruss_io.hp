@@ -89,6 +89,25 @@
 // Address for the Constant table Programmable Pointer Register 1(CTPPR_1)
 #define CTPPR_1         0x2202C
 
+#define PRU0_PRU_CTRL_BASE 0x00022000
+#define PRU_CTRL_CONTROL   0x00
+#define PRU_CTRL_CYCLE     0x0C
+
+
+#define TSCADC_BASE          0x44e0d000
+
+#define TSCADC_SYSCONFIG     0x0010
+#define TSCADC_IRQENABLE_CLR 0x0030
+#define TSCADC_CTRL          0x0040
+#define TSCADC_ADC_CLKDIV    0x004c
+#define TSCADC_IDLECONFIG    0x0058
+#define TSCADC_STEPCONFIG1   0x0064
+#define TSCADC_ADCSTAT       0x0044
+#define TSCADC_STEPENABLE    0x0054
+#define TSCADC_FIFO0COUNT    0x00e4
+
+#define TSCADC_FIFO0DATA_BASE (TSCADC_BASE + 0x0100)
+
 
 #define GPIO0             0x44E07000
 #define GPIO1             0x4804C000
@@ -171,10 +190,13 @@
 #define PRU_MODE_RUN    2
 #define PRU_MODE_HALT   3
 
-#define STATUS_NOMINAL       0
-#define STATUS_ERROR_COMMAND 0x00000001
-#define STATUS_ERROR_OVERRUN 0x00000002
-#define STATUS_BUSY          0x80000000
+#define STATUS_NOMINAL           0
+#define STATUS_ERROR_COMMAND     0x00000001
+#define STATUS_ERROR_OVERRUN     0x00000002
+#define STATUS_ERROR_ADC_DESYNC  0x00000004
+#define STATUS_ERROR_ADC_TIMEOUT 0x00000008
+#define STATUS_ERROR_ADC_NO_DATA 0x00000010
+#define STATUS_BUSY              0x80000000
 
 #define OWNER_HOST 0
 #define OWNER_PRU0 1
