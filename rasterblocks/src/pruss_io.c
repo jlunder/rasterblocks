@@ -13,7 +13,9 @@
 #define RB_PRUSS_IO_DEVICE_STARTUP_COMMAND \
     "sh -c \"modprobe uio_pruss && " \
     "(grep -q rb-pruss-io /sys/devices/bone_capemgr.9/slots || " \
-    "echo rb-pruss-io > /sys/devices/bone_capemgr.9/slots)\""
+    "echo rb-pruss-io > /sys/devices/bone_capemgr.9/slots) && " \
+    "(grep -q BB-ADC /sys/devices/bone_capemgr.9/slots || " \
+    "echo BB-ADC > /sys/devices/bone_capemgr.9/slots)\""
 
 
 #define RB_PRUSS_IO_BUSY_WAIT_MS 10
