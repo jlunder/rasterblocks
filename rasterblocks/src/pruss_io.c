@@ -89,6 +89,9 @@
 #define RB_STATUS_ERROR_ADC_NO_DATA 0x00000010
 
 
+#define RB_PRUSS_IO_AUDIO_HIGH_PASS_K (0.0001)
+
+
 typedef struct {
     uint32_t owner;
     uint32_t frameNum;
@@ -141,6 +144,8 @@ static size_t g_rbPrussIoCapturedMidiSize;
 static uint8_t g_rbPrussIoCapturedMidi[RB_MIDI_MAX_CHARS_PER_VIDEO_FRAME];
 static uint16_t g_rbPrussIoCapturedAudio[RB_AUDIO_FRAMES_PER_VIDEO_FRAME][
     RB_PRUSS_IO_AUDIO_CHANNELS];
+
+static float g_rbPrussIoHighPassLastSample[RB_PRUSS_IO_AUDIO_CHANNELS];
 
 static RBControls g_rbLastControls;
 static RBControlInputMidiParser g_rbMidiParser;
@@ -595,6 +600,8 @@ void rbAudioInputPrussInitialize(RBConfiguration const * pConfig)
     rbPrussIoStartPrussInput();
     g_rbPrussIoAudioInputRunning = true;
     rbZero(g_rbPrussIoCapturedAudio, sizeof g_rbPrussIoCapturedAudio);
+    rbZero(g_rbPrussIoHighPassLastSample,
+        sizeof g_rbPrussIoHighPassLastSample);
 }
 
 
@@ -607,11 +614,23 @@ void rbAudioInputPrussShutdown(void)
 
 void rbAudioInputPrussBlockingRead(RBRawAudio * pAudio)
 {
+    double lastSamples[RB_PRUSS_IO_AUDIO_CHANNELS];
+    
+    for(size_t i = 0; i < RB_PRUSS_IO_AUDIO_CHANNELS; ++i) {
+        lastSamples[i] = g_rbPrussIoHighPassLastSample[i];
+    }
     for(size_t j = 0; j < RB_AUDIO_FRAMES_PER_VIDEO_FRAME; ++j) {
         for(size_t i = 0; i < RB_PRUSS_IO_AUDIO_CHANNELS; ++i) {
             pAudio->audio[j][i] = (float)g_rbPrussIoCapturedAudio[j][i] *
                 RB_PRUSS_IO_AUDIO_SCALE - 1.0f;
+            lastSamples[i] =
+                lastSamples[i] * (1.0 - RB_PRUSS_IO_AUDIO_HIGH_PASS_K) +
+                pAudio->audio[j][i] * RB_PRUSS_IO_AUDIO_HIGH_PASS_K;
+            pAudio->audio[j][i] -= lastSamples[i];
         }
+    }
+    for(size_t i = 0; i < RB_PRUSS_IO_AUDIO_CHANNELS; ++i) {
+        g_rbPrussIoHighPassLastSample[i] = lastSamples[i];
     }
 }
 
