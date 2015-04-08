@@ -1,0 +1,27 @@
+{
+	"audioInput": "pruss",
+	"lightOutput": "pruss",
+	"controlInput": "bbb_uart4_midi",
+
+	"lowCutoff": 200,
+	"hiCutoff": 500,
+	"agcMax": 0.5,
+	"agcMin": 0.01,
+	"agcStrength": 0.75,
+
+	//"brightness": 1,
+	"projectionWidth": 8,
+	"projectionHeight": 8,
+	"numLightsPerString": 64,
+	"numLightStrings": 8,
+	"panels": [
+		[7,0, -1,0, 0,1],
+		[7,0, -1,0, 0,1],
+		[7,0, -1,0, 0,1],
+		[7,0, -1,0, 0,1],
+		[7,0, -1,0, 0,1],
+		[7,0, -1,0, 0,1],
+		[7,0, -1,0, 0,1],
+		[7,0, -1,0, 0,1],
+	],
+}
