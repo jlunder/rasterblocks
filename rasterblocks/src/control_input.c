@@ -26,7 +26,7 @@
 
 #define RB_MIDI_TRIGGER_START_NOTE 0x3C
 #define RB_MIDI_CONTROLLER_START_CONTROLLER 0x46
-
+#define RB_MIDI_CONTROLLER_DEBUG_MODE 0x10
 
 static RBControlInput g_rbControlInput;
 
@@ -250,17 +250,26 @@ void rbControlInputMidiParserParseByteProcessMessage(
             }
             break;
         case RB_MIDI_STATUS_TYPE_CONTROL_CHANGE:
-            if((pParser->message[1] >= RB_MIDI_CONTROLLER_START_CONTROLLER) &&
-                    (pParser->message[1] <
-                        (RB_MIDI_CONTROLLER_START_CONTROLLER +
+            {
+                uint8_t midiCont = pParser->message[1];
+                uint8_t midiVal = pParser->message[2];
+                if((midiCont >= RB_MIDI_CONTROLLER_START_CONTROLLER) &&
+                        (midiCont < (RB_MIDI_CONTROLLER_START_CONTROLLER +
                             RB_NUM_TRIGGERS))) {
-                pControls->controllers[pParser->message[1] -
-                    RB_MIDI_CONTROLLER_START_CONTROLLER] =
-                        (float)pParser->message[2] * 2.0f / 127.0f - 1.0f;
-                rbInfo("Controller %d change: %.2f\n",
-                    pParser->message[1] - RB_MIDI_CONTROLLER_START_CONTROLLER,
-                    pControls->controllers[pParser->message[1] -
-                        RB_MIDI_CONTROLLER_START_CONTROLLER]);
+                    size_t controller =
+                        midiCont - RB_MIDI_CONTROLLER_START_CONTROLLER;
+                    float value = (float)midiVal * 2.0f / 127.0f - 1.0f;
+                    
+                    pControls->controllers[controller] = value;
+                    rbInfo("Controller %d change: %.2f\n", controller, value);
+                }
+                else if(midiCont == RB_MIDI_CONTROLLER_DEBUG_MODE) {
+                    pControls->debugDisplayReset = true;
+                    pControls->debugDisplayMode =
+                       (RBDebugDisplayMode)(midiVal * RBDM_COUNT / 127);
+                    rbInfo("Debug mode change (via controller): %d\n",
+                        pControls->debugDisplayMode);
+                }
             }
             break;
         default:

@@ -5,6 +5,9 @@
 #include "audio_device.h"
 
 
+#define RB_DC_OFFSET_ELIMINATION_HIGH_PASS_K (0.0001)
+
+
 static RBAudioInput g_rbAudioInput = RBAI_INVALID;
 static uint64_t g_rbAudioVideoFrameCount = 0;
 
@@ -15,6 +18,11 @@ static size_t g_rbAudioTestHighSamplesSinceTrigger;
 static size_t g_rbAudioTestLowSamplesSinceTrigger;
 static float g_rbAudioTestHighPhase;
 static float g_rbAudioTestLowPhase;
+
+static double g_rbDcOffsetEliminationLastSample[RB_AUDIO_CHANNELS];
+
+
+static void rbAudioInputTestBlockingRead(RBRawAudio * pAudio);
 
 
 void rbAudioInputInitialize(RBConfiguration const * pConfig)
@@ -54,6 +62,9 @@ void rbAudioInputInitialize(RBConfiguration const * pConfig)
     	rbFatal("Invalid audio input type %d\n", pConfig->audioInput);
     	break;
     }
+    
+    rbZero(g_rbDcOffsetEliminationLastSample,
+        sizeof g_rbDcOffsetEliminationLastSample);
 }
 
 
@@ -88,39 +99,11 @@ void rbAudioInputShutdown(void)
 
 void rbAudioInputBlockingRead(RBRawAudio * pAudio)
 {
+    double lastSamples[RB_AUDIO_CHANNELS];
+    
     switch(g_rbAudioInput) {
     case RBAI_TEST:
-        if(rbGetTimerPeriodsAndReset(&g_rbAudioTestHighBeatTimer) > 0) {
-            g_rbAudioTestHighSamplesSinceTrigger = 0;
-        }
-        if(rbGetTimerPeriodsAndReset(&g_rbAudioTestLowBeatTimer) > 0) {
-            g_rbAudioTestLowSamplesSinceTrigger = 0;
-        }
-        for(size_t i = 0; i < LENGTHOF(pAudio->audio); ++i) {
-            g_rbAudioTestHighPhase = fmodf(g_rbAudioTestHighPhase +
-                2.0f * RB_PI * 1000.0f / RB_AUDIO_SAMPLE_RATE, 2.0f * RB_PI);
-            g_rbAudioTestLowPhase = fmodf(g_rbAudioTestLowPhase +
-                2.0f * RB_PI * 50.0f / RB_AUDIO_SAMPLE_RATE, 2.0f * RB_PI);
-            pAudio->audio[i][0] = pAudio->audio[i][1] =
-                sinf(g_rbAudioTestHighPhase) * 0.3f *
-                    powf(0.001f,
-                        (float)g_rbAudioTestHighSamplesSinceTrigger /
-                            RB_AUDIO_SAMPLE_RATE) +
-                sinf(g_rbAudioTestHighPhase) * 0.5f *
-                    powf(0.001f,
-                        (float)g_rbAudioTestLowSamplesSinceTrigger /
-                            RB_AUDIO_SAMPLE_RATE);
-            ++g_rbAudioTestHighSamplesSinceTrigger;
-            ++g_rbAudioTestLowSamplesSinceTrigger;
-        }
-        {
-            RBTime timeLeft = rbGetTimeLeft(&g_rbAudioTestFrameTimer);
-            if(timeLeft > 0) {
-                rbSleep(timeLeft);
-            }
-            rbStartTimer(&g_rbAudioTestFrameTimer,
-                rbTimeFromMs(1000 / RB_VIDEO_FRAME_RATE) + timeLeft);
-        }
+        rbAudioInputTestBlockingRead(pAudio);
         break;
     case RBAI_ALSA:
     case RBAI_OPENAL:
@@ -136,6 +119,31 @@ void rbAudioInputBlockingRead(RBRawAudio * pAudio)
     	// RBAIS_INVALID is not legal here: we must be init'd
     	rbFatal("Invalid audio source type %d\n", g_rbAudioInput);
     	break;
+    }
+    
+    pAudio->frameNum = g_rbAudioVideoFrameCount;
+    pAudio->overdriven = false;
+    pAudio->largeDc = false;
+    
+    for(size_t i = 0; i < RB_AUDIO_CHANNELS; ++i) {
+        lastSamples[i] = g_rbDcOffsetEliminationLastSample[i];
+    }
+    for(size_t j = 0; j < RB_AUDIO_FRAMES_PER_VIDEO_FRAME; ++j) {
+        for(size_t i = 0; i < RB_AUDIO_CHANNELS; ++i) {
+            lastSamples[i] =
+                lastSamples[i] * (1.0 - RB_DC_OFFSET_ELIMINATION_HIGH_PASS_K) +
+                pAudio->audio[j][i] * RB_DC_OFFSET_ELIMINATION_HIGH_PASS_K;
+            if(fabsf(pAudio->audio[j][i]) > RB_AUDIO_OVERDRIVE_THRESHOLD) {
+                pAudio->overdriven = true;
+            }
+            if(fabsf(lastSamples[i]) > RB_AUDIO_LARGE_DC_THRESHOLD) {
+                pAudio->largeDc = true;
+            }
+            pAudio->audio[j][i] -= lastSamples[i];
+        }
+    }
+    for(size_t i = 0; i < RB_AUDIO_CHANNELS; ++i) {
+        g_rbDcOffsetEliminationLastSample[i] = lastSamples[i];
     }
     
     if(rbInfoEnabled()) {
@@ -156,6 +164,42 @@ void rbAudioInputBlockingRead(RBRawAudio * pAudio)
     }
     
     ++g_rbAudioVideoFrameCount;
+}
+
+
+void rbAudioInputTestBlockingRead(RBRawAudio * pAudio)
+{
+    if(rbGetTimerPeriodsAndReset(&g_rbAudioTestHighBeatTimer) > 0) {
+        g_rbAudioTestHighSamplesSinceTrigger = 0;
+    }
+    if(rbGetTimerPeriodsAndReset(&g_rbAudioTestLowBeatTimer) > 0) {
+        g_rbAudioTestLowSamplesSinceTrigger = 0;
+    }
+    for(size_t i = 0; i < LENGTHOF(pAudio->audio); ++i) {
+        g_rbAudioTestHighPhase = fmodf(g_rbAudioTestHighPhase +
+            2.0f * RB_PI * 1000.0f / RB_AUDIO_SAMPLE_RATE, 2.0f * RB_PI);
+        g_rbAudioTestLowPhase = fmodf(g_rbAudioTestLowPhase +
+            2.0f * RB_PI * 50.0f / RB_AUDIO_SAMPLE_RATE, 2.0f * RB_PI);
+        pAudio->audio[i][0] = pAudio->audio[i][1] =
+            sinf(g_rbAudioTestHighPhase) * 0.3f *
+                powf(0.001f,
+                    (float)g_rbAudioTestHighSamplesSinceTrigger /
+                        RB_AUDIO_SAMPLE_RATE) +
+            sinf(g_rbAudioTestHighPhase) * 0.5f *
+                powf(0.001f,
+                    (float)g_rbAudioTestLowSamplesSinceTrigger /
+                        RB_AUDIO_SAMPLE_RATE);
+        ++g_rbAudioTestHighSamplesSinceTrigger;
+        ++g_rbAudioTestLowSamplesSinceTrigger;
+    }
+    {
+        RBTime timeLeft = rbGetTimeLeft(&g_rbAudioTestFrameTimer);
+        if(timeLeft > 0) {
+            rbSleep(timeLeft);
+        }
+        rbStartTimer(&g_rbAudioTestFrameTimer,
+            rbTimeFromMs(1000 / RB_VIDEO_FRAME_RATE) + timeLeft);
+    }
 }
 
 

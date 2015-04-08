@@ -54,6 +54,9 @@
 #define RB_PI_D (3.14159265358979323846)
 #define RB_SQRT_2 (1.4142135623730950488f)
 
+#define RB_AUDIO_OVERDRIVE_THRESHOLD (0.75f)
+#define RB_AUDIO_LARGE_DC_THRESHOLD (0.25f)
+
 
 typedef enum {
     RBLL_INFO,
@@ -102,6 +105,18 @@ typedef enum {
     RBLO_SPIDEV,
     RBLO_PRUSS,
 } RBLightOutput;
+
+
+typedef enum {
+    RBDM_OFF = 0, // Must be entry 0, so that rbZero(&rbControls...) will work
+    RBDM_DISPLAY_AUDIO_INPUT,
+    RBDM_DISPLAY_CONTROL_INPUT,
+    RBDM_PROJECTION_BORDER,
+    RBDM_IDENTIFY_PANELS,
+    RBDM_IDENTIFY_STRINGS,
+    RBDM_IDENTIFY_PIXELS,
+    RBDM_COUNT,
+} RBDebugDisplayMode;
 
 
 #ifdef RB_USE_NEON
@@ -191,17 +206,31 @@ typedef struct {
 
 
 typedef struct {
+    RBVector2 position;
+    RBVector2 uInc;
+    RBVector2 vInc;
+} RBPanelConfig;
+
+
+typedef struct {
+    uint32_t frameNum;
+    bool overdriven;
+    bool largeDc;
     float audio[RB_AUDIO_FRAMES_PER_VIDEO_FRAME][RB_AUDIO_CHANNELS];
 } RBRawAudio;
 
 
 typedef struct {
     float controllers[RB_NUM_CONTROLLERS];
-    float triggers[RB_NUM_TRIGGERS];
+    bool triggers[RB_NUM_TRIGGERS];
+    bool debugDisplayReset;
+    RBDebugDisplayMode debugDisplayMode;
 } RBControls;
 
 
 typedef struct {
+    uint32_t frameNum;
+    
     RBControls controls;
     
     float rawAudio[RB_AUDIO_FRAMES_PER_VIDEO_FRAME];
@@ -215,6 +244,7 @@ typedef struct {
     float leftRightBalance;
     
     bool sourceOverdriven;
+    bool sourceLargeDc;
     bool peakDetected;
     
     float chladniPattern[RB_CHLADNI_SIZE][RB_CHLADNI_SIZE];
@@ -222,13 +252,7 @@ typedef struct {
 
 
 typedef struct {
-    RBVector2 position;
-    RBVector2 uInc;
-    RBVector2 vInc;
-} RBPanelConfig;
-
-
-typedef struct {
+    uint32_t frameNum;
     size_t numLightStrings;
     size_t numLightsPerString;
     RBColor data[RB_MAX_LIGHTS];

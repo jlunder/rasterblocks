@@ -10,17 +10,6 @@
 #include "pruss_io.h"
 
 
-typedef enum {
-    RBDM_OFF,
-    RBDM_DISPLAY_AUDIO_INPUT,
-    RBDM_DISPLAY_CONTROL_INPUT,
-    RBDM_PROJECTION_BORDER,
-    RBDM_IDENTIFY_PANELS,
-    RBDM_IDENTIFY_STRINGS,
-    RBDM_IDENTIFY_PIXELS,
-} RBDebugDisplayMode;
-
-
 static char const * const g_rbLogLevelNames[RBLL_COUNT] = {
     "INFO",
     "WARN",
@@ -61,14 +50,14 @@ static uint64_t g_rbClockNs = 0;
 static uint64_t g_rbClockMsNsRemainder = 0;
 static RBTime g_rbClockMs = 0;
 
-static RBDebugDisplayMode g_rbDebugDisplayMode = RBDM_OFF;
-
 
 static void rbProcessSubsystems(bool * pCoslClockNsnfigChanged);
 static void rbProjectLightData(RBTexture2 * pProjFrame,
     RBRawLightFrame * pRawFrame);
-static void rbOverlayFrameDebugInfo(RBTexture2 * pFrame);
-static void rbOverlayRawDebugInfo(RBRawLightFrame * pRawFrame);
+static void rbOverlayFrameDebugInfo(RBAnalyzedAudio * pAnalysis,
+    RBTexture2 * pFrame);
+static void rbOverlayRawDebugInfo(RBAnalyzedAudio * pAnalysis,
+    RBRawLightFrame * pRawFrame);
 static void rbProcessConfigChanged(void);
 static void rbProcessGentleRestart(void);
 
@@ -511,9 +500,14 @@ void rbProcessSubsystems(bool * pConfigChanged)
     rbLightGenerationGenerate(&analysis, pFrame);
     
     rbChangeSubsystem(RBS_MAIN);
-    rbOverlayFrameDebugInfo(pFrame);
+    rbOverlayFrameDebugInfo(&analysis, pFrame);
     rbProjectLightData(pFrame, &g_rbLastFrameLightData);
-    rbOverlayRawDebugInfo(&g_rbLastFrameLightData);
+    // This is kind of a hacky way to propagate the frame number; perhaps this
+    // is an indication we should be wrapping the pFrame texture in another
+    // purpose-specific struct so ...Generate can pass it along?
+    g_rbLastFrameLightData.frameNum = analysis.frameNum;
+    rbAssert(g_rbLastFrameLightData.frameNum == rawAudio.frameNum);
+    rbOverlayRawDebugInfo(&analysis, &g_rbLastFrameLightData);
     
     rbTexture2Free(pFrame);
     
@@ -546,16 +540,18 @@ void rbProjectLightData(RBTexture2 * pProjFrame, RBRawLightFrame * pRawFrame)
 }
 
 
-void rbOverlayFrameDebugInfo(RBTexture2 * pFrame)
+void rbOverlayFrameDebugInfo(RBAnalyzedAudio * pAnalysis, RBTexture2 * pFrame)
 {
-    UNUSED(g_rbDebugDisplayMode);
+    UNUSED(pAnalysis);
     UNUSED(pFrame);
     //t2dtextf(pFrame, 0, 0, colori(63, 63, 63, 255), "EEE");
 }
 
 
-void rbOverlayRawDebugInfo(RBRawLightFrame * pRawFrame)
+void rbOverlayRawDebugInfo(RBAnalyzedAudio * pAnalysis,
+    RBRawLightFrame * pRawFrame)
 {
+    UNUSED(pAnalysis);
     UNUSED(pRawFrame);
 }
 
