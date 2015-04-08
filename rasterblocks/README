@@ -1,36 +1,34 @@
 README
 
 
-WARNING the automatic dependency generation in the Makefile seems to recently
-have been broken, so PLEASE issue a "make clean" before rebuilding with any
-changes!
+This is the (minimal) documentation for rasterblocks.
 
 
-There is a known bug that the server allows "0" values for some config items.
-The program interprets a "0" value as "value not set, don't change", so it
-will behave strangely if you use these values. This is what happened in the
-demo with the AGC settings appearing not to be reset (they weren't, because I
-chose a 0 AGC min).
+BUILDING
+
+There are 3 supported builds currently:
+
+1. Host testing build -- recent Mac OS X and Ubuntu 14.04 supported on Intel.
+   This build supports audio input via OpenAL or ALSA, depending on platform,
+   and output via OpenGL in a test window, or direct to a PixelPusher to
+   actually control LEDs. MIDI input is currently not available.
+
+2. Target build -- rasterblocks can be built directly on the Beaglebone. This
+   build supports all target platform features; essentially, everything except
+   OpenGL output.
+
+3. Target cross-build -- if you want, you can cross-build for the Beaglebone
+   from Ubuntu 14.04 on Intel. The full package build is supported -- it
+   generate a package and executable that function identically to the ones
+   built on the Beaglebone.
 
 
-If you just want to do a full cross-build, then you need to run the
-./setup-target-build-environment script found in this folder first to set up
-your build environment; then, just "make". The default target builds
-"bin/rasterblocks-1.0_armhf.deb"; copy that to the target platform, install
-it, and it should just go.
+HOST BUILD (on Intel/Linux, OS X)
 
-There should not be any extra runtime dependencies not already on the BBB,
-but if you encounter problems with this and you cannot figure out which
-packages are needed we can give you a shortlist of likely candidates so
-please let us know.
+Building on host after you install any dependendencies you are missing, simply
+"make bin/rasterblocks". Note that if you "make all" it will try to do a
+cross-build which is not what you want.
 
-It's best if the BBB is connected to the network during installation so npm
-setup can fetch dependencies.
-
-
-There is a local test version of the app that builds in Linux and uses
-OpenGL to render a simulation of the lights.  It is not the default build,
-it can be built using the command "make bin/rasterblocks".
 
 You need to install some extra packages to do local development on Ubuntu
 14.04 (trusty):
@@ -45,12 +43,41 @@ sudo apt-get install libjson0 libjson0-dev
 When running the local test system, a couple command-line parameters are
 helpful:
 
+-og                   # output to OpenGL; default is to output to the
+                      # PixelPusher!
 -c <config_file_path> # specify the path to the initial config file
--sf <wav_file_path>   # run in test mode using an audio file instead of ALSA
--sa <audio_hw>        # run using actual audio input via ALSA; param is usually
+-it                   # run in test mode using internally-generated audio
+-ia <audio_hw>        # run using actual audio input via ALSA; param is usually
                       # "plughw:1" for an external USB audio device, or
                       # "plughw:0" for the default internal audio device.
+-op <address>         # output to PixelPusher at <address>; useful if you
+                      # don't have the PP at the default address.
+-v                    # log verbosely. REALLY verbosely.
 
+
+TARGET BUILD (on Beaglebone/Debian)
+
+This is the simplest configuration; "make all" from this folder should build
+both bin/rasterblocks.target and the package, bin/rasterblocks-1.0_armhf.deb.
+
+There is a debug build available for development on target as well, with
+optimizations disabled. "make bin/rasterblocks.target-debug" to build it.
+
+
+CROSS-BUILD
+
+If you want to do a full cross-build, then you need to run the
+./setup-target-build-environment script found in this folder first to set up
+your build environment; after that, just "make". The default target builds
+"bin/rasterblocks-1.0_armhf.deb"; copy that to the target platform, install
+it, and it should just go. There should not be any extra runtime dependencies
+not already on the BBB.
+
+It's best if the BBB is connected to the network during installation so npm
+setup can fetch dependencies.
+
+
+NODE.JS SERVER
 
 When working on the nodeserver, you need to "npm install" to get
 dependencies of the code installed alongside.
@@ -59,3 +86,8 @@ Then, to launch the server:
 
 node server.js <path to config file>
 
+
+
+DESIGN
+
+Rasterblocks is structured as ...
