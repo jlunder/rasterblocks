@@ -266,7 +266,7 @@ void rbControlInputMidiParserParseByteProcessMessage(
                 else if(midiCont == RB_MIDI_CONTROLLER_DEBUG_MODE) {
                     pControls->debugDisplayReset = true;
                     pControls->debugDisplayMode =
-                       (RBDebugDisplayMode)(midiVal * RBDM_COUNT / 127);
+                       (RBDebugDisplayMode)(midiVal * RBDM_COUNT / 128);
                     rbInfo("Debug mode change (via controller): %d\n",
                         pControls->debugDisplayMode);
                 }

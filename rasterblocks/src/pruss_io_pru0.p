@@ -90,7 +90,8 @@ run_entry:
     mov     r1, 0
     sbbo    r0, l.p_adc, TSCADC_STEPCONFIG1, 8
     mov     r0, 1 << 19
-    mov     r1, 0
+    or      r0, r0, 0x08 // 4x averaging
+    mov     r1, (1 << 24) | 1
     sbbo    r0, l.p_adc, TSCADC_STEPCONFIG1 + 8, 8
     
     // Re-enable ADC, enable write-protect

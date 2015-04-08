@@ -928,10 +928,10 @@ void rbTexture2FillRect(RBTexture2 * pDestTex, int32_t du, int32_t dv,
     
     rbClipRect(pDestTex, &r, NULL);
     
-    for(int32_t j = 0; j < dh; ++j) {
-        for(int32_t i = 0; i < dw; ++i) {
-            t2sett(pDestTex, i, j, cmixi(t2gett(pDestTex, i, j), 255 - c.a, c,
-                255));
+    for(int32_t j = 0; j < r.h; ++j) {
+        for(int32_t i = 0; i < r.w; ++i) {
+            t2sett(pDestTex, i + r.x, j + r.y,
+                cmixi(t2gett(pDestTex, i + r.x, j + r.y), 255 - c.a, c, 255));
         }
     }
 }

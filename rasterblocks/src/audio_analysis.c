@@ -330,6 +330,8 @@ static void rbAudioAnalysisUpdateAgc(RBAnalyzedAudio * pAnalysis)
     pAnalysis->trebleEnergy *= agcValue;
     
     pAnalysis->totalEnergy *= agcValue;
+    
+    pAnalysis->agcValue = g_rbAgcTrackingValue;
 }
 
 

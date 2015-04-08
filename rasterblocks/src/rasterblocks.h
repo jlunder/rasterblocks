@@ -109,9 +109,10 @@ typedef enum {
 
 typedef enum {
     RBDM_OFF = 0, // Must be entry 0, so that rbZero(&rbControls...) will work
-    RBDM_DISPLAY_AUDIO_INPUT,
-    RBDM_DISPLAY_CONTROL_INPUT,
-    RBDM_PROJECTION_BORDER,
+    RBDM_AUDIO,
+    RBDM_CONTROLS,
+    RBDM_PERF_METRICS,
+    RBDM_PROJECTION_GRID,
     RBDM_IDENTIFY_PANELS,
     RBDM_IDENTIFY_STRINGS,
     RBDM_IDENTIFY_PIXELS,
@@ -242,6 +243,8 @@ typedef struct {
     float trebleEnergy;
     float totalEnergy;
     float leftRightBalance;
+    
+    float agcValue;
     
     bool sourceOverdriven;
     bool sourceLargeDc;
@@ -412,6 +415,16 @@ static inline int32_t rbClampI(int32_t i, int32_t iMin, int32_t iMax)
     }
 }
 
+static inline int32_t rbMinI(int32_t a, int32_t b)
+{
+    return a < b ? a : b;
+}
+
+static inline int32_t rbMaxI(int32_t a, int32_t b)
+{
+    return a > b ? a : b;
+}
+
 static inline float rbClampF(float f, float fMin, float fMax)
 {
     // This is structured carefully so that NaN will clamp as fMin.
@@ -423,6 +436,16 @@ static inline float rbClampF(float f, float fMin, float fMax)
         return f;
     }
     return fMin;
+}
+
+static inline float rbMinF(float a, float b)
+{
+    return a < b ? a : b;
+}
+
+static inline float rbMaxF(float a, float b)
+{
+    return a > b ? a : b;
 }
 
 static inline uint32_t rbRandomI(uint32_t range)

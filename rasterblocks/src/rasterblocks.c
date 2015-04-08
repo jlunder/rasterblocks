@@ -54,10 +54,27 @@ static RBTime g_rbClockMs = 0;
 static void rbProcessSubsystems(bool * pCoslClockNsnfigChanged);
 static void rbProjectLightData(RBTexture2 * pProjFrame,
     RBRawLightFrame * pRawFrame);
+
 static void rbOverlayFrameDebugInfo(RBAnalyzedAudio * pAnalysis,
     RBTexture2 * pFrame);
+static void rbOverlayFrameAudioDebugInfo(RBAnalyzedAudio * pAnalysis,
+    RBTexture2 * pFrame);
+static void rbOverlayFrameControlsDebugInfo(RBAnalyzedAudio * pAnalysis,
+    RBTexture2 * pFrame);
+static void rbOverlayFramePerfMetricsDebugInfo(RBAnalyzedAudio * pAnalysis,
+    RBTexture2 * pFrame);
+static void rbOverlayFrameProjectionGridDebugInfo(RBAnalyzedAudio * pAnalysis,
+    RBTexture2 * pFrame);
+
 static void rbOverlayRawDebugInfo(RBAnalyzedAudio * pAnalysis,
     RBRawLightFrame * pRawFrame);
+static void rbOverlayRawIdentifyPanelsDebugInfo(RBAnalyzedAudio * pAnalysis,
+    RBRawLightFrame * pRawFrame);
+static void rbOverlayRawIdentifyStringsDebugInfo(RBAnalyzedAudio * pAnalysis,
+    RBRawLightFrame * pRawFrame);
+static void rbOverlayRawIdentifyPixelsDebugInfo(RBAnalyzedAudio * pAnalysis,
+    RBRawLightFrame * pRawFrame);
+
 static void rbProcessConfigChanged(void);
 static void rbProcessGentleRestart(void);
 
@@ -496,8 +513,13 @@ void rbProcessSubsystems(bool * pConfigChanged)
     rbChangeSubsystem(RBS_AUDIO_ANALYSIS);
     rbAudioAnalysisAnalyze(&rawAudio, &analysis);
     
-    rbChangeSubsystem(RBS_LIGHT_GENERATION);
-    rbLightGenerationGenerate(&analysis, pFrame);
+    // Only generate lights if they'll actually be visible! Most of the debug
+    // overlays fully take over the display.
+    if((analysis.controls.debugDisplayMode == RBDM_OFF) ||
+            (analysis.controls.debugDisplayMode == RBDM_PERF_METRICS)) {
+        rbChangeSubsystem(RBS_LIGHT_GENERATION);
+        rbLightGenerationGenerate(&analysis, pFrame);
+    }
     
     rbChangeSubsystem(RBS_MAIN);
     rbOverlayFrameDebugInfo(&analysis, pFrame);
@@ -542,13 +564,189 @@ void rbProjectLightData(RBTexture2 * pProjFrame, RBRawLightFrame * pRawFrame)
 
 void rbOverlayFrameDebugInfo(RBAnalyzedAudio * pAnalysis, RBTexture2 * pFrame)
 {
-    UNUSED(pAnalysis);
+    switch(pAnalysis->controls.debugDisplayMode) {
+    case RBDM_OFF:
+        break;
+    case RBDM_AUDIO:
+        rbOverlayFrameAudioDebugInfo(pAnalysis, pFrame);
+        break;
+    case RBDM_CONTROLS:
+        rbOverlayFrameControlsDebugInfo(pAnalysis, pFrame);
+        break;
+    case RBDM_PERF_METRICS:
+        rbOverlayFramePerfMetricsDebugInfo(pAnalysis, pFrame);
+        break;
+    case RBDM_PROJECTION_GRID:
+        rbOverlayFrameProjectionGridDebugInfo(pAnalysis, pFrame);
+        break;
+    case RBDM_IDENTIFY_PANELS:
+    case RBDM_IDENTIFY_STRINGS:
+    case RBDM_IDENTIFY_PIXELS:
+        break;
+    default:
+        rbFatal("Invalid debug display mode??\n");
+        break;
+    }
     UNUSED(pFrame);
     //t2dtextf(pFrame, 0, 0, colori(63, 63, 63, 255), "EEE");
 }
 
 
+void rbOverlayFrameAudioDebugInfo(RBAnalyzedAudio * pAnalysis,
+    RBTexture2 * pFrame)
+{
+    size_t w = t2getw(pFrame);
+    size_t h = t2geth(pFrame);
+    size_t const oscopeH = h * 4 / 8;
+    RBColor const bgC = colori(0, 0, 0, 0);
+    RBColor const agcC = colori(127, 127, 0, 0);
+    RBColor const lrBalC = colori(0, 127, 63, 0);
+    RBColor const bassC = colori(127, 63, 0, 0);
+    RBColor const trebC = colori(0, 0, 127, 0);
+    RBColor const odC = colori(255, 0, 0, 0);
+    RBColor const ldcC = colori(127, 0, 127, 0);
+    RBColor const pdC = colori(0, 0, 255, 0);
+    RBColor const oscopeC = colori(63, 255, 15, 0);
+    float mins[w];
+    float maxs[w];
+    
+    for(size_t i = 0; i < w; ++i) {
+        mins[i] = 1.0f;
+        maxs[i] = 0.0f;
+    }
+    rbAssert(w <= RB_AUDIO_FRAMES_PER_VIDEO_FRAME);
+    for(size_t j = 0; j < RB_AUDIO_FRAMES_PER_VIDEO_FRAME; ++j) {
+        size_t i = j * w / RB_AUDIO_FRAMES_PER_VIDEO_FRAME;
+        float s = pAnalysis->rawAudio[i] * 0.5f + 0.5f;
+        mins[i] = rbMinF(s, mins[i]);
+        maxs[i] = rbMaxF(s, maxs[i]);
+        if(mins[i] < 0.0f) {
+            mins[i] = 0.0f;
+        }
+        if(maxs[i] > 1.0f) {
+            maxs[i] = 1.0f;
+        }
+    }
+    
+    t2clear(pFrame, bgC);
+    for(size_t i = 0; i < w; ++i) {
+        float y0 = mins[i] * (oscopeH - 1);
+        float y0c = ceilf(y0);
+        float y0a = y0c - y0;
+        float y1 = maxs[i] * (oscopeH - 1);
+        float y1f = floorf(y1);
+        float y1a = y1 - y1f;
+        
+        if(y0a > 0.0f) {
+            t2sett(pFrame, i, h - 1 - (int32_t)floorf(y0),
+                cscalef(oscopeC, y0a));
+        }
+        for(int32_t y = (int32_t)y0c; y < (int32_t)y1f + 1; ++y) {
+            t2sett(pFrame, i, h - 1 - y, oscopeC);
+        }
+        if(y1a > 0.0f) {
+            t2sett(pFrame, i, h - 1 - (int32_t)ceilf(y1),
+                cscalef(oscopeC, y1a));
+        }
+    }
+    {
+        float lAgcMax = logf(g_rbConfiguration.agcMax);
+        float lAgcMin = logf(g_rbConfiguration.agcMin);
+        float lAgc = logf(pAnalysis->agcValue);
+        t2rect(pFrame, w * 0 / 8, h * 0 / 8,
+            roundf(((lAgc - lAgcMin) / (lAgcMax - lAgcMin)) * w * 8 / 8),
+            h * 1 / 8, agcC);
+    }
+    t2rect(pFrame, w * 0 / 8, h * 1 / 8,
+        rbMinI((int32_t)roundf(pAnalysis->bassEnergy * 0.5f * w * 4 / 8),
+            w * 4 / 8), h * 1 / 8, bassC);
+    t2rect(pFrame, w * 4 / 8, h * 1 / 8,
+        rbMinI((int32_t)roundf(pAnalysis->trebleEnergy * 0.5f * w * 4 / 8),
+            w * 4 / 8), h * 1 / 8, trebC);
+    t2rect(pFrame, w * 0 / 8, h * 2 / 8,
+        rbMinI((int32_t)roundf(pAnalysis->leftRightBalance * w * 4 / 8),
+            w * 4 / 8), h * 1 / 8, lrBalC);
+    if(pAnalysis->sourceOverdriven) {
+        t2rect(pFrame, w * 1 / 8, h * 3 / 8, w * 2 / 8, h * 1 / 8, odC);
+    }
+    if(pAnalysis->sourceLargeDc) {
+        t2rect(pFrame, w * 3 / 8, h * 3 / 8, w * 2 / 8, h * 1 / 8, ldcC);
+    }
+    if(pAnalysis->peakDetected) {
+        t2rect(pFrame, w * 5 / 8, h * 3 / 8, w * 2 / 8, h * 1 / 8, pdC);
+    }
+}
+
+
+void rbOverlayFrameControlsDebugInfo(RBAnalyzedAudio * pAnalysis,
+    RBTexture2 * pFrame)
+{
+    UNUSED(pAnalysis);
+    UNUSED(pFrame);
+}
+
+
+void rbOverlayFramePerfMetricsDebugInfo(RBAnalyzedAudio * pAnalysis,
+    RBTexture2 * pFrame)
+{
+    UNUSED(pAnalysis);
+    UNUSED(pFrame);
+}
+
+
+void rbOverlayFrameProjectionGridDebugInfo(RBAnalyzedAudio * pAnalysis,
+    RBTexture2 * pFrame)
+{
+    UNUSED(pAnalysis);
+    UNUSED(pFrame);
+}
+
+
 void rbOverlayRawDebugInfo(RBAnalyzedAudio * pAnalysis,
+    RBRawLightFrame * pRawFrame)
+{
+    switch(pAnalysis->controls.debugDisplayMode) {
+    case RBDM_OFF:
+        break;
+    case RBDM_AUDIO:
+    case RBDM_CONTROLS:
+    case RBDM_PERF_METRICS:
+    case RBDM_PROJECTION_GRID:
+        break;
+    case RBDM_IDENTIFY_PANELS:
+        rbOverlayRawIdentifyPanelsDebugInfo(pAnalysis, pRawFrame);
+        break;
+    case RBDM_IDENTIFY_STRINGS:
+        rbOverlayRawIdentifyStringsDebugInfo(pAnalysis, pRawFrame);
+        break;
+    case RBDM_IDENTIFY_PIXELS:
+        rbOverlayRawIdentifyPixelsDebugInfo(pAnalysis, pRawFrame);
+        break;
+    default:
+        rbFatal("Invalid debug display mode??\n");
+        break;
+    }
+    UNUSED(pRawFrame);
+}
+
+
+void rbOverlayRawIdentifyPanelsDebugInfo(RBAnalyzedAudio * pAnalysis,
+    RBRawLightFrame * pRawFrame)
+{
+    UNUSED(pAnalysis);
+    UNUSED(pRawFrame);
+}
+
+
+void rbOverlayRawIdentifyStringsDebugInfo(RBAnalyzedAudio * pAnalysis,
+    RBRawLightFrame * pRawFrame)
+{
+    UNUSED(pAnalysis);
+    UNUSED(pRawFrame);
+}
+
+
+void rbOverlayRawIdentifyPixelsDebugInfo(RBAnalyzedAudio * pAnalysis,
     RBRawLightFrame * pRawFrame)
 {
     UNUSED(pAnalysis);
