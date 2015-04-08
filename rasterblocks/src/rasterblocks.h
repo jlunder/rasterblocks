@@ -214,6 +214,7 @@ typedef struct {
     float totalEnergy;
     float leftRightBalance;
     
+    bool sourceOverdriven;
     bool peakDetected;
     
     float chladniPattern[RB_CHLADNI_SIZE][RB_CHLADNI_SIZE];

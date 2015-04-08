@@ -4,6 +4,8 @@
 
 #include "audio_analysis.h"
 
+#define RB_AUDIO_OVERDRIVE_THRESHOLD (0.75f)
+
 #define RB_AGC_SAMPLE_WINDOW_S 4
 
 static float const RB_AGC_ROOT_2 = 1.41421356237f;
@@ -334,7 +336,8 @@ static void rbAudioAnalysisUpdateAgc(RBAnalyzedAudio * pAnalysis)
 }
 
 
-void rbAudioAnalysisAnalyze(RBRawAudio const * audio, RBAnalyzedAudio * pAnalysis)
+void rbAudioAnalysisAnalyze(RBRawAudio const * audio,
+    RBAnalyzedAudio * pAnalysis)
 {
     float inputBuf[RB_AUDIO_FRAMES_PER_VIDEO_FRAME];
     float bufLOW[RB_AUDIO_FRAMES_PER_VIDEO_FRAME];
@@ -365,6 +368,16 @@ void rbAudioAnalysisAnalyze(RBRawAudio const * audio, RBAnalyzedAudio * pAnalysi
     memcpy(pAnalysis->trebleAudio, bufHI, sizeof pAnalysis->trebleAudio);
     
     rbAudioAnalysisUpdateAgc(pAnalysis);
+    
+    pAnalysis->sourceOverdriven = false;
+    for(size_t j = 0; j < RB_AUDIO_FRAMES_PER_VIDEO_FRAME; ++j) {
+        for(size_t i = 0; i < RB_AUDIO_CHANNELS; ++i) {
+            if(fabsf(audio->audio[j][i]) > RB_AUDIO_OVERDRIVE_THRESHOLD) {
+                pAnalysis->sourceOverdriven = true;
+                break;
+            }
+        }
+    }
     
     pAnalysis->peakDetected = false;
     if(g_rbPeakDetected) {
