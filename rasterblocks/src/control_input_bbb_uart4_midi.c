@@ -77,6 +77,7 @@ void rbControlInputBbbUart4MidiRead(RBControls * pControls)
     for(size_t i = 0; i < RB_NUM_TRIGGERS; ++i) {
         g_rbLastControls.triggers[i] = false;
     }
+    g_rbLastControls.debugDisplayReset = false;
     
     // Keep reading input as long as it looks like there's a full buffer
     for(;;) {

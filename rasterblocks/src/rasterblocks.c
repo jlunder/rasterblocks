@@ -50,6 +50,22 @@ static uint64_t g_rbClockNs = 0;
 static uint64_t g_rbClockMsNsRemainder = 0;
 static RBTime g_rbClockMs = 0;
 
+static uint32_t g_rbDebugDisplayFrameCounter = 0;
+
+static RBColor const g_rbDebugColors[10] = {
+    {127,   0,   0, 0},
+    {255, 127,   0, 0},
+    {127, 127,   0, 0},
+    {  0, 127,   0, 0},
+    {  0, 127, 127, 0},
+    {  0,   0, 127, 0},
+    { 63,   0,  95, 0},
+    {127,   0, 127, 0},
+    { 15,  15,  15, 0},
+    {127, 127, 127, 0},
+};
+
+
 
 static void rbProcessSubsystems(bool * pCoslClockNsnfigChanged);
 static void rbProjectLightData(RBTexture2 * pProjFrame,
@@ -320,6 +336,8 @@ void rbInitialize(int argc, char * argv[])
         g_rbSubsystemLogLevels[i] = logLevel;
     }
     
+    g_rbDebugDisplayFrameCounter = 0;
+    
     rbChangeSubsystem(RBS_CONFIGURATION);
     rbConfigurationSetDefaults(&g_rbConfiguration);
     rbConfigurationParseArgv(&g_rbConfiguration, argc, argv);
@@ -522,6 +540,9 @@ void rbProcessSubsystems(bool * pConfigChanged)
     }
     
     rbChangeSubsystem(RBS_MAIN);
+    if(analysis.controls.debugDisplayReset) {
+        g_rbDebugDisplayFrameCounter = 0;
+    }
     rbOverlayFrameDebugInfo(&analysis, pFrame);
     rbProjectLightData(pFrame, &g_rbLastFrameLightData);
     // This is kind of a hacky way to propagate the frame number; perhaps this
@@ -530,6 +551,7 @@ void rbProcessSubsystems(bool * pConfigChanged)
     g_rbLastFrameLightData.frameNum = analysis.frameNum;
     rbAssert(g_rbLastFrameLightData.frameNum == rawAudio.frameNum);
     rbOverlayRawDebugInfo(&analysis, &g_rbLastFrameLightData);
+    ++g_rbDebugDisplayFrameCounter;
     
     rbTexture2Free(pFrame);
     
@@ -681,8 +703,25 @@ void rbOverlayFrameAudioDebugInfo(RBAnalyzedAudio * pAnalysis,
 void rbOverlayFrameControlsDebugInfo(RBAnalyzedAudio * pAnalysis,
     RBTexture2 * pFrame)
 {
-    UNUSED(pAnalysis);
-    UNUSED(pFrame);
+    size_t w = t2getw(pFrame);
+    size_t h = t2geth(pFrame);
+    RBColor const bgC = colori(0, 0, 0, 0);
+    
+    t2clear(pFrame, bgC);
+    for(size_t i = 0; i < 5; ++i) {
+        t2rect(pFrame, w * 0 / 8, h * i / 8,
+            roundf((pAnalysis->controls.controllers[i] * 0.5f + 0.5f) *
+                w * 4 / 8), h * 1 / 8, g_rbDebugColors[i]);
+        t2rect(pFrame, w * 4 / 8, h * i / 8,
+            roundf((pAnalysis->controls.controllers[i + 5] * 0.5f + 0.5f) *
+                w * 4 / 8), h * 1 / 8, g_rbDebugColors[i + 5]);
+    }
+    for(size_t i = 0; i < 10; ++i) {
+        if(pAnalysis->controls.triggers[i]) {
+            t2rect(pFrame, w * (i % 4) * 2 / 8, h * (i / 4 + 5) * 1 / 8,
+                w * 2 / 8, h * 1 / 8, g_rbDebugColors[i]);
+        }
+    }
 }
 
 
@@ -697,8 +736,49 @@ void rbOverlayFramePerfMetricsDebugInfo(RBAnalyzedAudio * pAnalysis,
 void rbOverlayFrameProjectionGridDebugInfo(RBAnalyzedAudio * pAnalysis,
     RBTexture2 * pFrame)
 {
+    int32_t w = t2getw(pFrame);
+    int32_t h = t2geth(pFrame);
+    int32_t animFrame =
+        g_rbDebugDisplayFrameCounter * 10 / RB_VIDEO_FRAME_RATE;
+    RBColor const bgC = colori(15, 15, 15, 0);
+    RBColor const frameC = colori(127, 127, 127, 255);
+    RBColor const gridC = colori(63, 15, 0, 255);
+    RBColor const sweepC = colori(15, 63, 0, 0);
+    
     UNUSED(pAnalysis);
-    UNUSED(pFrame);
+    
+    if(animFrame >= w + h) {
+        animFrame = 0;
+        g_rbDebugDisplayFrameCounter = 0;
+    }
+    
+    t2clear(pFrame, bgC);
+    for(int32_t i = 0; i < (h / 4) - 1; ++i) {
+        t2rect(pFrame, 0, i * 4 + 3, w, 2, gridC);
+    }
+    for(int32_t i = 0; i < (w / 4) - 1; ++i) {
+        t2rect(pFrame, i * 4 + 3, 0, 2, h, gridC);
+    }
+    
+    t2dtextf(pFrame, (w - RB_DEBUG_CHAR_WIDTH * 1) / 2,
+        (h - RB_DEBUG_CHAR_HEIGHT * 2) / 2, frameC, "^");
+    t2dtextf(pFrame, (w - RB_DEBUG_CHAR_WIDTH * 1) / 2,
+        (h - RB_DEBUG_CHAR_HEIGHT * 2) / 2, frameC, "|");
+    t2dtextf(pFrame, (w - RB_DEBUG_CHAR_WIDTH * 2) / 2,
+        (h - RB_DEBUG_CHAR_HEIGHT * 2) / 2 + RB_DEBUG_CHAR_HEIGHT * 1, frameC,
+        "UP");
+    
+    t2rect(pFrame, 0, 0, w, 1, frameC);
+    t2rect(pFrame, 0, h - 1, w, 1, frameC);
+    t2rect(pFrame, 0, 0, 1, h, frameC);
+    t2rect(pFrame, w - 1, 0, 1, h, frameC);
+    
+    if(animFrame < w) {
+        t2rect(pFrame, animFrame, 0, 1, h, sweepC);
+    }
+    else {
+        t2rect(pFrame, 0, animFrame - w, w, 1, sweepC);
+    }
 }
 
 
@@ -749,8 +829,29 @@ void rbOverlayRawIdentifyStringsDebugInfo(RBAnalyzedAudio * pAnalysis,
 void rbOverlayRawIdentifyPixelsDebugInfo(RBAnalyzedAudio * pAnalysis,
     RBRawLightFrame * pRawFrame)
 {
+    size_t const lps = pRawFrame->numLightsPerString;
+    uint32_t animFrame =
+        g_rbDebugDisplayFrameCounter * 10 / RB_VIDEO_FRAME_RATE;
+    
     UNUSED(pAnalysis);
-    UNUSED(pRawFrame);
+    
+    if(animFrame >= lps) {
+        animFrame = 0;
+        g_rbDebugDisplayFrameCounter = 0;
+    }
+    
+    rbAssert(pRawFrame->numLightStrings < LENGTHOF(g_rbDebugColors));
+    for(size_t j = 0; j < pRawFrame->numLightStrings; ++j) {
+        for(size_t i = 0; i < lps; ++i) {
+            size_t index = j * lps + i;
+            if(i == animFrame) {
+                pRawFrame->data[index] = colori(255, 255, 255, 255);
+            }
+            else {
+                pRawFrame->data[index] = g_rbDebugColors[j];
+            }
+        }
+    }
 }
 
 

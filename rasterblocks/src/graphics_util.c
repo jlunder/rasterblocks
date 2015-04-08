@@ -64,6 +64,12 @@ static void rbClipRect(RBTexture2 * pDestTex, RBRect2I * pRect,
     int32_t ox = 0;
     int32_t oy = 0;
     
+    // The double negation works for 0x80000000, naive thing doesn't
+    rbAssert(-abs(pRect->x) > -RB_MAX_REASONABLE_SIZE);
+    rbAssert(-abs(pRect->y) > -RB_MAX_REASONABLE_SIZE);
+    rbAssert(-abs(pRect->w) > -RB_MAX_REASONABLE_SIZE);
+    rbAssert(-abs(pRect->h) > -RB_MAX_REASONABLE_SIZE);
+    
     if(pRect->x < 0) {
         ox = -pRect->x;
         pRect->x = 0;

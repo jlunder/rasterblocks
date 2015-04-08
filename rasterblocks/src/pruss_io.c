@@ -640,6 +640,7 @@ void rbControlInputPrussMidiRead(RBControls * pControls)
     for(size_t i = 0; i < RB_NUM_TRIGGERS; ++i) {
         g_rbLastControls.triggers[i] = false;
     }
+    g_rbLastControls.debugDisplayReset = false;
     
     rbAssert(g_rbPrussIoCapturedMidiSize <= sizeof g_rbPrussIoCapturedMidi);
     for(size_t i = 0; i < g_rbPrussIoCapturedMidiSize; ++i) {
