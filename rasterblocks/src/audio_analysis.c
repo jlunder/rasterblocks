@@ -262,6 +262,7 @@ static void rbAudioAnalysisCalculatePower(
     }
 }
 
+
 static void rbAudioAnalysisCalculateEnergy(RBAnalyzedAudio * analysis,
     float bassPower, float midPower, float treblePower,
     float leftPower, float rightPower)
@@ -278,6 +279,7 @@ static void rbAudioAnalysisCalculateEnergy(RBAnalyzedAudio * analysis,
         analysis->leftRightBalance = 0.5f;
     }
 }
+
 
 static void rbAudioAnalysisUpdateAgc(RBAnalyzedAudio * pAnalysis)
 {

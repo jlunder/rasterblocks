@@ -45,14 +45,21 @@ helpful:
 
 -og                   # output to OpenGL; default is to output to the
                       # PixelPusher!
+
 -c <config_file_path> # specify the path to the initial config file
+
 -it                   # run in test mode using internally-generated audio
+
 -ia <audio_hw>        # run using actual audio input via ALSA; param is usually
                       # "plughw:1" for an external USB audio device, or
                       # "plughw:0" for the default internal audio device.
+
 -op <address>         # output to PixelPusher at <address>; useful if you
                       # don't have the PP at the default address.
+
 -v                    # log verbosely. REALLY verbosely.
+
+-m <mode>             # start in debug mode <mode>; 0-5 valid, 0 is normal run
 
 
 TARGET BUILD (on Beaglebone/Debian)
@@ -90,4 +97,161 @@ node server.js <path to config file>
 
 DESIGN
 
-Rasterblocks is structured as ...
+Here are some brief notes on the design and implementation of Rasterblocks.
+
+
+WHAT IS RASTERBLOCKS
+
+Rasterblocks is the control software in a system that generates light displays
+for LED video walls, which react to music.
+
+It's got a variety of front ends for gathering audio and back ends for
+interfacing with different lighting systems, and it's also got a variety of
+video generation algorithms. The intent is for it to be fairly configurable at
+runtime, although right now the setup of the video generation is fairly fixed
+if you can't recompile the program.
+
+
+HOW IT IS STRUCTURED
+
+The design philosophy behind rasterblocks is KISS. There is not much
+speculative abstraction. This is a conscious design decision to make reading,
+navigating, and stepping through the source code easier. The tradeoff is that
+the coupling of the modules is a little stronger than it maybe needs to be. As
+the number of different input and output options has proliferated, future work
+could be profitably focused on reducing the coupling of modules.
+
+The program is structured generally as a pipeline, receiving input (audio and
+controls) and then feeding it through successive stages. There are 5 distinct
+stages:
+
+1. Gather input (audio and, if available, controls)
+2. Analyze the audio
+3. Generate video from the audio
+4. Format the video to match the physical arrangement of the LEDs
+5. Generate the correct electrical signal to drive the LEDs
+
+At each stage, the data undergoes a transformation; generally each stage has
+an input data type and output data type, and they're different.
+
+If you are looking at rasterblocks for the first time, you probably want to
+orient yourself by looking at these key functions first:
+
+- main() in target_harness.c: this is the simplest harness, and it's also the
+  one that executes on the target platform, so it's really the most important.
+
+- rbProcess(), and particularly rbProcessSubsystems() in rasterblocks.c: these
+  are the core of the frame loop.
+
+This should be enough to give you context and make it clear how the data is
+transformed.
+
+
+INTERESTING SUBSYSTEM DESIGN FEATURES
+
+There are a few subsystem features worth calling out.
+
+
+Shared-Memory PRU Communication
+
+Communication between the PRUs and the host uses a simple ownership-passing
+technique: each buffer is owned by either the host or one of the PRUs. This
+relies on the atomicity of word-length memory writes, but doesn't require an
+atomic compare-exchange or anything of the sort, which is important because
+the PRU doesn't have any advanced atomic operations or bus locking
+instructions.
+
+Fancier locking or coordination would have to use a peripheral like the
+mailbox.
+
+Messages are placed in the buffer, then ownership is transferred to the
+recipient. For this to work, each CPU can only access the buffer if it is the
+owner -- setting ownership has to be the last thing it does, and ownership
+cannot be reclaimed, it has to be given back (which is a problem for triple-
+buffering techniques which need this).
+
+This technique is used by both the PRUs.
+
+
+PRU Input Poll Timing
+
+The input polling in pruss_io_pru0.p is worth looking at. Careful sequencing
+will allow the UART to be polled while running the ADC (only ADC poll is
+implemented at the moment); timing is derived from PRUSS clock via the PRU's
+instruction counter. The comments in the assembler explain the sequencing.
+
+
+Pluggable Image Generators
+
+The one plugin abstraction implemented is in the image generators. See
+light_generation.c; there is a template at the end of that file for a basic
+generator plugin.
+
+The pluggable generators allow different effects to be composited together to
+make more complex, layered, varied effects from a smaller number of building
+blocks.
+
+
+Configuration Hot-Reload
+
+The communication method between the web app and rasterblocks is extremely
+simple: rasterblocks watches the config file, constantly polling its mtime
+by calling stat(). The web app writes a new config file (using the atomic-
+write trick of writing the file to a new name temporarily, then renaming it to
+the proper name, to avoid having rasterblocks try to load a partial config
+file). When the mtime changes, the config is reloaded.
+
+The reload/reinit path mostly reuses the shutdown/startup machinery; see
+configuration.c and rasterblocks.c to see how this is sequenced.
+
+Reload mostly involves having the init path called again without shutdown;
+this means the subsystem init functions must be resilient to this. This is
+typically implemented by calling shutdown as the first part of the init, but
+there is room for faster reinit paths to be implemented without needing a lot
+of extra machinery.
+
+
+SIGBREAK Handling
+
+In target_harness.c, a signal handler is installed to gracefully shut down if
+SIGBREAK is received. A double signal forces abort, so this shouldn't cause
+the program to get stuck.
+
+This is important because the PRUs don't actually necessarily get cleaned up
+completely (or at all) by the kernel without a clean exit.
+
+
+FUTURE WORK
+
+Here are a few ideas for future improvements and features:
+
+- Scripting to handle the initialization of image generators; this could even
+  include scripting custom image generation code.
+
+- Implement functions to load external resources (like images) at runtime.
+
+- Modify the PRU code to read from/write to external DRAM instead of being
+  restricted to PRU local RAM, so it can use larger buffers (and more of them)
+  to prevent frame dropping, which is currently an issue.
+
+- Implement stricter timing of output, possibly via PRU-PRU communication.
+  This implies some kind of structured way of handling frame drops (hopefully
+  including intelligence in the main loop to skip image gen when we're behind
+  frames)
+
+- Clean up the audio input code; it doesn't really follow patterns established
+  for other modules, or even any kind of consistent patterns really.
+
+- Design a plugin architecture for the input and output modules, and refactor
+  them to use it.
+
+- Performance improvements: reimplement the graphics code using NEON
+  intrinsics or hardware video acceleration.
+
+- Implement a mapping system for controller inputs, so MIDI controller/note
+  on/etc. messages can be mapped via the config file and reconfigured at
+  runtime.
+
+- Fix the high-pass filter, which currently I believe has a phase issue that
+  causes it to pass a small amount of low frequency.
+
