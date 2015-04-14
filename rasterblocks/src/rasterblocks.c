@@ -97,10 +97,6 @@ static void rbOverlayFrameProjectionGridDebugInfo(RBAnalyzedAudio * pAnalysis,
 
 static void rbOverlayRawDebugInfo(RBAnalyzedAudio * pAnalysis,
     RBRawLightFrame * pRawFrame);
-static void rbOverlayRawIdentifyPanelsDebugInfo(RBAnalyzedAudio * pAnalysis,
-    RBRawLightFrame * pRawFrame);
-static void rbOverlayRawIdentifyStringsDebugInfo(RBAnalyzedAudio * pAnalysis,
-    RBRawLightFrame * pRawFrame);
 static void rbOverlayRawIdentifyPixelsDebugInfo(RBAnalyzedAudio * pAnalysis,
     RBRawLightFrame * pRawFrame);
 
@@ -670,8 +666,6 @@ void rbOverlayFrameDebugInfo(RBAnalyzedAudio * pAnalysis, RBTexture2 * pFrame)
         modeName = "Grid";
         rbOverlayFrameProjectionGridDebugInfo(pAnalysis, pFrame);
         break;
-    case RBDM_IDENTIFY_PANELS:
-    case RBDM_IDENTIFY_STRINGS:
     case RBDM_IDENTIFY_PIXELS:
         break;
     default:
@@ -894,12 +888,6 @@ void rbOverlayRawDebugInfo(RBAnalyzedAudio * pAnalysis,
     case RBDM_PERF_METRICS:
     case RBDM_PROJECTION_GRID:
         break;
-    case RBDM_IDENTIFY_PANELS:
-        rbOverlayRawIdentifyPanelsDebugInfo(pAnalysis, pRawFrame);
-        break;
-    case RBDM_IDENTIFY_STRINGS:
-        rbOverlayRawIdentifyStringsDebugInfo(pAnalysis, pRawFrame);
-        break;
     case RBDM_IDENTIFY_PIXELS:
         rbOverlayRawIdentifyPixelsDebugInfo(pAnalysis, pRawFrame);
         break;
@@ -907,22 +895,6 @@ void rbOverlayRawDebugInfo(RBAnalyzedAudio * pAnalysis,
         rbFatal("Invalid debug display mode??\n");
         break;
     }
-    UNUSED(pRawFrame);
-}
-
-
-void rbOverlayRawIdentifyPanelsDebugInfo(RBAnalyzedAudio * pAnalysis,
-    RBRawLightFrame * pRawFrame)
-{
-    UNUSED(pAnalysis);
-    UNUSED(pRawFrame);
-}
-
-
-void rbOverlayRawIdentifyStringsDebugInfo(RBAnalyzedAudio * pAnalysis,
-    RBRawLightFrame * pRawFrame)
-{
-    UNUSED(pAnalysis);
     UNUSED(pRawFrame);
 }
 
