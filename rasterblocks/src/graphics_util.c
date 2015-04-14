@@ -900,10 +900,10 @@ void rbTexture2DebugTextF(RBTexture2 * pDestTex, int32_t du, int32_t dv,
     
     // Convert chars in buf into indices into the font
     for(int i = 0; i < bufLen; ++i) {
-        if(buf[i] < 32) {
+        if((uint8_t)buf[i] < 32) {
             buf[i] = 0;
         }
-        else if(buf[i] > 127) {
+        else if((uint8_t)buf[i] > 127) {
             buf[i] = '?' - 32;
         }
         else {

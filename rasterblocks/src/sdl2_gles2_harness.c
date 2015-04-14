@@ -106,9 +106,9 @@ int main(int argc, char *argv[])
         SDL_GetWindowSize(mainwindow, &width, &height);
         gles2_harness_reshape(width, height);
         
-        gles2_harness_update(void);
+        gles2_harness_update();
 
-		SDL_GL_SwapWindow(mainwindow);
+        SDL_GL_SwapWindow(mainwindow);
     }
     
     gles2_harness_terminate();
