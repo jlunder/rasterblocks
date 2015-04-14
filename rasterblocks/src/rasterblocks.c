@@ -9,6 +9,11 @@
 #include "light_output.h"
 #include "pruss_io.h"
 
+#ifdef RB_OSX
+#include <mach/mach.h>
+#include <mach/mach_time.h>
+#endif
+
 
 static char const * const g_rbLogLevelNames[RBLL_COUNT] = {
     "INFO",

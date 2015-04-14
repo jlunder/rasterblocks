@@ -138,7 +138,7 @@ void rbAudioInputBlockingRead(RBRawAudio * pAudio)
             if(fabsf(pAudio->audio[j][i]) > RB_AUDIO_OVERDRIVE_THRESHOLD) {
                 pAudio->overdriven = true;
             }
-            if(fabsf(lastSamples[i]) > RB_AUDIO_LARGE_DC_THRESHOLD) {
+            if(fabs(lastSamples[i]) > RB_AUDIO_LARGE_DC_THRESHOLD) {
                 pAudio->largeDc = true;
             }
             pAudio->audio[j][i] -= lastSamples[i];
