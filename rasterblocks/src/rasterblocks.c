@@ -568,7 +568,6 @@ void rbProcessSubsystems(bool * pConfigChanged)
     rbChangeSubsystem(RBS_AUDIO_INPUT);
     rbAudioInputBlockingRead(&rawAudio);
     
-    computeStartNs = rbGetRealTimeNs();
     // Do light output and control input right after audio input to stabilize
     // timings
     rbChangeSubsystem(RBS_LIGHT_OUTPUT);
@@ -576,6 +575,8 @@ void rbProcessSubsystems(bool * pConfigChanged)
     
     rbChangeSubsystem(RBS_CONTROL_INPUT);
     rbControlInputRead(&analysis.controls);
+    
+    computeStartNs = rbGetRealTimeNs();
     
     // Everything else is bulk data processing, not timing critical
     rbChangeSubsystem(RBS_AUDIO_ANALYSIS);

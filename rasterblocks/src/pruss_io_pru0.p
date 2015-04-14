@@ -10,8 +10,10 @@
 #define CONTROL_OFS (0)
 #define AUDIO_0_OFS (SIZE(pru_control) + SIZE(buffer_control) * 0)
 #define AUDIO_1_OFS (SIZE(pru_control) + SIZE(buffer_control) * 1)
-#define MIDI_0_OFS  (SIZE(pru_control) + SIZE(buffer_control) * 2)
-#define MIDI_1_OFS  (SIZE(pru_control) + SIZE(buffer_control) * 3)
+#define AUDIO_2_OFS (SIZE(pru_control) + SIZE(buffer_control) * 2)
+#define MIDI_0_OFS  (SIZE(pru_control) + SIZE(buffer_control) * 3)
+#define MIDI_1_OFS  (SIZE(pru_control) + SIZE(buffer_control) * 4)
+#define MIDI_2_OFS  (SIZE(pru_control) + SIZE(buffer_control) * 5)
 
 
 .struct main_vars
@@ -117,8 +119,8 @@ run_entry_adc_wait_idle_fin:
     mov     r0, 0x3
     sbbo    r0, l.p_adc, TSCADC_CTRL, 4
     
-    // We have no buffers yet, so we can't *swap*, we must *acquire*; this
-    // also sets up l.status.
+    // We have no buffers yet, so we can't *swap*, we must *acquire*.
+    mov     l.status, STATUS_NOMINAL
     call     swap_buffers_acquire
     
 run_loop:
@@ -168,14 +170,14 @@ run_clear_adc_fifo_fin:
     // samples; there's a fixed but difficult to calculate number of extra
     // cycles introduced by the delay between reading/testing this counter and
     // loop and cycle_reset.
-    mov     r0, 4000
-    clr     r31, 5
+    mov     r0, 4150
+    clr     r30, 5
 run_sample_timing_wait_loop:
     lbbo    r1, l.p_pru_ctrl, PRU_CTRL_CYCLE, 4
     qbgt    run_sample_timing_wait_loop, r1, r0
     
     call    cycle_reset
-    set     r31, 5
+    set     r30, 5
     
     // Enable STEP1 and STEP2, which starts conversion immediately
     mov     r0, 0x006
@@ -232,10 +234,13 @@ run_poll_adc_wait_conversion_fin:
     // Expect ID 1 for result 1
     qbne    run_poll_adc_desync, r1.w2, 1
     // Shuffle the data into r0
-    mov     r0.w2, r1.w0
+    and     r0.b1, r0.b1, 0x0F
+    lsl     r1.b1, r1.b1, 4
+    or      r0.b1, r0.b1, r1.b1
+    mov     r0.b2, r1.b0
     // Store data and update pointer
-    sbbo    r0, audio_buf.address, audio_buf.size, 4
-    add     audio_buf.size, audio_buf.size, 4
+    sbbo    r0, audio_buf.address, audio_buf.size, 3
+    add     audio_buf.size, audio_buf.size, 3
     // Go back to the start: we want to empty the FIFO if somehow multiple
     // values get stuck in there, also swap buffer immediately if possible, to
     // absolutely minimize latency
@@ -267,6 +272,7 @@ swap_buffers:
     // overruns, etc.
     mov     audio_buf.status, l.status
     mov     midi_buf.status, l.status
+    mov     l.status, STATUS_NOMINAL
     // First, hand the buffers we're currently working with back to the host
     sbbo    audio_buf, l.p_audio_buf, 0, SIZE(audio_buf)
     sbbo    midi_buf, l.p_midi_buf, 0, SIZE(midi_buf)
@@ -276,7 +282,7 @@ swap_buffers:
     mov     midi_buf.owner, OWNER_HOST
     sbbo    midi_buf.owner, l.p_audio_buf, OFFSET(audio_buf.owner), SIZE(audio_buf.owner)
     
-    // Trigger interrupt to wake up host!
+    // Trigger interrupt to wake up host
     mov     r31.b0, PRU0_ARM_INTERRUPT + 16
     
 swap_buffers_acquire:
@@ -314,7 +320,6 @@ swap_buffers_buffer_1_unavailable:
 swap_buffers_read_buffer:
     lbbo    audio_buf, l.p_audio_buf, OFFSET(audio_buf), SIZE(audio_buf)
     lbbo    midi_buf, l.p_midi_buf, OFFSET(midi_buf), SIZE(midi_buf)
-    mov     l.status, STATUS_NOMINAL
     ret
 
 
