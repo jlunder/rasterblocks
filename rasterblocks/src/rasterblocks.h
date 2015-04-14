@@ -175,7 +175,6 @@ typedef struct {
     // defaults
     char configPath[PATH_MAX];
     
-    //
     RBAudioInput audioInput;
     char audioInputParam[PATH_MAX];
     
@@ -190,12 +189,6 @@ typedef struct {
     float agcMax;
     float agcMin;
     float agcStrength;
-    // analysis tweaks?
-    // output mode?
-    // output device path?
-    // hot config port/etc.?
-    
-    int32_t mode;
     
     float brightness;
     int32_t projectionWidth;
@@ -203,6 +196,8 @@ typedef struct {
     size_t numLightStrings;
     size_t numLightsPerString;
     RBVector2 lightPositions[RB_MAX_LIGHTS];
+    
+    int32_t mode;
 } RBConfiguration;
 
 
@@ -214,7 +209,7 @@ typedef struct {
 
 
 typedef struct {
-    uint32_t frameNum;
+    uint64_t frameNum;
     bool overdriven;
     bool largeDc;
     float audio[RB_AUDIO_FRAMES_PER_VIDEO_FRAME][RB_AUDIO_CHANNELS];
@@ -230,7 +225,7 @@ typedef struct {
 
 
 typedef struct {
-    uint32_t frameNum;
+    uint64_t frameNum;
     
     RBControls controls;
     
@@ -255,7 +250,7 @@ typedef struct {
 
 
 typedef struct {
-    uint32_t frameNum;
+    uint64_t frameNum;
     size_t numLightStrings;
     size_t numLightsPerString;
     RBColor data[RB_MAX_LIGHTS];
@@ -295,7 +290,15 @@ static inline int32_t rbMsFromTime(RBTime time)
     return time;
 }
 
+// rbGetTime() returns the *frame* time; it's invariant during computation of
+// a frame. This is usually handy but if you are trying to time something
+// (say, to measure performance), you need to use rbGetRealTime().
 RBTime rbGetTime(void);
+
+// rbGetRealTime() reads the clock at the exact point it is called. You should
+// not use it for timing animations; rbGetTime() is better for that.
+RBTime rbGetRealTime(void);
+uint64_t rbGetRealTimeNs(void);
 
 static inline RBTime rbDiffTime(RBTime x, RBTime y)
 {
@@ -514,7 +517,7 @@ static inline float rbRandomF(void)
 // Framework: coordinates all the other subsystems
 void rbInitialize(int argc, char * argv[]);
 void rbShutdown(void);
-void rbProcess(uint64_t nsSinceLastProcess);
+void rbProcess(void);
 
 
 // Implemented in the harness!

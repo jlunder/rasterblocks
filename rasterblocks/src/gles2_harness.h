@@ -13,10 +13,8 @@ void gles2_harness_init_serial(char const * dev);
 void gles2_harness_process_serial(void);
 int gles2_harness_read_serial(void);
 void gles2_harness_reshape(int width, int height);
-void gles2_harness_update(float time);
-void gles2_harness_generate_motion_input(float time);
-void gles2_harness_process_lookaround_input(float time);
-void gles2_harness_draw_lights(float time);
+void gles2_harness_update(void);
+void gles2_harness_draw_lights(void);
 void gles2_harness_terminate(void);
 
 

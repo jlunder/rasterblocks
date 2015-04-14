@@ -317,7 +317,7 @@ static void rbAudioAnalysisUpdateAgc(RBAnalyzedAudio * pAnalysis)
     
     rbInfo("AGC tracking %.4f from %.4f\n", g_rbAgcTrackingValue, agcTarget);
     
-    agcValue = 1.0f / g_rbAgcTrackingValue;
+    agcValue = 0.7f / g_rbAgcTrackingValue;
     
     for(size_t i = 0; i < RB_AUDIO_FRAMES_PER_VIDEO_FRAME; ++i) {
         pAnalysis->rawAudio[i] *= agcValue;

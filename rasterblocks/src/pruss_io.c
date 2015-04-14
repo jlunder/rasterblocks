@@ -417,11 +417,11 @@ void rbPrussIoReadInput(void)
         }
         if(oldestBuf == RB_PRUSS_IO_NUM_BUFFERS) {
             //TODO use PRU interrupts here for min latency
-            /*
+            ///*
             prussdrv_pru_wait_event(PRU_EVTOUT_0);
             prussdrv_pru_clear_event(PRU_EVTOUT_0, PRU0_ARM_INTERRUPT);
-            */
-            rbSleep(rbTimeFromMs(1));
+            //*/
+            //rbSleep(rbTimeFromMs(1));
         }
     } while(oldestBuf == RB_PRUSS_IO_NUM_BUFFERS);
     

@@ -97,8 +97,6 @@ void rbConfigurationSetDefaults(RBConfiguration * pConfig)
     pConfig->agcMin = 1e-2f;
     pConfig->agcStrength = 0.5f;
 
-    pConfig->mode = 0;
-
     pConfig->brightness = 1.0f;
     pConfig->projectionWidth = RB_PANEL_WIDTH * RB_DEFAULT_PANEL_ARRAY_WIDTH;
     pConfig->projectionHeight = RB_PANEL_HEIGHT * RB_DEFAULT_PANEL_ARRAY_HEIGHT;
@@ -107,6 +105,8 @@ void rbConfigurationSetDefaults(RBConfiguration * pConfig)
         pConfig->projectionHeight / pConfig->numLightStrings;
     rbComputeLightPositionsFromPanelList(pConfig->lightPositions,
         RB_MAX_LIGHTS, g_rbDefaultPanelConfigs, RB_DEFAULT_NUM_PANELS);
+
+    pConfig->mode = 0;
 }
 
 

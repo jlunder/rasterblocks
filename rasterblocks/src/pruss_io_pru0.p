@@ -276,6 +276,9 @@ swap_buffers:
     mov     midi_buf.owner, OWNER_HOST
     sbbo    midi_buf.owner, l.p_audio_buf, OFFSET(audio_buf.owner), SIZE(audio_buf.owner)
     
+    // Trigger interrupt to wake up host!
+    mov     r31.b0, PRU0_ARM_INTERRUPT + 16
+    
 swap_buffers_acquire:
     // Buffer 0 available?
     mov     l.p_audio_buf, REGS_BASE + AUDIO_0_OFS

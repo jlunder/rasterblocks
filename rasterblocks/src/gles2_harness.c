@@ -470,13 +470,11 @@ void gles2_harness_reshape(int width, int height)
 }
 
 
-void gles2_harness_update(float time)
+void gles2_harness_update(void)
 {
-    int64_t frame_nsec = (int64_t)round(time * 1.0e9);
+    rbProcess();
     
-    rbProcess(frame_nsec);
-    
-    gles2_harness_draw_lights(time);
+    gles2_harness_draw_lights();
 }
 
 
@@ -498,7 +496,7 @@ float gles2_harness_blue_transform(float blue)
 }
 
 
-void gles2_harness_draw_lights(float time)
+void gles2_harness_draw_lights(void)
 {
     GLfloat viewMatrix[16];
     GLfloat viewProjectionMatrix[16];
@@ -518,8 +516,6 @@ void gles2_harness_draw_lights(float time)
     RBVector2 projectionOffset = vector2(
         -lightSpacing * (projectionWidth - 1) * 0.5f,
         -lightSpacing * (projectionHeight - 1) * 0.5f);
-    
-    GLUS_UNUSED(time);
     
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     

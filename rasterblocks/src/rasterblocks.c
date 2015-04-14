@@ -46,11 +46,24 @@ static bool g_rbIsRestarting = false;
 
 static RBRawLightFrame g_rbLastFrameLightData;
 
+#ifdef RB_LINUX
+struct timespec g_rbStartupTs;
+#endif
+#ifdef RB_OSX
+uint64_t g_rbStartupTime;
+mach_timebase_info_data_t g_rbTimeBase;
+#endif
 static uint64_t g_rbClockNs = 0;
-static uint64_t g_rbClockMsNsRemainder = 0;
 static RBTime g_rbClockMs = 0;
 
+static uint64_t g_rbLastFrameComputeNs = 0;
+static uint64_t g_rbPeakFrameComputeNs = 0;
+static uint64_t g_rbPeakFrameComputeNsAge = 0;
+static float g_rbAverageFrameComputeNs = 0.0f;
+
 static uint32_t g_rbDebugDisplayFrameCounter = 0;
+
+static RBTimer g_rbDebugDisplayLabelTimer;
 
 static RBColor const g_rbDebugColors[10] = {
     {127,   0,   0, 0},
@@ -181,6 +194,38 @@ void rbComputeLightPositionsFromPanelList(RBVector2 * pLightPositions,
 RBTime rbGetTime(void)
 {
     return g_rbClockMs;
+}
+
+
+RBTime rbGetRealTime(void)
+{
+    return (RBTime)(rbGetRealTimeNs() / 1000000);
+}
+
+
+uint64_t rbGetRealTimeNs(void)
+{
+#ifdef RB_LINUX
+    struct timespec ts;
+#endif
+#ifdef RB_OSX
+    uint64_t time;
+#endif
+    uint64_t timeNs;
+    
+#ifdef RB_LINUX
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    timeNs = (uint64_t)(ts.tv_nsec - g_rbStartupTs.tv_nsec) +
+        (uint64_t)(ts.tv_sec - g_rbStartupTs.tv_sec) * 1000000000LLU;
+    rbAssert(timeNs < 0x8000000000000000LLU);
+#endif
+#ifdef RB_OSX
+    time = mach_absolute_time();
+    timeNs = ((time - g_rbStartupTime) * g_rbTimeBase.numer) /
+        g_rbTimeBase.denom;
+#endif
+    
+    return timeNs;
 }
 
 
@@ -326,6 +371,14 @@ void rbInitialize(int argc, char * argv[])
     
     srand(time(NULL));
     
+#ifdef RB_LINUX
+    clock_gettime(CLOCK_MONOTONIC, &g_rbStartupTs);
+#endif
+#ifdef RB_OSX
+    mach_timebase_info(&g_rbTimeBase);
+    g_rbStartupTime = mach_absolute_time();
+#endif
+    
     for(int i = 0; i < argc; ++i) {
         if(strcmp(argv[i], "-v") == 0) {
             logLevel = RBLL_INFO;
@@ -435,24 +488,18 @@ void rbShutdown(void)
 }
 
 
-void rbProcess(uint64_t nsSinceLastProcess)
+void rbProcess(void)
 {
     RBSubsystem lastSubsystem = rbChangeSubsystem(RBS_MAIN);
     bool configChanged = false;
-    int32_t msSinceLastProcess;
+    uint64_t lastClockNs = g_rbClockNs;
+    uint64_t nsSinceLastProcess;
     
-    g_rbClockNs += nsSinceLastProcess;
-    msSinceLastProcess = (g_rbClockMsNsRemainder + nsSinceLastProcess) /
-        1000000;
-    g_rbClockMsNsRemainder = g_rbClockMsNsRemainder + nsSinceLastProcess -
-        (uint64_t)msSinceLastProcess * 1000000;
-    rbAssert(g_rbClockMsNsRemainder < 1000000);
-    rbAssert(msSinceLastProcess >= 0);
-    g_rbClockMs += msSinceLastProcess;
-    rbAssert(g_rbClockNs == (uint64_t)g_rbClockMs * 1000000 +
-        g_rbClockMsNsRemainder);
+    g_rbClockNs = rbGetRealTimeNs();
+    g_rbClockMs = (RBTime)(g_rbClockNs / 1000000);
+    nsSinceLastProcess = g_rbClockNs - lastClockNs;
     
-    rbInfo("Frame time: %dms\n", msSinceLastProcess);
+    rbInfo("Frame time: %.3fms\n", (float)nsSinceLastProcess * 1e-6f);
     
     rbAssert(lastSubsystem == RBS_MAIN);
     
@@ -501,6 +548,7 @@ void rbProcessSubsystems(bool * pConfigChanged)
     RBTexture2 * pFrame =
         rbTexture2Alloc(g_rbConfiguration.projectionWidth,
             g_rbConfiguration.projectionHeight);
+    uint64_t computeStartNs;
     
 #ifdef RB_USE_PRUSS_IO
     // Input poll causes the PRUSS I/O system to effectively do a blocking
@@ -519,6 +567,7 @@ void rbProcessSubsystems(bool * pConfigChanged)
     rbChangeSubsystem(RBS_AUDIO_INPUT);
     rbAudioInputBlockingRead(&rawAudio);
     
+    computeStartNs = rbGetRealTimeNs();
     // Do light output and control input right after audio input to stabilize
     // timings
     rbChangeSubsystem(RBS_LIGHT_OUTPUT);
@@ -542,6 +591,7 @@ void rbProcessSubsystems(bool * pConfigChanged)
     rbChangeSubsystem(RBS_MAIN);
     if(analysis.controls.debugDisplayReset) {
         g_rbDebugDisplayFrameCounter = 0;
+        rbStartTimer(&g_rbDebugDisplayLabelTimer, rbTimeFromMs(4000));
     }
     rbOverlayFrameDebugInfo(&analysis, pFrame);
     rbProjectLightData(pFrame, &g_rbLastFrameLightData);
@@ -554,6 +604,18 @@ void rbProcessSubsystems(bool * pConfigChanged)
     ++g_rbDebugDisplayFrameCounter;
     
     rbTexture2Free(pFrame);
+    
+    if(g_rbPeakFrameComputeNsAge > RB_VIDEO_FRAME_RATE * 1) {
+        g_rbPeakFrameComputeNs = 0;
+    }
+    g_rbLastFrameComputeNs = rbGetRealTimeNs() - computeStartNs;
+    g_rbAverageFrameComputeNs = g_rbAverageFrameComputeNs * 0.999f +
+        (float)g_rbLastFrameComputeNs * 0.001f;
+    if(g_rbLastFrameComputeNs >= g_rbPeakFrameComputeNs) {
+        g_rbPeakFrameComputeNs = g_rbLastFrameComputeNs;
+        g_rbPeakFrameComputeNsAge = 0;
+    }
+    ++g_rbPeakFrameComputeNsAge;
     
     // Don't output yet, even though we have a frame of good data now --
     // output will happen right after the next audio read, to minimize jitter.
@@ -586,7 +648,7 @@ void rbProjectLightData(RBTexture2 * pProjFrame, RBRawLightFrame * pRawFrame)
 
 void rbOverlayFrameDebugInfo(RBAnalyzedAudio * pAnalysis, RBTexture2 * pFrame)
 {
-    char const * modeName = "UNKNOWN";
+    char const * modeName = NULL;
     
     switch(pAnalysis->controls.debugDisplayMode) {
     case RBDM_OFF:
@@ -609,22 +671,19 @@ void rbOverlayFrameDebugInfo(RBAnalyzedAudio * pAnalysis, RBTexture2 * pFrame)
         rbOverlayFrameProjectionGridDebugInfo(pAnalysis, pFrame);
         break;
     case RBDM_IDENTIFY_PANELS:
-        modeName = "Panels";
     case RBDM_IDENTIFY_STRINGS:
-        modeName = "Strings";
     case RBDM_IDENTIFY_PIXELS:
-        modeName = "Pixels";
         break;
     default:
         rbFatal("Invalid debug display mode??\n");
         break;
     }
     
-    if(g_rbDebugDisplayFrameCounter < RB_VIDEO_FRAME_RATE * 4) {
+    if(modeName != NULL && rbGetTimeLeft(&g_rbDebugDisplayLabelTimer) > 0) {
         uint8_t a = 255;
-        if(g_rbDebugDisplayFrameCounter >= RB_VIDEO_FRAME_RATE * 2) {
-            a = (uint8_t)((2.0f - (float)g_rbDebugDisplayFrameCounter /
-                (RB_VIDEO_FRAME_RATE * 2.0f)) * 255.0f);
+        if(rbGetTimeLeft(&g_rbDebugDisplayLabelTimer) < rbTimeFromMs(2000)) {
+            a = (uint8_t)(rbGetTimeLeft(&g_rbDebugDisplayLabelTimer) *
+                255.0f / rbTimeFromMs(2000));
         }
         t2rect(pFrame, 0, 0, t2getw(pFrame), RB_DEBUG_CHAR_HEIGHT,
             colori(0, 0, 0, a));
@@ -752,8 +811,26 @@ void rbOverlayFrameControlsDebugInfo(RBAnalyzedAudio * pAnalysis,
 void rbOverlayFramePerfMetricsDebugInfo(RBAnalyzedAudio * pAnalysis,
     RBTexture2 * pFrame)
 {
+    size_t w = t2getw(pFrame);
+    size_t h = t2geth(pFrame);
+    
     UNUSED(pAnalysis);
-    UNUSED(pFrame);
+    
+    if(w >= RB_DEBUG_CHAR_WIDTH * 8) {
+        t2rect(pFrame, 0, 0, w, h, colori(0, 0, 0, 192));
+        t2dtextf(pFrame, 0, h - RB_DEBUG_CHAR_HEIGHT * 2,
+            colori(255, 128, 0, 255), "%6.3fms",
+            g_rbAverageFrameComputeNs * 1e-6f);
+        t2dtextf(pFrame, 0, h - RB_DEBUG_CHAR_HEIGHT, colori(255, 128, 0, 255),
+            "%6.3fms", (float)g_rbLastFrameComputeNs * 1e-6f);
+    }
+    t2rect(pFrame, 0, h * 0 / 8,
+        floorf((float)g_rbLastFrameComputeNs * 1e-9f *
+            (float)RB_VIDEO_FRAME_RATE * 0.5f * w),
+        h / 8, colori(128, 128, 128, 255));
+    t2rect(pFrame, floorf((float)g_rbPeakFrameComputeNs * 1e-9f *
+            (float)RB_VIDEO_FRAME_RATE * 0.5f * w), h * 0 / 8, 1, h * 1 / 8,
+        colori(255, 0, 255, 255));
 }
 
 

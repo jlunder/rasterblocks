@@ -135,17 +135,6 @@ static void key_callback(
 int main(int argc, char * argv[])
 {
     GLFWwindow* window;
-#ifdef RB_LINUX
-    struct timespec lastts;
-    
-    clock_gettime(CLOCK_MONOTONIC, &lastts);
-#endif
-#ifdef RB_OSX
-    uint64_t lasttime = mach_absolute_time();
-    mach_timebase_info_data_t timebase;
-    
-    mach_timebase_info(&timebase);
-#endif
 
     glfwSetErrorCallback(error_callback);
 
@@ -178,37 +167,12 @@ int main(int argc, char * argv[])
     while (!glfwWindowShouldClose(window))
     {
         int width = 0, height = 0;
-#ifdef RB_LINUX
-        struct timespec ts;
-#endif
-#ifdef RB_OSX
-        uint64_t time;
-#endif
-        uint64_t time_ns;
-
+        
         glfwGetFramebufferSize(window, &width, &height);
 
         gles2_harness_reshape(width, height);
         
-#ifdef RB_LINUX
-        clock_gettime(CLOCK_MONOTONIC, &ts);
-        ts.tv_nsec -= lastts.tv_nsec;
-        if(ts.tv_nsec < 0) {
-            ts.tv_nsec += 1000000000;
-            --ts.tv_sec;
-        }
-        assert(ts.tv_nsec >= 0 && ts.tv_nsec < 1000000000);
-        assert(ts.tv_sec >= 0);
-        lastts = ts;
-        time_ns = ts.tv_nsec + ts.tv_sec * 1000000000;
-#endif
-#ifdef RB_OSX
-        time = mach_absolute_time();
-        time_ns = ((time - lasttime) * timebase.numer) / timebase.denom;
-        lasttime = time;
-#endif
-        
-        gles2_harness_update((float)(time_ns / 1.0e9));
+        gles2_harness_update();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
