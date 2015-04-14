@@ -586,31 +586,51 @@ void rbProjectLightData(RBTexture2 * pProjFrame, RBRawLightFrame * pRawFrame)
 
 void rbOverlayFrameDebugInfo(RBAnalyzedAudio * pAnalysis, RBTexture2 * pFrame)
 {
+    char const * modeName = "UNKNOWN";
+    
     switch(pAnalysis->controls.debugDisplayMode) {
     case RBDM_OFF:
+        modeName = "Run";
         break;
     case RBDM_AUDIO:
+        modeName = "Audio";
         rbOverlayFrameAudioDebugInfo(pAnalysis, pFrame);
         break;
     case RBDM_CONTROLS:
+        modeName = "Controls";
         rbOverlayFrameControlsDebugInfo(pAnalysis, pFrame);
         break;
     case RBDM_PERF_METRICS:
+        modeName = "Perf";
         rbOverlayFramePerfMetricsDebugInfo(pAnalysis, pFrame);
         break;
     case RBDM_PROJECTION_GRID:
+        modeName = "Grid";
         rbOverlayFrameProjectionGridDebugInfo(pAnalysis, pFrame);
         break;
     case RBDM_IDENTIFY_PANELS:
+        modeName = "Panels";
     case RBDM_IDENTIFY_STRINGS:
+        modeName = "Strings";
     case RBDM_IDENTIFY_PIXELS:
+        modeName = "Pixels";
         break;
     default:
         rbFatal("Invalid debug display mode??\n");
         break;
     }
-    UNUSED(pFrame);
-    //t2dtextf(pFrame, 0, 0, colori(63, 63, 63, 255), "EEE");
+    
+    if(g_rbDebugDisplayFrameCounter < RB_VIDEO_FRAME_RATE * 4) {
+        uint8_t a = 255;
+        if(g_rbDebugDisplayFrameCounter >= RB_VIDEO_FRAME_RATE * 2) {
+            a = (uint8_t)((2.0f - (float)g_rbDebugDisplayFrameCounter /
+                (RB_VIDEO_FRAME_RATE * 2.0f)) * 255.0f);
+        }
+        t2rect(pFrame, 0, 0, t2getw(pFrame), RB_DEBUG_CHAR_HEIGHT,
+            colori(0, 0, 0, a));
+        t2dtextf(pFrame, 0, 0, colori(a, a, a, a),
+            modeName);
+    }
 }
 
 
@@ -631,6 +651,7 @@ void rbOverlayFrameAudioDebugInfo(RBAnalyzedAudio * pAnalysis,
     RBColor const oscopeC = colori(63, 255, 15, 0);
     float mins[w];
     float maxs[w];
+    float avg = 0.0f;
     
     for(size_t i = 0; i < w; ++i) {
         mins[i] = 1.0f;
@@ -648,16 +669,17 @@ void rbOverlayFrameAudioDebugInfo(RBAnalyzedAudio * pAnalysis,
         if(maxs[i] > 1.0f) {
             maxs[i] = 1.0f;
         }
+        avg += pAnalysis->rawAudio[i] / RB_AUDIO_FRAMES_PER_VIDEO_FRAME;
     }
     
     t2clear(pFrame, bgC);
     for(size_t i = 0; i < w; ++i) {
         float y0 = mins[i] * (oscopeH - 1);
-        float y0c = ceilf(y0);
-        float y0a = y0c - y0;
+        float y0c = ceilf(y0); // y0c = ceil
+        float y0a = y0c - y0; // y0a = alpha
         float y1 = maxs[i] * (oscopeH - 1);
-        float y1f = floorf(y1);
-        float y1a = y1 - y1f;
+        float y1f = floorf(y1); // y1f = floor
+        float y1a = y1 - y1f; // y1a = alpha
         
         if(y0a > 0.0f) {
             t2sett(pFrame, i, h - 1 - (int32_t)floorf(y0),
@@ -671,6 +693,8 @@ void rbOverlayFrameAudioDebugInfo(RBAnalyzedAudio * pAnalysis,
                 cscalef(oscopeC, y1a));
         }
     }
+    t2dtextf(pFrame, w * 0 / 8, h * 4 / 8, colori(255, 255, 255, 255),
+        "%+6.3f", avg);
     {
         float lAgcMax = logf(g_rbConfiguration.agcMax);
         float lAgcMin = logf(g_rbConfiguration.agcMin);

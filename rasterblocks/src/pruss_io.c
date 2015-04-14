@@ -142,9 +142,6 @@ static uint8_t g_rbPrussIoCapturedMidi[RB_MIDI_MAX_CHARS_PER_VIDEO_FRAME];
 static uint16_t g_rbPrussIoCapturedAudio[RB_AUDIO_FRAMES_PER_VIDEO_FRAME][
     RB_PRUSS_IO_AUDIO_CHANNELS];
 
-static RBControls g_rbLastControls;
-static RBControlInputMidiParser g_rbMidiParser;
-
 
 #include "pruss_io_pru0_bin.h"
 #include "pruss_io_pru1_bin.h"
@@ -623,8 +620,7 @@ void rbControlInputPrussMidiInitialize(RBConfiguration const * pConfig)
     rbPrussIoStartPrussInput();
     g_rbPrussIoMidiInputRunning = true;
     
-    rbZero(&g_rbLastControls, sizeof g_rbLastControls);
-    rbControlInputMidiParserInitialize(&g_rbMidiParser);
+    rbControlInputMidiParserInitialize(&g_rbMidiParser, pConfig);
 }
 
 
@@ -637,18 +633,16 @@ void rbControlInputPrussMidiShutdown(void)
 
 void rbControlInputPrussMidiRead(RBControls * pControls)
 {
-    for(size_t i = 0; i < RB_NUM_TRIGGERS; ++i) {
-        g_rbLastControls.triggers[i] = false;
-    }
-    g_rbLastControls.debugDisplayReset = false;
+    rbControlInputMidiParserResetControls(&g_rbMidiParser);
     
     rbAssert(g_rbPrussIoCapturedMidiSize <= sizeof g_rbPrussIoCapturedMidi);
     for(size_t i = 0; i < g_rbPrussIoCapturedMidiSize; ++i) {
         rbControlInputMidiParserParseByte(&g_rbMidiParser,
-            &g_rbLastControls, g_rbPrussIoCapturedMidi[i]);
+            g_rbPrussIoCapturedMidi[i]);
     }
     
-    memcpy(pControls, &g_rbLastControls, sizeof *pControls);
+    memcpy(pControls, rbControlInputMidiParserGetControls(&g_rbMidiParser),
+        sizeof *pControls);
 }
 
 

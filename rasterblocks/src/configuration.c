@@ -194,6 +194,13 @@ void rbConfigurationParseArgv(RBConfiguration * pConfig, int argc,
                 pConfig->brightness = atof(argv[i]);
             }
         }
+        
+        else if(strcmp(argv[i], "-m") == 0) {
+            if(i + 1 < argc) {
+                ++i;
+                pConfig->mode = atoi(argv[i]);
+            }
+        }
     }
 }
 

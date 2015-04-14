@@ -20,8 +20,6 @@
     "echo BB-UART4 > /sys/devices/bone_capemgr.9/slots'"
 
 
-static RBControlInputMidiParser g_rbMidiParser;
-static RBControls g_rbLastControls;
 static int g_rbUartFd = -1;
 
 
@@ -58,8 +56,7 @@ void rbControlInputBbbUart4MidiInitialize(RBConfiguration const * pConfig)
     rbVerify(ioctl(g_rbUartFd, TCSETS2, &tio) == 0);
     rbInfo("Successfully set UART4 to MIDI speed\n");
     
-    rbZero(&g_rbLastControls, sizeof g_rbLastControls);
-    rbControlInputMidiParserInitialize(&g_rbMidiParser);
+    rbControlInputMidiParserInitialize(&g_rbMidiParser, pConfig);
 }
 
 
@@ -74,10 +71,7 @@ void rbControlInputBbbUart4MidiShutdown(void)
 
 void rbControlInputBbbUart4MidiRead(RBControls * pControls)
 {
-    for(size_t i = 0; i < RB_NUM_TRIGGERS; ++i) {
-        g_rbLastControls.triggers[i] = false;
-    }
-    g_rbLastControls.debugDisplayReset = false;
+    rbControlInputMidiParserResetControls(&g_rbMidiParser);
     
     // Keep reading input as long as it looks like there's a full buffer
     for(;;) {
@@ -92,15 +86,15 @@ void rbControlInputBbbUart4MidiRead(RBControls * pControls)
         
         // Use the default MIDI parser to actually process the data
         for(int i = 0; i < amountRead; ++i) {
-            rbControlInputMidiParserParseByte(&g_rbMidiParser,
-                &g_rbLastControls, buf[i]);
+            rbControlInputMidiParserParseByte(&g_rbMidiParser, buf[i]);
         }
         if(amountRead < (int)sizeof buf) {
             break;
         }
     }
     
-    memcpy(pControls, &g_rbLastControls, sizeof *pControls);
+    memcpy(pControls, rbControlInputMidiParserGetControls(&g_rbMidiParser),
+        sizeof *pControls);
 }
 
 

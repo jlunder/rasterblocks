@@ -16,9 +16,15 @@ typedef enum {
 
 
 typedef struct {
+    RBControls controls;
     RBControlInputMidiParserState state;
     uint8_t message[3];
 } RBControlInputMidiParser;
+
+
+// This is available purely for other modules to use - control_input doesn't
+// use it by itself.
+extern RBControlInputMidiParser g_rbMidiParser;
 
 
 // Control input subsystem
@@ -26,9 +32,14 @@ void rbControlInputInitialize(RBConfiguration const * pConfig);
 void rbControlInputShutdown(void);
 void rbControlInputRead(RBControls * pControls);
 
-void rbControlInputMidiParserInitialize(RBControlInputMidiParser * pParser);
+void rbControlInputMidiParserInitialize(RBControlInputMidiParser * pParser,
+    RBConfiguration const * pConfig);
+RBControls const * rbControlInputMidiParserGetControls(
+    RBControlInputMidiParser * pParser);
+void rbControlInputMidiParserResetControls(
+    RBControlInputMidiParser * pParser);
 void rbControlInputMidiParserParseByte(RBControlInputMidiParser * pParser,
-    RBControls * pControls, uint8_t incomingByte);
+    uint8_t incomingByte);
 
 void rbControlInputBbbUart4MidiInitialize(RBConfiguration const * pConfig);
 void rbControlInputBbbUart4MidiShutdown(void);

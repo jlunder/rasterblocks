@@ -101,6 +101,9 @@ void rbAudioInputBlockingRead(RBRawAudio * pAudio)
 {
     double lastSamples[RB_AUDIO_CHANNELS];
     
+    // Default frame number -- driver may supply its own
+    pAudio->frameNum = g_rbAudioVideoFrameCount++;
+    
     switch(g_rbAudioInput) {
     case RBAI_TEST:
         rbAudioInputTestBlockingRead(pAudio);
@@ -121,7 +124,6 @@ void rbAudioInputBlockingRead(RBRawAudio * pAudio)
     	break;
     }
     
-    pAudio->frameNum = g_rbAudioVideoFrameCount;
     pAudio->overdriven = false;
     pAudio->largeDc = false;
     
@@ -131,8 +133,8 @@ void rbAudioInputBlockingRead(RBRawAudio * pAudio)
     for(size_t j = 0; j < RB_AUDIO_FRAMES_PER_VIDEO_FRAME; ++j) {
         for(size_t i = 0; i < RB_AUDIO_CHANNELS; ++i) {
             lastSamples[i] =
-                lastSamples[i] * (1.0 - RB_DC_OFFSET_ELIMINATION_HIGH_PASS_K) +
-                pAudio->audio[j][i] * RB_DC_OFFSET_ELIMINATION_HIGH_PASS_K;
+                lastSamples[i] * 0.999 +//(1.0 - RB_DC_OFFSET_ELIMINATION_HIGH_PASS_K) +
+                pAudio->audio[j][i] * 0.001;//RB_DC_OFFSET_ELIMINATION_HIGH_PASS_K;
             if(fabsf(pAudio->audio[j][i]) > RB_AUDIO_OVERDRIVE_THRESHOLD) {
                 pAudio->overdriven = true;
             }
@@ -160,10 +162,8 @@ void rbAudioInputBlockingRead(RBRawAudio * pAudio)
         }
         totalPower = sqrtf(totalPower / LENGTHOF(pAudio->audio));
         rbInfo("Audio for video frame %llu; peak = %.4f, power = %.4f\n",
-            g_rbAudioVideoFrameCount, peak, totalPower);
+            pAudio->frameNum, peak, totalPower);
     }
-    
-    ++g_rbAudioVideoFrameCount;
 }
 
 

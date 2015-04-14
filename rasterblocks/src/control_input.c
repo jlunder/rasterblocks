@@ -28,14 +28,17 @@
 #define RB_MIDI_CONTROLLER_START_CONTROLLER 0x46
 #define RB_MIDI_CONTROLLER_DEBUG_MODE 0x10
 
+
+RBControlInputMidiParser g_rbMidiParser;
+
+
 static RBControlInput g_rbControlInput;
 
 
 static void rbControlInputMidiParserParseByteProcessRealtime(
-    RBControlInputMidiParser * pParser, RBControls * pControls,
-    uint8_t incomingByte);
+    RBControlInputMidiParser * pParser, uint8_t incomingByte);
 static void rbControlInputMidiParserParseByteProcessMessage(
-    RBControlInputMidiParser * pParser, RBControls * pControls);
+    RBControlInputMidiParser * pParser);
 
 
 void rbControlInputInitialize(RBConfiguration const * pConfig)
@@ -94,14 +97,43 @@ void rbControlInputRead(RBControls * pControls)
 }
 
 
-void rbControlInputMidiParserInitialize(RBControlInputMidiParser * pParser)
+void rbControlInputMidiParserInitialize(RBControlInputMidiParser * pParser,
+    RBConfiguration const * pConfig)
 {
     pParser->state = RBCIMPS_CLEAR;
+    for(size_t i = 0; i < LENGTHOF(pParser->controls.controllers); ++i) {
+        pParser->controls.controllers[i] = 0.0f;
+    }
+    for(size_t i = 0; i < LENGTHOF(pParser->controls.triggers); ++i) {
+        pParser->controls.triggers[i] = false;
+    }
+    // Brightness control defaults to full on -- hax
+    pParser->controls.controllers[0] = 1.0f;
+    pParser->controls.debugDisplayReset = true;
+    pParser->controls.debugDisplayMode =
+        ((pConfig->mode < 0) || (pConfig->mode >= RBDM_COUNT)) ? 0 :
+            pConfig->mode;
+}
+
+
+RBControls const * rbControlInputMidiParserGetControls(
+    RBControlInputMidiParser * pParser)
+{
+    return &pParser->controls;
+}
+
+
+void rbControlInputMidiParserResetControls(RBControlInputMidiParser * pParser)
+{
+    for(size_t i = 0; i < RB_NUM_TRIGGERS; ++i) {
+        pParser->controls.triggers[i] = false;
+    }
+    pParser->controls.debugDisplayReset = false;
 }
 
 
 void rbControlInputMidiParserParseByte(RBControlInputMidiParser * pParser,
-    RBControls * pControls, uint8_t incomingByte)
+    uint8_t incomingByte)
 {
     //rbInfo("Parsing byte: %02X\n", incomingByte);
     
@@ -111,7 +143,7 @@ void rbControlInputMidiParserParseByte(RBControlInputMidiParser * pParser,
         if((incomingByte & RB_MIDI_STATUS_REALTIME_FILTER) ==
                     RB_MIDI_STATUS_REALTIME_FILTER) {
             rbControlInputMidiParserParseByteProcessRealtime(pParser,
-                pControls, incomingByte);
+                incomingByte);
             // Remain in current state, unless that process call changed it!
             // Don't try to reparse the current message... we already did that
             // when the last byte was received.
@@ -164,29 +196,28 @@ void rbControlInputMidiParserParseByte(RBControlInputMidiParser * pParser,
         }
     }
     
-    rbControlInputMidiParserParseByteProcessMessage(pParser, pControls);
+    rbControlInputMidiParserParseByteProcessMessage(pParser);
 }
 
 
 void rbControlInputMidiParserParseByteProcessRealtime(
-    RBControlInputMidiParser * pParser, RBControls * pControls,
-    uint8_t incomingByte)
+    RBControlInputMidiParser * pParser, uint8_t incomingByte)
 {
     if(incomingByte == RB_MIDI_STATUS_RESET) {
         pParser->state = RBCIMPS_CLEAR;
         
         for(size_t i = 0; i < RB_NUM_CONTROLLERS; ++i) {
-            pControls->controllers[i] = 0.0f;
+            pParser->controls.controllers[i] = 0.0f;
         }
         for(size_t i = 0; i < RB_NUM_TRIGGERS; ++i) {
-            pControls->triggers[i] = false;
+            pParser->controls.triggers[i] = false;
         }
     }
 }
 
 
 void rbControlInputMidiParserParseByteProcessMessage(
-    RBControlInputMidiParser * pParser, RBControls * pControls)
+    RBControlInputMidiParser * pParser)
 {
     uint8_t status = pParser->message[0];
     
@@ -242,7 +273,7 @@ void rbControlInputMidiParserParseByteProcessMessage(
                 if((pParser->message[1] >= RB_MIDI_TRIGGER_START_NOTE) &&
                         (pParser->message[1] < (RB_MIDI_TRIGGER_START_NOTE +
                             RB_NUM_TRIGGERS))) {
-                    pControls->triggers[pParser->message[1] -
+                    pParser->controls.triggers[pParser->message[1] -
                         RB_MIDI_TRIGGER_START_NOTE] = true;
                     rbInfo("Trigger %d triggered\n",
                         pParser->message[1] - RB_MIDI_TRIGGER_START_NOTE);
@@ -260,15 +291,15 @@ void rbControlInputMidiParserParseByteProcessMessage(
                         midiCont - RB_MIDI_CONTROLLER_START_CONTROLLER;
                     float value = (float)midiVal * 2.0f / 127.0f - 1.0f;
                     
-                    pControls->controllers[controller] = value;
+                    pParser->controls.controllers[controller] = value;
                     rbInfo("Controller %d change: %.2f\n", controller, value);
                 }
                 else if(midiCont == RB_MIDI_CONTROLLER_DEBUG_MODE) {
-                    pControls->debugDisplayReset = true;
-                    pControls->debugDisplayMode =
+                    pParser->controls.debugDisplayReset = true;
+                    pParser->controls.debugDisplayMode =
                        (RBDebugDisplayMode)(midiVal * RBDM_COUNT / 128);
                     rbInfo("Debug mode change (via controller): %d\n",
-                        pControls->debugDisplayMode);
+                        pParser->controls.debugDisplayMode);
                 }
             }
             break;

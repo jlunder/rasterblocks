@@ -39,6 +39,13 @@ pause_entry:
     mov     r0, 0x6
     sbbo    r0, l.p_adc, TSCADC_CTRL, 4
     
+    mov     r0, 0x03FF
+    sbbo    r0, l.p_adc, TSCADC_IRQENABLE_CLR, 4
+    sbbo    r0, l.p_adc, TSCADC_IRQSTATUS, 4
+    
+    mov     r0, 3
+    sbbo    r0, l.p_adc, TSCADC_DMAENABLE_CLR, 4
+    
     // Echo back the status to indicate we are in the requested mode
     mov     r0, REGS_BASE + CONTROL_OFS
     mov     r1, PRU_MODE_PAUSE
@@ -74,6 +81,18 @@ run_entry:
     mov     r0, 0x6
     sbbo    r0, l.p_adc, TSCADC_CTRL, 4
     
+    mov     r0, 1000
+run_entry_adc_wait_idle_loop:
+    lbbo    r0, l.p_adc, TSCADC_ADCSTAT, 4
+    // Is the ADC busy? If not, done here.
+    qbbc    run_entry_adc_wait_idle_fin, r0, 5
+    // Yes: how long have we been waiting?
+    lbbo    r0, l.p_pru_ctrl, PRU_CTRL_CYCLE, 4
+    qbgt    run_entry_adc_wait_idle_loop, r0, r1
+    // Fell through: too long!
+    jmp     halt_entry
+run_entry_adc_wait_idle_fin:
+
     // Smart idle mode
     mov     r0, 0xC
     sbbo    r0, l.p_adc, TSCADC_SYSCONFIG, 4
@@ -187,7 +206,7 @@ run_poll_adc_buffers_not_full_yet:
     // the loop, well after it's been posted to the FIFO.
     // This reduces latency by a totally negligible amount but I like it.
     // r1 gets the cycle count for the timeout
-    mov     r1, 1000
+    mov     r1, 2000
 run_poll_adc_wait_conversion_loop:
     lbbo    r0, l.p_adc, TSCADC_ADCSTAT, 4
     // Is the ADC busy? If not, done here.

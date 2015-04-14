@@ -178,7 +178,7 @@ of800k_words_loop:
     mov     l.bits_count, 8
     
 of800k_bits_loop:
-    mov     r30.w0, 0x004B//0x01FB
+    mov     r30.w0, 0x01FB
     
     // This next stanza repacks the 7th bits of each byte in l.bits_0,1 into
     // r0.w0, with each 7th bit assigned to one of the bit positions of the
@@ -193,16 +193,16 @@ of800k_bits_loop:
     and     r0, r0, l.pat0x08040201
     
     // Shift the 7th bits of l.bits_1.b0-3 into positions 4-7, respectively
-    lsr     r1.b0, l.bits_0.b0, 3
-    lsr     r1.b1, l.bits_0.b1, 2
-    lsr     r1.b2, l.bits_0.b2, 1
-    lsr     r1.b3, l.bits_0.b3, 0
+    lsr     r1.b0, l.bits_1.b0, 3
+    lsr     r1.b1, l.bits_1.b1, 2
+    lsr     r1.b2, l.bits_1.b2, 1
+    lsr     r1.b3, l.bits_1.b3, 0
     // Clear the other bits, preparing for the merge
     and     r1, r1, l.pat0x80402010
     
     // Merge -- divide and conquer
     or      r0, r0, r1
-    or      r0.w0, r0.w0, r0.w1
+    or      r0.w0, r0.w0, r0.w2
     or      r0.b0, r0.b0, r0.b1
     
     // Clear other bits, keep just the single reordered byte
@@ -210,10 +210,10 @@ of800k_bits_loop:
     
     // Bit 2 is an input, so we have to split the byte and shift the upper
     // half left 1... the final packing is 0-1,3-8
-    lsl     r0.w1, r0.w0, 1
-    and     r0.w1.b0, r0.w1.b0, 0xF8
+    lsl     r0.w2, r0.w0, 1
+    and     r0.w2.b0, r0.w2.b0, 0xF8
     and     r0.w0.b0, r0.w0.b0, 0x03
-    or      r0.w0, r0.w0, r0.w1
+    or      r0.w0, r0.w0, r0.w2
     
     or      r1.w0, r0.w0, 0x40
 
@@ -233,12 +233,19 @@ of800k_bits_loop:
     lsl     l.bits_0, l.bits_0, 1
     lsl     l.bits_1, l.bits_1, 1
     
-    mov     r0, 32
+    mov     r0, 28
     call    delay
     
     // Loop boilerplate for inner loop (shifting out bits of the word)
     sub     l.bits_count, l.bits_count, 1
-    qbne    of800k_bits_loop, l.bits_count, 0
+    qbeq    of800k_no_bits_loop, l.bits_count, 0
+    
+    // This stanza simulates the delay that would result from fetching the
+    // next words, to keep timing consistent
+    mov     r0, 3
+    call    delay
+    jmp     of800k_bits_loop
+of800k_no_bits_loop:
     
     // Loop boilerplate for outer loop (fetching groups of 8 bytes)
     sub     l.bytes_count, l.bytes_count, 1
@@ -249,7 +256,7 @@ of800k_bits_loop:
 of_check_pause:
     // Check if we are supposed to pause at end-of-frame
     mov     r1, COMMAND_LIGHT_END_FRAME_PAUSE
-    and     r0, buf.status, r1
+    and     r0, buf.command, r1
     qbeq    no_pause, r0, 0
     
     // 200,000 insns = 1ms
