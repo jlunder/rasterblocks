@@ -16,11 +16,35 @@ There are 3 supported builds currently:
 2. Target build -- rasterblocks can be built directly on the Beaglebone. This
    build supports all target platform features; essentially, everything except
    OpenGL output.
+   If you do this and you plan on running the build directly rather than
+   installing the .deb package, keep in mind you need to copy
+   "rb-pruss-io-00A0.dtbo" from the bin folder to /lib/firmware first! Also,
+   you will probably need to disable the HDMI device tree overlay. See the
+   "Installing On The BeagleBone" section below for details.
 
 3. Target cross-build -- if you want, you can cross-build for the Beaglebone
    from Ubuntu 14.04 on Intel. The full package build is supported -- it
    generate a package and executable that function identically to the ones
    built on the Beaglebone.
+
+
+INSTALLING ON THE BEAGLEBONE
+
+There is one special gotcha regarding the BeagleBone: by default, in the
+BeagleBone Debian build, the HDMI device tree overlay is loaded. This
+conflicts with the PRUSS I/O; if you're planning to use PRUSS output or PRUSS
+input, you'll need to disable it.
+
+The easiest way is to edit the uEnv.txt in /boot/uboot/uEnv.txt:
+
+# vi /boot/uboot/uEnv.txt
+
+Look for the line labeled “##Disable HDMI”. Uncomment it. It should look
+something like:
+
+optargs=capemgr.disable_partno=BB-BONELT_HDMI,BB-BONELT_HDMIN
+
+Now reboot, and you should be good to go.
 
 
 HOST BUILD (on Intel/Linux, OS X)
