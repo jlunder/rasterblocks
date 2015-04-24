@@ -62,10 +62,15 @@
 
 #include "rasterblocks.h"
 
+#include "control_input.h"
 #include "graphics_util.h"
 
 
-RBRawLightFrame gles2_harness_frame;
+#define GLES2_HARNESS_CONTROLLER_D_D_DT 2.0f
+#define GLES2_HARNESS_CONTROLLER_D_DT 1.0f
+
+
+static RBRawLightFrame gles2_harness_frame;
 
 
 static GLuint g_program;
@@ -91,19 +96,19 @@ static GLfloat g_aspectRatio;
 #define GLES2_HARNESS_LINE_READY     2
 #define GLES2_HARNESS_LINE_LOST      3
 
-size_t gles2_harness_serial_count;
-int gles2_harness_line_buf_state = GLES2_HARNESS_LINE_BUF_EMPTY;
-char gles2_harness_serial_buf[1024];
-char gles2_harness_line_buf[1024];
-int gles2_harness_serial_fd = -1;
+static size_t gles2_harness_serial_count;
+static int gles2_harness_line_buf_state = GLES2_HARNESS_LINE_BUF_EMPTY;
+static char gles2_harness_serial_buf[1024];
+static char gles2_harness_line_buf[1024];
+static int gles2_harness_serial_fd = -1;
 
-float gles2_harness_fake_input_time = 0.0f;
+static float gles2_harness_brightness = 1.0f;
 
-float gles2_harness_dist = 1.0f;
-float gles2_harness_horizontal_pos = 0.0f;
-float gles2_harness_vertical_pos = 0.0f;
+static bool gles2_harness_controllers_inc[RB_NUM_CONTROLLERS];
+static bool gles2_harness_controllers_dec[RB_NUM_CONTROLLERS];
+static float gles2_harness_controllers_d_dt[RB_NUM_CONTROLLERS];
 
-float gles2_harness_brightness = 1.0f;
+static uint64_t gles2_harness_last_ns;
 
 
 static char const * light_frag =
@@ -472,6 +477,43 @@ void gles2_harness_reshape(int width, int height)
 
 void gles2_harness_update(void)
 {
+    uint64_t ns = rbGetRealTimeNs();
+    uint64_t delta_ns = ns - gles2_harness_last_ns;
+    float dt = delta_ns * 1.0e-9f;
+    RBControls * pControls = rbControlInputHarnessGetStoredControls();
+    
+    // Simulate controller inputs
+    gles2_harness_last_ns = ns;
+    
+    for(size_t i = 0; i < RB_NUM_CONTROLLERS; ++i) {
+        // This implements an accel model for buttons controlling the
+        // simulated controller inputs: the longer you hold down the button,
+        // the faster the controller changes, up to a max change rate of
+        // GLES2_HARNESS_CONTROLLER_D_DT.
+        float target_d_dt = GLES2_HARNESS_CONTROLLER_D_DT *
+            ((float)!!gles2_harness_controllers_inc[i] -
+                (float)!!gles2_harness_controllers_dec[i]);
+        float d_dt = gles2_harness_controllers_d_dt[i];
+        float d_d_dt = (target_d_dt > d_dt) ? GLES2_HARNESS_CONTROLLER_D_D_DT :
+            ((target_d_dt < d_dt) ? -GLES2_HARNESS_CONTROLLER_D_D_DT : 0.0f);
+        
+        if(fabsf(target_d_dt - gles2_harness_controllers_d_dt[i]) <
+                fabsf(d_d_dt * dt)) {
+            // prevent overshoot
+            gles2_harness_controllers_d_dt[i] = d_dt;
+        } else {
+            d_dt = rbClampF(gles2_harness_controllers_d_dt[i] + d_d_dt * dt,
+                -GLES2_HARNESS_CONTROLLER_D_DT, GLES2_HARNESS_CONTROLLER_D_DT);
+        }
+        pControls->controllers[i] = rbClampF(
+            pControls->controllers[i] + d_dt * dt +0.5f * d_d_dt * dt * dt,
+            -1.0f, 1.0f);
+        gles2_harness_controllers_d_dt[i] = d_dt;
+    }
+    // Triggers and debug mode change are written directly into pControls as
+    // the button press messages are processed, so there's no logic for that
+    // here.
+    
     rbProcess();
     
     gles2_harness_draw_lights();
@@ -594,6 +636,47 @@ void gles2_harness_terminate(void)
     glDeleteProgram(g_program);
     glDeleteShader(g_vertShader);
     glDeleteShader(g_fragShader);
+}
+
+
+void gles2_harness_set_controller_inc(size_t controller_num, bool inc)
+{
+    rbAssert(controller_num < RB_NUM_CONTROLLERS);
+    gles2_harness_controllers_inc[controller_num] = inc;
+}
+
+
+void gles2_harness_set_controller_dec(size_t controller_num, bool dec)
+{
+    rbAssert(controller_num < RB_NUM_CONTROLLERS);
+    gles2_harness_controllers_dec[controller_num] = dec;
+}
+
+
+void gles2_harness_set_trigger(size_t trigger_num)
+{
+    rbAssert(trigger_num < RB_NUM_TRIGGERS);
+    rbControlInputHarnessGetStoredControls()->triggers[trigger_num] = true;
+}
+
+
+void gles2_harness_debug_mode_next(void)
+{
+    RBControls * pControls = rbControlInputHarnessGetStoredControls();
+    if(pControls->debugDisplayMode + 1 < RBDM_COUNT) {
+        ++pControls->debugDisplayMode;
+        pControls->debugDisplayReset = true;
+    }
+}
+
+
+void gles2_harness_debug_mode_prev(void)
+{
+    RBControls * pControls = rbControlInputHarnessGetStoredControls();
+    if(pControls->debugDisplayMode > RBDM_OFF) {
+        --pControls->debugDisplayMode;
+        pControls->debugDisplayReset = true;
+    }
 }
 
 

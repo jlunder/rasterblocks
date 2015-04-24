@@ -2,6 +2,7 @@
 #define GLES2_HARNESS_H_INCLUDED
 
 
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -16,6 +17,12 @@ void gles2_harness_reshape(int width, int height);
 void gles2_harness_update(void);
 void gles2_harness_draw_lights(void);
 void gles2_harness_terminate(void);
+
+void gles2_harness_set_controller_inc(size_t controller_num, bool inc);
+void gles2_harness_set_controller_dec(size_t controller_num, bool dec);
+void gles2_harness_set_trigger(size_t trigger_num);
+void gles2_harness_debug_mode_next(void);
+void gles2_harness_debug_mode_prev(void);
 
 
 #endif

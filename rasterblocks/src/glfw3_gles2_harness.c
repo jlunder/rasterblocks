@@ -82,74 +82,42 @@ static void key_callback(
     GLUS_UNUSED(mods);
     
     if(action == GLFW_PRESS) {
-        RBControls * pControls = rbControlInputHarnessGetStoredControls();
-        
         switch(key) {
-        case 'Q': pControls->triggers[0] = true; break;
-        case 'W': pControls->triggers[1] = true; break;
-        case 'E': pControls->triggers[2] = true; break;
-        case 'R': pControls->triggers[3] = true; break;
-        case 'T': pControls->triggers[4] = true; break;
-        case 'Y': pControls->triggers[5] = true; break;
-        case 'U': pControls->triggers[6] = true; break;
-        case 'I': pControls->triggers[7] = true; break;
-        case 'O': pControls->triggers[8] = true; break;
-        case 'P': pControls->triggers[9] = true; break;
+        case 'Q': gles2_harness_set_trigger(0); break;
+        case 'W': gles2_harness_set_trigger(1); break;
+        case 'E': gles2_harness_set_trigger(2); break;
+        case 'R': gles2_harness_set_trigger(3); break;
+        case 'T': gles2_harness_set_trigger(4); break;
+        case 'Y': gles2_harness_set_trigger(5); break;
+        case 'U': gles2_harness_set_trigger(6); break;
+        case 'I': gles2_harness_set_trigger(7); break;
+        case 'O': gles2_harness_set_trigger(8); break;
+        case 'P': gles2_harness_set_trigger(9); break;
         
-        case 'A': pControls->controllers[0] = rbMinF(
-            pControls->controllers[0] + 1.0f / 16, 1.0f); break;
-        case 'S': pControls->controllers[1] = rbMinF(
-            pControls->controllers[1] + 1.0f / 16, 1.0f); break;
-        case 'D': pControls->controllers[2] = rbMinF(
-            pControls->controllers[2] + 1.0f / 16, 1.0f); break;
-        case 'F': pControls->controllers[3] = rbMinF(
-            pControls->controllers[3] + 1.0f / 16, 1.0f); break;
-        case 'G': pControls->controllers[4] = rbMinF(
-            pControls->controllers[4] + 1.0f / 16, 1.0f); break;
-        case 'H': pControls->controllers[5] = rbMinF(
-            pControls->controllers[5] + 1.0f / 16, 1.0f); break;
-        case 'J': pControls->controllers[6] = rbMinF(
-            pControls->controllers[6] + 1.0f / 16, 1.0f); break;
-        case 'K': pControls->controllers[7] = rbMinF(
-            pControls->controllers[7] + 1.0f / 16, 1.0f); break;
-        case 'L': pControls->controllers[8] = rbMinF(
-            pControls->controllers[8] + 1.0f / 16, 1.0f); break;
-        case ';': pControls->controllers[9] = rbMinF(
-            pControls->controllers[9] + 1.0f / 16, 1.0f); break;
+        case 'A': gles2_harness_set_controller_inc(0, true); break;
+        case 'S': gles2_harness_set_controller_inc(1, true); break;
+        case 'D': gles2_harness_set_controller_inc(2, true); break;
+        case 'F': gles2_harness_set_controller_inc(3, true); break;
+        case 'G': gles2_harness_set_controller_inc(4, true); break;
+        case 'H': gles2_harness_set_controller_inc(5, true); break;
+        case 'J': gles2_harness_set_controller_inc(6, true); break;
+        case 'K': gles2_harness_set_controller_inc(7, true); break;
+        case 'L': gles2_harness_set_controller_inc(8, true); break;
+        case ';': gles2_harness_set_controller_inc(9, true); break;
         
-        case 'Z': pControls->controllers[0] = rbMaxF(
-            pControls->controllers[0] - 1.0f / 16, -1.0f); break;
-        case 'X': pControls->controllers[1] = rbMaxF(
-            pControls->controllers[1] - 1.0f / 16, -1.0f); break;
-        case 'C': pControls->controllers[2] = rbMaxF(
-            pControls->controllers[2] - 1.0f / 16, -1.0f); break;
-        case 'V': pControls->controllers[3] = rbMaxF(
-            pControls->controllers[3] - 1.0f / 16, -1.0f); break;
-        case 'B': pControls->controllers[4] = rbMaxF(
-            pControls->controllers[4] - 1.0f / 16, -1.0f); break;
-        case 'N': pControls->controllers[5] = rbMaxF(
-            pControls->controllers[5] - 1.0f / 16, -1.0f); break;
-        case 'M': pControls->controllers[6] = rbMaxF(
-            pControls->controllers[6] - 1.0f / 16, -1.0f); break;
-        case ',': pControls->controllers[7] = rbMaxF(
-            pControls->controllers[7] - 1.0f / 16, -1.0f); break;
-        case '.': pControls->controllers[8] = rbMaxF(
-            pControls->controllers[8] - 1.0f / 16, -1.0f); break;
-        case '/': pControls->controllers[9] = rbMaxF(
-            pControls->controllers[9] - 1.0f / 16, -1.0f); break;
+        case 'Z': gles2_harness_set_controller_dec(0, true); break;
+        case 'X': gles2_harness_set_controller_dec(1, true); break;
+        case 'C': gles2_harness_set_controller_dec(2, true); break;
+        case 'V': gles2_harness_set_controller_dec(3, true); break;
+        case 'B': gles2_harness_set_controller_dec(4, true); break;
+        case 'N': gles2_harness_set_controller_dec(5, true); break;
+        case 'M': gles2_harness_set_controller_dec(6, true); break;
+        case ',': gles2_harness_set_controller_dec(7, true); break;
+        case '.': gles2_harness_set_controller_dec(8, true); break;
+        case '/': gles2_harness_set_controller_dec(9, true); break;
         
-        case '[':
-            if(pControls->debugDisplayMode > RBDM_OFF) {
-                --pControls->debugDisplayMode;
-                pControls->debugDisplayReset = true;
-            }
-            break;
-        case ']':
-            if(pControls->debugDisplayMode + 1 < RBDM_COUNT) {
-                ++pControls->debugDisplayMode;
-                pControls->debugDisplayReset = true;
-            }
-            break;
+        case '[': gles2_harness_debug_mode_prev(); break;
+        case ']': gles2_harness_debug_mode_next(); break;
         
         case GLFW_KEY_ESCAPE:
             glfwSetWindowShouldClose(window, GL_TRUE);
@@ -158,6 +126,28 @@ static void key_callback(
     }
     else if(action == GLFW_RELEASE) {
         switch(key) {
+        case 'A': gles2_harness_set_controller_inc(0, false); break;
+        case 'S': gles2_harness_set_controller_inc(1, false); break;
+        case 'D': gles2_harness_set_controller_inc(2, false); break;
+        case 'F': gles2_harness_set_controller_inc(3, false); break;
+        case 'G': gles2_harness_set_controller_inc(4, false); break;
+        case 'H': gles2_harness_set_controller_inc(5, false); break;
+        case 'J': gles2_harness_set_controller_inc(6, false); break;
+        case 'K': gles2_harness_set_controller_inc(7, false); break;
+        case 'L': gles2_harness_set_controller_inc(8, false); break;
+        case ';': gles2_harness_set_controller_inc(9, false); break;
+        
+        case 'Z': gles2_harness_set_controller_dec(0, false); break;
+        case 'X': gles2_harness_set_controller_dec(1, false); break;
+        case 'C': gles2_harness_set_controller_dec(2, false); break;
+        case 'V': gles2_harness_set_controller_dec(3, false); break;
+        case 'B': gles2_harness_set_controller_dec(4, false); break;
+        case 'N': gles2_harness_set_controller_dec(5, false); break;
+        case 'M': gles2_harness_set_controller_dec(6, false); break;
+        case ',': gles2_harness_set_controller_dec(7, false); break;
+        case '.': gles2_harness_set_controller_dec(8, false); break;
+        case '/': gles2_harness_set_controller_dec(9, false); break;
+        
         default: break;
         }
     }
