@@ -35,7 +35,7 @@ void rbAudioInputInitialize(RBConfiguration const * pConfig)
         g_rbAudioInput = RBAI_TEST;
         rbStartTimer(&g_rbAudioTestFrameTimer,
             rbTimeFromMs(1000 / RB_VIDEO_FRAME_RATE));
-        rbStartTimer(&g_rbAudioTestHighBeatTimer, rbTimeFromMs(500 / 4));
+        rbStartTimer(&g_rbAudioTestHighBeatTimer, rbTimeFromMs(500 / 2));
         rbStartTimer(&g_rbAudioTestLowBeatTimer, rbTimeFromMs(500));
         g_rbAudioTestHighSamplesSinceTrigger = 0;
         g_rbAudioTestLowSamplesSinceTrigger = 0;
@@ -185,7 +185,7 @@ void rbAudioInputTestBlockingRead(RBRawAudio * pAudio)
                 powf(0.001f,
                     (float)g_rbAudioTestHighSamplesSinceTrigger /
                         RB_AUDIO_SAMPLE_RATE) +
-            sinf(g_rbAudioTestHighPhase) * 0.5f *
+            sinf(g_rbAudioTestLowPhase) * 0.5f *
                 powf(0.001f,
                     (float)g_rbAudioTestLowSamplesSinceTrigger /
                         RB_AUDIO_SAMPLE_RATE);

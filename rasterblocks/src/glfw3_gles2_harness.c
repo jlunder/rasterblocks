@@ -58,6 +58,8 @@
 
 #include "rasterblocks.h"
 
+#include "control_input.h"
+
 
 static void error_callback(int error, const char* description)
 {
@@ -79,38 +81,75 @@ static void key_callback(
     GLUS_UNUSED(action);
     GLUS_UNUSED(mods);
     
-/*
     if(action == GLFW_PRESS) {
+        RBControls * pControls = rbControlInputHarnessGetStoredControls();
+        
         switch(key) {
-        case 'Q': ddh_mode = 0; break;
-        case 'W': ddh_mode = 1; break;
-        case 'E': ddh_mode = 2; break;
-        case 'R': ddh_mode = 3; break;
-        case 'T': ddh_mode = 4; break;
-        case 'Y': ddh_mode = 5; break;
-        case 'U': ddh_mode = 6; break;
-        case 'I': ddh_mode = 7; break;
-        case 'O': ddh_mode = 8; break;
-        case 'P': ddh_mode = 9; break;
+        case 'Q': pControls->triggers[0] = true; break;
+        case 'W': pControls->triggers[1] = true; break;
+        case 'E': pControls->triggers[2] = true; break;
+        case 'R': pControls->triggers[3] = true; break;
+        case 'T': pControls->triggers[4] = true; break;
+        case 'Y': pControls->triggers[5] = true; break;
+        case 'U': pControls->triggers[6] = true; break;
+        case 'I': pControls->triggers[7] = true; break;
+        case 'O': pControls->triggers[8] = true; break;
+        case 'P': pControls->triggers[9] = true; break;
         
-        case 'A': ddh_submode = 0; break;
-        case 'S': ddh_submode = 1; break;
-        case 'D': ddh_submode = 2; break;
-        case 'F': ddh_submode = 3; break;
-        case 'G': ddh_submode = 4; break;
-        case 'H': ddh_submode = 5; break;
-        case 'J': ddh_submode = 6; break;
-        case 'K': ddh_submode = 7; break;
-        case 'L': ddh_submode = 8; break;
-        case ';': ddh_submode = 9; break;
+        case 'A': pControls->controllers[0] = rbMinF(
+            pControls->controllers[0] + 1.0f / 16, 1.0f); break;
+        case 'S': pControls->controllers[1] = rbMinF(
+            pControls->controllers[1] + 1.0f / 16, 1.0f); break;
+        case 'D': pControls->controllers[2] = rbMinF(
+            pControls->controllers[2] + 1.0f / 16, 1.0f); break;
+        case 'F': pControls->controllers[3] = rbMinF(
+            pControls->controllers[3] + 1.0f / 16, 1.0f); break;
+        case 'G': pControls->controllers[4] = rbMinF(
+            pControls->controllers[4] + 1.0f / 16, 1.0f); break;
+        case 'H': pControls->controllers[5] = rbMinF(
+            pControls->controllers[5] + 1.0f / 16, 1.0f); break;
+        case 'J': pControls->controllers[6] = rbMinF(
+            pControls->controllers[6] + 1.0f / 16, 1.0f); break;
+        case 'K': pControls->controllers[7] = rbMinF(
+            pControls->controllers[7] + 1.0f / 16, 1.0f); break;
+        case 'L': pControls->controllers[8] = rbMinF(
+            pControls->controllers[8] + 1.0f / 16, 1.0f); break;
+        case ';': pControls->controllers[9] = rbMinF(
+            pControls->controllers[9] + 1.0f / 16, 1.0f); break;
         
-        case '[': ddh_button_a = true; break;
-        case ']': ddh_button_b = true; break;
+        case 'Z': pControls->controllers[0] = rbMaxF(
+            pControls->controllers[0] - 1.0f / 16, -1.0f); break;
+        case 'X': pControls->controllers[1] = rbMaxF(
+            pControls->controllers[1] - 1.0f / 16, -1.0f); break;
+        case 'C': pControls->controllers[2] = rbMaxF(
+            pControls->controllers[2] - 1.0f / 16, -1.0f); break;
+        case 'V': pControls->controllers[3] = rbMaxF(
+            pControls->controllers[3] - 1.0f / 16, -1.0f); break;
+        case 'B': pControls->controllers[4] = rbMaxF(
+            pControls->controllers[4] - 1.0f / 16, -1.0f); break;
+        case 'N': pControls->controllers[5] = rbMaxF(
+            pControls->controllers[5] - 1.0f / 16, -1.0f); break;
+        case 'M': pControls->controllers[6] = rbMaxF(
+            pControls->controllers[6] - 1.0f / 16, -1.0f); break;
+        case ',': pControls->controllers[7] = rbMaxF(
+            pControls->controllers[7] - 1.0f / 16, -1.0f); break;
+        case '.': pControls->controllers[8] = rbMaxF(
+            pControls->controllers[8] - 1.0f / 16, -1.0f); break;
+        case '/': pControls->controllers[9] = rbMaxF(
+            pControls->controllers[9] - 1.0f / 16, -1.0f); break;
         
-        case GLFW_KEY_LEFT: gles2_harness_input_left = true; break;
-        case GLFW_KEY_RIGHT: gles2_harness_input_right = true; break;
-        case GLFW_KEY_UP: gles2_harness_input_up = true; break;
-        case GLFW_KEY_DOWN: gles2_harness_input_down = true; break;
+        case '[':
+            if(pControls->debugDisplayMode > RBDM_OFF) {
+                --pControls->debugDisplayMode;
+                pControls->debugDisplayReset = true;
+            }
+            break;
+        case ']':
+            if(pControls->debugDisplayMode + 1 < RBDM_COUNT) {
+                ++pControls->debugDisplayMode;
+                pControls->debugDisplayReset = true;
+            }
+            break;
         
         case GLFW_KEY_ESCAPE:
             glfwSetWindowShouldClose(window, GL_TRUE);
@@ -119,16 +158,9 @@ static void key_callback(
     }
     else if(action == GLFW_RELEASE) {
         switch(key) {
-        case '[': ddh_button_a = false; break;
-        case ']': ddh_button_b = false; break;
-        
-        case GLFW_KEY_LEFT: gles2_harness_input_left = false;
-        case GLFW_KEY_RIGHT: gles2_harness_input_right = false;
-        case GLFW_KEY_UP: gles2_harness_input_up = false;
-        case GLFW_KEY_DOWN: gles2_harness_input_down = false;
+        default: break;
         }
     }
-*/
 }
 
 

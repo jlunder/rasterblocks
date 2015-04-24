@@ -34,6 +34,8 @@ RBControlInputMidiParser g_rbMidiParser;
 
 static RBControlInput g_rbControlInput;
 
+static RBControls g_rbHarnessStoredControls;
+
 
 static void rbControlInputMidiParserParseByteProcessRealtime(
     RBControlInputMidiParser * pParser, uint8_t incomingByte);
@@ -47,6 +49,9 @@ void rbControlInputInitialize(RBConfiguration const * pConfig)
     switch(g_rbControlInput) {
     case RBCI_NONE:
     case RBCI_TEST:
+        break;
+    case RBCI_HARNESS:
+        rbControlInputHarnessInitialize(pConfig);
         break;
     case RBCI_BBB_UART4_MIDI:
         rbControlInputBbbUart4MidiInitialize(pConfig);
@@ -69,6 +74,9 @@ void rbControlInputShutdown(void)
     case RBCI_NONE:
     case RBCI_TEST:
         break;
+    case RBCI_HARNESS:
+        rbControlInputHarnessShutdown();
+        break;
     case RBCI_BBB_UART4_MIDI:
         rbControlInputBbbUart4MidiShutdown();
         break;
@@ -86,6 +94,9 @@ void rbControlInputRead(RBControls * pControls)
     case RBCI_NONE:
     case RBCI_TEST:
         rbZero(pControls, sizeof *pControls);
+        break;
+    case RBCI_HARNESS:
+        rbControlInputHarnessRead(pControls);
         break;
     case RBCI_BBB_UART4_MIDI:
         rbControlInputBbbUart4MidiRead(pControls);
@@ -351,3 +362,35 @@ void rbControlInputPrussMidiRead(RBControls * pControls)
     UNUSED(pControls);
 }
 #endif
+
+
+void rbControlInputHarnessInitialize(RBConfiguration const * pConfig)
+{
+    UNUSED(pConfig);
+    
+    rbZero(&g_rbHarnessStoredControls, sizeof g_rbHarnessStoredControls);
+}
+
+
+void rbControlInputHarnessShutdown(void)
+{
+}
+
+
+void rbControlInputHarnessRead(RBControls * pControls)
+{
+    *pControls = g_rbHarnessStoredControls;
+    
+    for(size_t i = 0; i < RB_NUM_TRIGGERS; ++i) {
+        g_rbHarnessStoredControls.triggers[i] = false;
+    }
+    g_rbHarnessStoredControls.debugDisplayReset = false;
+}
+
+
+RBControls * rbControlInputHarnessGetStoredControls(void)
+{
+    return &g_rbHarnessStoredControls;
+}
+
+

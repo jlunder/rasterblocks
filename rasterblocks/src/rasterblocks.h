@@ -93,6 +93,7 @@ typedef enum {
     RBCI_INVALID,
     RBCI_NONE,
     RBCI_TEST,
+    RBCI_HARNESS,
     RBCI_BBB_UART4_MIDI,
     RBCI_PRUSS_MIDI,
 } RBControlInput;

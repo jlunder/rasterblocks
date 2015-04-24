@@ -63,6 +63,9 @@ static RBControlInput getControlInput(const char* val)
     else if(rbStricmp(val, "TEST") == 0) {
         return RBCI_TEST;
     }
+    else if(rbStricmp(val, "HARNESS") == 0) {
+        return RBCI_TEST;
+    }
     else if(rbStricmp(val, "BBB_UART4_MIDI") == 0) {
         return RBCI_BBB_UART4_MIDI;
     }

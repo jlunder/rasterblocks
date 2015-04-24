@@ -71,7 +71,7 @@ void rbConfigurationSetDefaults(RBConfiguration * pConfig)
 #elif defined RB_USE_BBB_UART4_MIDI
     pConfig->controlInput = RBCI_BBB_UART4_MIDI;
 #else
-    pConfig->controlInput = RBCI_NONE;
+    pConfig->controlInput = RBCI_HARNESS;
 #endif
     
 #if defined RB_USE_PRUSS_IO
@@ -162,6 +162,9 @@ void rbConfigurationParseArgv(RBConfiguration * pConfig, int argc,
         }
         else if(strcmp(argv[i], "-ct") == 0) {
             pConfig->controlInput = RBCI_TEST;
+        }
+        else if(strcmp(argv[i], "-ch") == 0) {
+            pConfig->controlInput = RBCI_HARNESS;
         }
         else if(strcmp(argv[i], "-cu") == 0) {
             pConfig->controlInput = RBCI_BBB_UART4_MIDI;

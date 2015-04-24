@@ -39,15 +39,7 @@ extern RBTexture1 * g_rbPBlackRedGoldHSPalTex;
 extern RBTexture1 * g_rbPBlackWhiteHSPalTex;
 
 
-extern RBTexture2 * g_rbPAmericanFlagTex;
-extern RBTexture2 * g_rbPSeqCircLogoTex;
-extern RBTexture2 * g_rbPSeqCircLogoTex16x8;
-extern RBTexture2 * g_rbPSeqCircLogoTex24x12;
-extern RBTexture2 * g_rbPSeqCircLogoTex32x16;
-extern RBTexture2 * g_rbPVectorHarmonyLogoTex48x16;
-extern RBTexture2 * g_rbPVectorHarmonyLogoTex24x8;
-extern RBTexture2 * g_rbPInventorLiveLogoBulbTex40x16;
-extern RBTexture2 * g_rbPInventorLiveLogoTextTex40x16;
+extern RBTexture2 * g_rbPSfuCsSurreyTex;
 
 
 // Light generation subsystem
@@ -87,6 +79,9 @@ RBLightGenerator * rbLightGenerationRescaleAlloc(
 
 RBLightGenerator * rbLightGenerationTimedRotationAlloc(
     RBLightGenerator * pGenerators[], size_t numGenerators, RBTime interval,
+    int32_t controllerNum);
+RBLightGenerator * rbLightGenerationControllerSelectAlloc(
+    RBLightGenerator * pGenerators[], size_t numGenerators,
     int32_t controllerNum);
 /*
 void rbLightGenerationTimedRotationPauseRotation(

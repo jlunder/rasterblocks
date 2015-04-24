@@ -49,6 +49,11 @@ void rbControlInputPrussMidiInitialize(RBConfiguration const * pConfig);
 void rbControlInputPrussMidiShutdown(void);
 void rbControlInputPrussMidiRead(RBControls * pControls);
 
+void rbControlInputHarnessInitialize(RBConfiguration const * pConfig);
+void rbControlInputHarnessShutdown(void);
+void rbControlInputHarnessRead(RBControls * pControls);
+RBControls * rbControlInputHarnessGetStoredControls(void);
+
 
 #endif
 
