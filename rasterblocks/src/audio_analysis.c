@@ -244,22 +244,15 @@ static void rbAudioAnalysisGatherChannels(RBRawAudio const * pAudio,
 }
 
 
-static void rbAudioAnalysisCalculatePower(
-    float * inputBuf, float * bufLow, float * bufHi,
-    float * bassPower, float * midPower, float * treblePower)
+static void rbAudioAnalysisCalculatePower(float * buf, float * pPower)
 {
+    float power = 0;
+    
     for(size_t i = 0; i < RB_AUDIO_FRAMES_PER_VIDEO_FRAME; ++i) {
-        *bassPower += bufLow[i] * bufLow[i] *
-            (1.0f / RB_AUDIO_FRAMES_PER_VIDEO_FRAME);
-
-        *midPower += (bufHi[i] - bufLow[i]) *
-            (bufHi[i] - bufLow[i]) *
-            (1.0f / RB_AUDIO_FRAMES_PER_VIDEO_FRAME);
-
-        *treblePower += (inputBuf[i] - bufHi[i]) *
-            (inputBuf[i] - bufHi[i]) *
-            (1.0f / RB_AUDIO_FRAMES_PER_VIDEO_FRAME);
+        power += buf[i] * buf[i];
     }
+    
+    *pPower = power / RB_AUDIO_FRAMES_PER_VIDEO_FRAME;
 }
 
 
@@ -342,6 +335,7 @@ void rbAudioAnalysisAnalyze(RBRawAudio const * pAudio,
 {
     float inputBuf[RB_AUDIO_FRAMES_PER_VIDEO_FRAME];
     float bufLOW[RB_AUDIO_FRAMES_PER_VIDEO_FRAME];
+    float bufMID[RB_AUDIO_FRAMES_PER_VIDEO_FRAME];
     float bufHI[RB_AUDIO_FRAMES_PER_VIDEO_FRAME];
     float bassPower = 0.0f;
     float midPower = 0.0f;
@@ -358,8 +352,13 @@ void rbAudioAnalysisAnalyze(RBRawAudio const * pAudio,
     rbAudioAnalysisLowPassFilter(g_rbXVHI, g_rbYVHI, g_rbGHI,
         g_rbKHI, inputBuf, bufHI);
 
-    rbAudioAnalysisCalculatePower(inputBuf, bufLOW, bufHI,
-        &bassPower, &midPower, &treblePower);
+    for(size_t i = 0; i < RB_AUDIO_FRAMES_PER_VIDEO_FRAME; ++i) {
+        bufMID[i] += bufHI[i] - bufLOW[i];
+        bufHI[i] = inputBuf[i] - bufHI[i];
+    }
+    rbAudioAnalysisCalculatePower(bufLOW, &bassPower);
+    rbAudioAnalysisCalculatePower(bufMID, &midPower);
+    rbAudioAnalysisCalculatePower(bufHI, &treblePower);
     
     pAnalysis->frameNum = pAudio->frameNum;
     

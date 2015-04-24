@@ -494,19 +494,21 @@ void gles2_harness_update(void)
             ((float)!!gles2_harness_controllers_inc[i] -
                 (float)!!gles2_harness_controllers_dec[i]);
         float d_dt = gles2_harness_controllers_d_dt[i];
-        float d_d_dt = (target_d_dt > d_dt) ? GLES2_HARNESS_CONTROLLER_D_D_DT :
-            ((target_d_dt < d_dt) ? -GLES2_HARNESS_CONTROLLER_D_D_DT : 0.0f);
+        float d_d_dt = 0.0f;
         
-        if(fabsf(target_d_dt - gles2_harness_controllers_d_dt[i]) <
-                fabsf(d_d_dt * dt)) {
+        if(fabsf(target_d_dt - d_dt) < GLES2_HARNESS_CONTROLLER_D_D_DT * dt) {
             // prevent overshoot
-            gles2_harness_controllers_d_dt[i] = d_dt;
+            d_dt = target_d_dt;
         } else {
-            d_dt = rbClampF(gles2_harness_controllers_d_dt[i] + d_d_dt * dt,
-                -GLES2_HARNESS_CONTROLLER_D_DT, GLES2_HARNESS_CONTROLLER_D_DT);
+                d_d_dt = GLES2_HARNESS_CONTROLLER_D_D_DT *
+                    ((target_d_dt > d_dt) ? 1.0f :
+                        ((target_d_dt < d_dt) ? -1.0f : 0.0f));
+                d_dt = rbClampF(d_dt + d_d_dt * dt,
+                    -GLES2_HARNESS_CONTROLLER_D_DT,
+                        GLES2_HARNESS_CONTROLLER_D_DT);
         }
         pControls->controllers[i] = rbClampF(
-            pControls->controllers[i] + d_dt * dt +0.5f * d_d_dt * dt * dt,
+            pControls->controllers[i] + d_dt * dt + 0.5f * d_d_dt * dt * dt,
             -1.0f, 1.0f);
         gles2_harness_controllers_d_dt[i] = d_dt;
     }
