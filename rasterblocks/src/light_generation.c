@@ -281,14 +281,16 @@ void rbLightGenerationInitialize(RBConfiguration const * pConfig)
                 g_rbPBlackPaleGreenFSAlphaPalTex, 3),
         };
         RBLightGenerator * pGenerators[] = {
-            rbLightGenerationCompositor2Alloc(
+            rbLightGenerationCompositor3Alloc(
                 rbLightGenerationControllerFadeAlloc(
                     rbLightGenerationControllerSelectAlloc(
                         pBackgroundGenerators,
                         LENGTHOF(pBackgroundGenerators), 0), 1),
                 rbLightGenerationControllerFadeAlloc(
                     rbLightGenerationControllerSelectAlloc(pFGColorGenerators,
-                        LENGTHOF(pFGColorGenerators), 2), 4)),
+                        LENGTHOF(pFGColorGenerators), 2), 4),
+                rbLightGenerationFireworksAlloc(
+                    g_rbPBlackRedGoldWhiteFSAlphaPalTex, 0)),
         };
         rbLightGenerationSetGenerator(
 //            rbLightGenerationControllerSelectAlloc(pGenerators,

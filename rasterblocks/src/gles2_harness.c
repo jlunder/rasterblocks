@@ -108,8 +108,6 @@ static bool gles2_harness_controllers_inc[RB_NUM_CONTROLLERS];
 static bool gles2_harness_controllers_dec[RB_NUM_CONTROLLERS];
 static float gles2_harness_controllers_d_dt[RB_NUM_CONTROLLERS];
 
-static uint64_t gles2_harness_last_ns;
-
 
 static char const * light_frag =
 #ifdef RB_USE_GLFW3_GLES2_HARNESS
@@ -477,14 +475,10 @@ void gles2_harness_reshape(int width, int height)
 
 void gles2_harness_update(void)
 {
-    uint64_t ns = rbGetRealTimeNs();
-    uint64_t delta_ns = ns - gles2_harness_last_ns;
-    float dt = delta_ns * 1.0e-9f;
+    float dt = rbGetDeltaTimeSeconds();
     RBControls * pControls = rbControlInputHarnessGetStoredControls();
     
     // Simulate controller inputs
-    gles2_harness_last_ns = ns;
-    
     for(size_t i = 0; i < RB_NUM_CONTROLLERS; ++i) {
         // This implements an accel model for buttons controlling the
         // simulated controller inputs: the longer you hold down the button,

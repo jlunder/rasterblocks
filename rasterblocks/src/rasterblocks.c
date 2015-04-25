@@ -60,6 +60,7 @@ mach_timebase_info_data_t g_rbTimeBase;
 #endif
 static uint64_t g_rbClockNs = 0;
 static RBTime g_rbClockMs = 0;
+static float g_rbDeltaTimeSeconds = 0.0f;
 
 static uint64_t g_rbLastFrameComputeNs = 0;
 static uint64_t g_rbPeakFrameComputeNs = 0;
@@ -195,6 +196,12 @@ void rbComputeLightPositionsFromPanelList(RBVector2 * pLightPositions,
 RBTime rbGetTime(void)
 {
     return g_rbClockMs;
+}
+
+
+float rbGetDeltaTimeSeconds(void)
+{
+    return g_rbDeltaTimeSeconds;
 }
 
 
@@ -499,6 +506,7 @@ void rbProcess(void)
     g_rbClockNs = rbGetRealTimeNs();
     g_rbClockMs = (RBTime)(g_rbClockNs / 1000000);
     nsSinceLastProcess = g_rbClockNs - lastClockNs;
+    g_rbDeltaTimeSeconds = nsSinceLastProcess * 1.0e-9f;
     
     rbInfo("Frame time: %.3fms\n", (float)nsSinceLastProcess * 1e-6f);
     

@@ -103,7 +103,8 @@ RBLightGenerator * rbLightGenerationPulseGridAlloc(RBColor hColor,
     RBColor vColor);
 RBLightGenerator * rbLightGenerationDashedCirclesAlloc(RBTexture1 * pPalTex);
 RBLightGenerator * rbLightGenerationSmokeSignalsAlloc(RBTexture1 * pPalTex);
-RBLightGenerator * rbLightGenerationFireworksAlloc(RBTexture1 * pPalTex);
+RBLightGenerator * rbLightGenerationFireworksAlloc(RBTexture1 * pPalTex,
+    int32_t triggerNum);
 RBLightGenerator * rbLightGenerationVerticalBarsAlloc(
     RBTexture1 * pBassPalTex, RBTexture1 * pTreblePalTex,
     size_t numBars, RBTime spawnInterval, RBTime fadeTime);

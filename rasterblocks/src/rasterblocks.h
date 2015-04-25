@@ -294,6 +294,9 @@ static inline int32_t rbMsFromTime(RBTime time)
 // (say, to measure performance), you need to use rbGetRealTime().
 RBTime rbGetTime(void);
 
+// This returns the time since the last frame, in seconds.
+float rbGetDeltaTimeSeconds(void);
+
 // rbGetRealTime() reads the clock at the exact point it is called. You should
 // not use it for timing animations; rbGetTime() is better for that.
 RBTime rbGetRealTime(void);
