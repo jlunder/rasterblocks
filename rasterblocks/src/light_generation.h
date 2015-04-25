@@ -85,6 +85,8 @@ RBLightGenerator * rbLightGenerationControllerSelectAlloc(
     int32_t controllerNum);
 RBLightGenerator * rbLightGenerationControllerFadeAlloc(
     RBLightGenerator * pGenerator, int32_t controllerNum);
+RBLightGenerator * rbLightGenerationTriggerFlashAlloc(RBTexture1 * pPalTex,
+    int32_t triggerNum);
 /*
 void rbLightGenerationTimedRotationPauseRotation(
     RBLightGenerator * pTRGenerator);
