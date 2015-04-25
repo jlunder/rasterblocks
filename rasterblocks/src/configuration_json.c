@@ -207,12 +207,13 @@ void rbParseJson(RBConfiguration * pConfig, char* filename) {
         fseek (f, 0, SEEK_END);
         length = ftell (f);
         fseek (f, 0, SEEK_SET);
-        buffer = malloc (length);
+        buffer = malloc (length + 1);
         if (buffer) {
             size_t result = fread (buffer, 1, length, f);
             if(result!=length) {
                 rbError("Error reading %s\n", filename);
             }
+            buffer[length] = '\0';
         }
         fclose (f);
     }
