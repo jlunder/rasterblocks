@@ -51,13 +51,12 @@ void rbLightGenerationSignalLissajousGenerate(void * pData,
         (RBLightGeneratorSignalLissajous *)pData;
     // scale adjusts brightness for the (guessed) pixel coverage, by pretending
     // the Lissajous figure will describe a circle.. this is very approximate.
-    float scale = (RB_PI * (float)t2getw(pFrame) * 0.5f) *
-        pAnalysis->totalEnergy / (float)RB_LISSAJOUS_WINDOW;
-    RBColor c = cscalef(pSignalLissajous->color, scale);
+    RBColor c = pSignalLissajous->color;
     int32_t width = t2getw(pFrame);
     int32_t height = t2geth(pFrame);
     float widthF = width;
     float heightF = height;
+    size_t lissaFrame[width * height];
     
     if(RB_AUDIO_FRAMES_PER_VIDEO_FRAME < RB_LISSAJOUS_WINDOW) {
         memmove(pSignalLissajous->bassData,
@@ -90,16 +89,26 @@ void rbLightGenerationSignalLissajousGenerate(void * pData,
             (sizeof *pSignalLissajous->trebleData) * RB_LISSAJOUS_WINDOW);
     }
     
-    t2clear(pFrame, colori(0, 0, 0, 0));
-    for(size_t i = 0; i < RB_LISSAJOUS_WINDOW; ++i) {
-        RBVector2 p = v2rotscale(
-            vector2(pSignalLissajous->bassData[i],
-                pSignalLissajous->trebleData[i]),
-            vector2(1.0f, 0.0f));//vector2(RB_SQRT_2 * 0.5f, -RB_SQRT_2 * 0.5f));
-        int32_t x = (int32_t)roundf((p.x * 0.5f + 0.5f) * widthF);
-        int32_t y = (int32_t)roundf((p.y * 0.5f + 0.5f) * heightF);
-        if(x >= 0 && x < width && y >= 0 && y < height) {
-            t2sett(pFrame, x, y, cadd(c, t2gett(pFrame, x, y)));
+    {
+        float scale = 0.0f;
+        rbZero(lissaFrame, sizeof lissaFrame);
+        for(size_t i = 0; i < RB_LISSAJOUS_WINDOW; ++i) {
+            RBVector2 p = vector2(pSignalLissajous->bassData[i],
+                    pSignalLissajous->trebleData[i]);
+            int32_t x = (int32_t)roundf((p.x * 0.5f + 0.5f) * widthF);
+            int32_t y = (int32_t)roundf((p.y * 0.5f + 0.5f) * heightF);
+            if(x >= 0 && x < width && y >= 0 && y < height) {
+                ++lissaFrame[y * width + x];
+            }
+            scale += v2len(p);
+        }
+        scale /= RB_LISSAJOUS_WINDOW;
+        for(int32_t j = 0; j < height; ++j) {
+            for(int32_t i = 0; i < width; ++i) {
+                t2sett(pFrame, i, j,
+                    cscalef(c, rbClampF(lissaFrame[j * width + i] * scale,
+                        0.0f, 1.0f)));
+            }
         }
     }
 }

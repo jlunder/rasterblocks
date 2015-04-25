@@ -927,7 +927,16 @@ void rbOverlayRawIdentifyPixelsDebugInfo(RBAnalyzedAudio * pAnalysis,
                 pRawFrame->data[index] = colori(255, 255, 255, 255);
             }
             else {
-                pRawFrame->data[index] = g_rbDebugColors[j];
+                size_t const panelSize = RB_PANEL_WIDTH * RB_PANEL_HEIGHT;
+                size_t panelCoord = i % panelSize;
+                size_t panelNum = i / panelSize;
+                if(panelCoord == panelSize - 1 || panelCoord < panelNum) {
+                    pRawFrame->data[index] = cscalei(g_rbDebugColors[j],
+                        (animFrame % 4) * 32 + 31);
+                }
+                else {
+                    pRawFrame->data[index] = g_rbDebugColors[j];
+                }
             }
         }
     }

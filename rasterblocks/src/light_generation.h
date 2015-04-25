@@ -83,6 +83,8 @@ RBLightGenerator * rbLightGenerationTimedRotationAlloc(
 RBLightGenerator * rbLightGenerationControllerSelectAlloc(
     RBLightGenerator * pGenerators[], size_t numGenerators,
     int32_t controllerNum);
+RBLightGenerator * rbLightGenerationControllerFadeAlloc(
+    RBLightGenerator * pGenerator, int32_t controllerNum);
 /*
 void rbLightGenerationTimedRotationPauseRotation(
     RBLightGenerator * pTRGenerator);

@@ -196,7 +196,7 @@ static RBLightGenerator * rbLightGenerationCreateVUGeneratorsFromTheme(
     RBTexture1 * pFGPalTex, RBColor fgColor);
 */
 static RBLightGenerator * rbLightGenerationCreateForegroundGenerators(
-    RBColor fgColor);
+    RBColor fgColor, RBTexture1 * pFGPalTex, int32_t controllerNum);
 
 
 void rbLightGenerationInitialize(RBConfiguration const * pConfig)
@@ -269,38 +269,48 @@ void rbLightGenerationInitialize(RBConfiguration const * pConfig)
                 g_rbPBluePurpleGreenHSPalTex),
         };
         RBLightGenerator * pFGColorGenerators[] = {
-            rbLightGenerationCreateForegroundGenerators(yellow),
-            rbLightGenerationCreateForegroundGenerators(orange),
-            rbLightGenerationCreateForegroundGenerators(white),
-            rbLightGenerationCreateForegroundGenerators(pink),
-            rbLightGenerationCreateForegroundGenerators(black),
+            rbLightGenerationCreateForegroundGenerators(yellow,
+                g_rbPBlackGoldFSAlphaPalTex, 3),
+            rbLightGenerationCreateForegroundGenerators(orange,
+                g_rbPBlackRedGoldWhiteFSAlphaPalTex, 3),
+            rbLightGenerationCreateForegroundGenerators(white,
+                g_rbPBlackWhiteFSAlphaPalTex, 3),
+            rbLightGenerationCreateForegroundGenerators(pink,
+                g_rbPBlackPurpleFSAlphaPalTex, 3),
+            rbLightGenerationCreateForegroundGenerators(black,
+                g_rbPBlackPaleGreenFSAlphaPalTex, 3),
         };
         RBLightGenerator * pGenerators[] = {
             rbLightGenerationCompositor2Alloc(
-                rbLightGenerationControllerSelectAlloc(pBackgroundGenerators,
-                    LENGTHOF(pBackgroundGenerators), 1),
-                rbLightGenerationControllerSelectAlloc(pFGColorGenerators,
-                    LENGTHOF(pFGColorGenerators), 3)),
+                rbLightGenerationControllerFadeAlloc(
+                    rbLightGenerationControllerSelectAlloc(
+                        pBackgroundGenerators,
+                        LENGTHOF(pBackgroundGenerators), 0), 1),
+                rbLightGenerationControllerFadeAlloc(
+                    rbLightGenerationControllerSelectAlloc(pFGColorGenerators,
+                        LENGTHOF(pFGColorGenerators), 2), 4)),
         };
         rbLightGenerationSetGenerator(
-            rbLightGenerationControllerSelectAlloc(pGenerators,
-                LENGTHOF(pGenerators), 0)
+//            rbLightGenerationControllerSelectAlloc(pGenerators,
+//                LENGTHOF(pGenerators), 0)
+            pGenerators[0]
             );
     }
 }
 
 
-static RBLightGenerator * rbLightGenerationCreateForegroundGenerators(
-    RBColor fgColor)
+RBLightGenerator * rbLightGenerationCreateForegroundGenerators(
+    RBColor fgColor, RBTexture1 * pFGPalTex, int32_t controllerNum)
 {
     RBLightGenerator * pForegroundGenerators[] = {
         rbLightGenerationSignalLissajousAlloc(fgColor),
         rbLightGenerationPulseCheckerboardAlloc(fgColor),
         rbLightGenerationOscilloscopeAlloc(fgColor),
+        rbLightGenerationDashedCirclesAlloc(pFGPalTex),
     };
     
     return rbLightGenerationControllerSelectAlloc(pForegroundGenerators,
-        LENGTHOF(pForegroundGenerators), 4);
+        LENGTHOF(pForegroundGenerators), controllerNum);
 }
 
 
