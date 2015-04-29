@@ -55,6 +55,7 @@ ifneq ($(BUILD_ON_TARGET),)
 	INSTALL_DIR := /usr/local/lib/rasterblocks
 endif
 
+RB_VERSION=1.1
 DT_NAME=rb-pruss-io-00A0
 
 MAKEDEPEND=@set -e; rm -f $@; \
@@ -71,7 +72,7 @@ MAKEDEPEND_TARGET=@set -e; rm -f $@; \
 .PHONY: all cleanall clean clean-dtc
 
 ifneq ($(PACKAGE_BUILD),)
-all: bin/rasterblocks-1.0_armhf.deb
+all: bin/rasterblocks-$(RB_VERSION)_armhf.deb
 else
 all: bin/rasterblocks
 endif
@@ -213,7 +214,7 @@ bin/package: $(wildcard package/DEBIAN/*) $(wildcard nodeserver/*) rasterblocks.
 
 ifeq ($(CROSS_BUILD)$(BUILD_ON_TARGET),)
 # Neither the cross-build env nor the target has tools to build a host package
-bin/rasterblocks-1.0_x64.deb: bin/package bin/rasterblocks
+bin/rasterblocks-$(RB_VERSION)_x64.deb: bin/package bin/rasterblocks
 	cp bin/rasterblocks bin/package/usr/lib/rasterblocks/rasterblocks
 	cp config/host_config.json bin/package/usr/lib/rasterblocks/config.json
 	dpkg-deb --build bin/package $@
@@ -221,7 +222,7 @@ endif
 
 ifeq ($(CROSS_BUILD),)
 # The cross-build env doesn't have enough toolchain to build a package
-bin/rasterblocks-1.0_armhf.deb: bin/package bin/rasterblocks.target
+bin/rasterblocks-$(RB_VERSION)_armhf.deb: bin/package bin/rasterblocks.target
 	cp bin/rasterblocks.target bin/package/usr/lib/rasterblocks/rasterblocks
 	cp config/target_config.json bin/package/usr/lib/rasterblocks/config.json
 	dpkg-deb --build bin/package $@
