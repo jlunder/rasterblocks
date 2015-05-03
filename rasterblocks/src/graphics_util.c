@@ -1,5 +1,7 @@
 #include "graphics_util.h"
 
+#include "font_debug_4x6.h"
+
 
 #define RB_MAX_REASONABLE_SIZE 10000
 
@@ -48,6 +50,56 @@ uint8_t const g_rbCieTable[256] = {
         rbAssert(pTex->stride >= pTex->width); \
         rbAssert(pTex->size >= pTex->stride * pTex->height); \
     } while(false);
+
+
+static void rbClipRect(RBTexture2 * pDestTex, RBRect2I * pRect,
+    RBCoord2I * pOffset);
+
+
+static void rbClipRect(RBTexture2 * pDestTex, RBRect2I * pRect,
+    RBCoord2I * pOffset)
+{
+    int32_t const tw = t2getw(pDestTex);
+    int32_t const th = t2geth(pDestTex);
+    int32_t ox = 0;
+    int32_t oy = 0;
+    
+    // The double negation works for 0x80000000, naive thing doesn't
+    rbAssert(-abs(pRect->x) > -RB_MAX_REASONABLE_SIZE);
+    rbAssert(-abs(pRect->y) > -RB_MAX_REASONABLE_SIZE);
+    rbAssert(-abs(pRect->w) > -RB_MAX_REASONABLE_SIZE);
+    rbAssert(-abs(pRect->h) > -RB_MAX_REASONABLE_SIZE);
+    
+    if(pRect->x < 0) {
+        ox = -pRect->x;
+        pRect->x = 0;
+        pRect->w -= ox;
+    }
+    if(pRect->y < 0) {
+        oy = -pRect->y;
+        pRect->y = 0;
+        pRect->h -= oy;
+    }
+    
+    if(pRect->x + pRect->w > tw) {
+        pRect->w = tw - pRect->x;
+    }
+    if(pRect->y + pRect->h > th) {
+        pRect->h = th - pRect->y;
+    }
+    
+    if(pRect->w < 0) {
+        pRect->w = 0;
+    }
+    if(pRect->h < 0) {
+        pRect->h = 0;
+    }
+    
+    if(pOffset != NULL) {
+        pOffset->x = ox;
+        pOffset->y = oy;
+    }
+}
 
 
 RBVector2 rbVector2Normalize(RBVector2 a)
@@ -813,6 +865,82 @@ void rbTexture2Rescale(RBTexture2 * pDestTex, RBTexture2 const * pSrcTex)
     }
 }
 
+
+void rbTexture2DebugTextF(RBTexture2 * pDestTex, int32_t du, int32_t dv,
+    RBColor c, char const * format, ...)
+{
+    RBRect2I r = {.x = du, .y = dv, .h = RB_DEBUG_CHAR_HEIGHT};
+    RBCoord2I o;
+    char buf[1000];
+    va_list va;
+    int bufLen;
+    
+    va_start(va, format);
+    bufLen = vsnprintf(buf, sizeof buf, format, va);
+    va_end(va);
+    
+    if(bufLen < 0) {
+        return;
+    }
+    
+    if((size_t)bufLen > LENGTHOF(buf)) {
+        bufLen = LENGTHOF(buf);
+    }
+    r.w = bufLen * RB_DEBUG_CHAR_WIDTH;
+    
+    rbClipRect(pDestTex, &r, &o);
+    
+    if(bufLen * RB_DEBUG_CHAR_WIDTH > r.w) {
+        bufLen = (o.x + r.w + RB_DEBUG_CHAR_WIDTH - 1) / RB_DEBUG_CHAR_WIDTH;
+    }
+    
+    if(bufLen == 0) {
+        return;
+    }
+    
+    // Convert chars in buf into indices into the font
+    for(int i = 0; i < bufLen; ++i) {
+        if((uint8_t)buf[i] < 32) {
+            buf[i] = 0;
+        }
+        else if((uint8_t)buf[i] > 127) {
+            buf[i] = '?' - 32;
+        }
+        else {
+            buf[i] -= 32;
+        }
+    }
+    
+    for(int32_t j = 0; j < r.h; ++j) {
+        int32_t row = o.y + j;
+        for(int32_t i = 0; i < r.w; ++i) {
+            size_t glyphIndex = (i + o.x) / RB_DEBUG_CHAR_WIDTH;
+            size_t glyphPixel = (i + o.x) % RB_DEBUG_CHAR_WIDTH;
+            uint8_t bits = g_rbFontDebug4x6[(size_t)buf[glyphIndex]][row];
+            if((bits & (1 << glyphPixel)) != 0) {
+                t2sett(pDestTex, r.x + i, r.y + j,
+                    cmixi(t2gett(pDestTex, r.x + i, r.y + j), 255 - c.a, c,
+                        255));
+            }
+        }
+    }
+}
+
+
+void rbTexture2FillRect(RBTexture2 * pDestTex, int32_t du, int32_t dv,
+    int32_t dw, int32_t dh, RBColor c)
+{
+    RBRect2I r = {.x = du, .y = dv, .w = dw, .h = dh};
+    
+    rbClipRect(pDestTex, &r, NULL);
+    
+    for(int32_t j = 0; j < r.h; ++j) {
+        for(int32_t i = 0; i < r.w; ++i) {
+            t2sett(pDestTex, i + r.x, j + r.y,
+                cmixi(t2gett(pDestTex, i + r.x, j + r.y), 255 - c.a, c, 255));
+        }
+    }
+}
 
 
 void rbHarmonicPathGeneratorInitialize(RBHarmonicPathGenerator * pPathGen,

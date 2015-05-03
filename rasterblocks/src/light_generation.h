@@ -39,15 +39,7 @@ extern RBTexture1 * g_rbPBlackRedGoldHSPalTex;
 extern RBTexture1 * g_rbPBlackWhiteHSPalTex;
 
 
-extern RBTexture2 * g_rbPAmericanFlagTex;
-extern RBTexture2 * g_rbPSeqCircLogoTex;
-extern RBTexture2 * g_rbPSeqCircLogoTex16x8;
-extern RBTexture2 * g_rbPSeqCircLogoTex24x12;
-extern RBTexture2 * g_rbPSeqCircLogoTex32x16;
-extern RBTexture2 * g_rbPVectorHarmonyLogoTex48x16;
-extern RBTexture2 * g_rbPVectorHarmonyLogoTex24x8;
-extern RBTexture2 * g_rbPInventorLiveLogoBulbTex40x16;
-extern RBTexture2 * g_rbPInventorLiveLogoTextTex40x16;
+extern RBTexture2 * g_rbPSfuCsSurreyTex;
 
 
 // Light generation subsystem
@@ -86,7 +78,15 @@ RBLightGenerator * rbLightGenerationRescaleAlloc(
     RBLightGenerator * pGenerator, size_t srcWidth, size_t srcHeight);
 
 RBLightGenerator * rbLightGenerationTimedRotationAlloc(
-    RBLightGenerator * pGenerators[], size_t numGenerators, RBTime interval);
+    RBLightGenerator * pGenerators[], size_t numGenerators, RBTime interval,
+    int32_t controllerNum);
+RBLightGenerator * rbLightGenerationControllerSelectAlloc(
+    RBLightGenerator * pGenerators[], size_t numGenerators,
+    int32_t controllerNum);
+RBLightGenerator * rbLightGenerationControllerFadeAlloc(
+    RBLightGenerator * pGenerator, int32_t controllerNum);
+RBLightGenerator * rbLightGenerationTriggerFlashAlloc(RBTexture1 * pPalTex,
+    int32_t triggerNum);
 /*
 void rbLightGenerationTimedRotationPauseRotation(
     RBLightGenerator * pTRGenerator);
@@ -105,7 +105,8 @@ RBLightGenerator * rbLightGenerationPulseGridAlloc(RBColor hColor,
     RBColor vColor);
 RBLightGenerator * rbLightGenerationDashedCirclesAlloc(RBTexture1 * pPalTex);
 RBLightGenerator * rbLightGenerationSmokeSignalsAlloc(RBTexture1 * pPalTex);
-RBLightGenerator * rbLightGenerationFireworksAlloc(RBTexture1 * pPalTex);
+RBLightGenerator * rbLightGenerationFireworksAlloc(RBTexture1 * pPalTex,
+    int32_t triggerNum);
 RBLightGenerator * rbLightGenerationVerticalBarsAlloc(
     RBTexture1 * pBassPalTex, RBTexture1 * pTreblePalTex,
     size_t numBars, RBTime spawnInterval, RBTime fadeTime);

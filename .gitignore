@@ -6,7 +6,10 @@
 *.o.*
 *.d
 *.d.*
+.DS_Store
+._.*
 rasterblocks/bin/*
 rasterblocks/build/*
 rasterblocks/precise-chroot
 rasterblocks/nodeserver/node_modules
+rasterblocks/pruss/lib

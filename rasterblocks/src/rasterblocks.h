@@ -29,18 +29,22 @@
 #define RB_VIDEO_FRAME_TIME (1.0f / RB_VIDEO_FRAME_RATE)
 #define RB_AUDIO_FRAMES_PER_VIDEO_FRAME \
     (RB_AUDIO_SAMPLE_RATE / RB_VIDEO_FRAME_RATE)
+#define RB_MIDI_BAUD 30000
+#define RB_MIDI_MAX_CHARS_PER_SECOND (RB_MIDI_BAUD / 10 + 1)
+#define RB_MIDI_MAX_CHARS_PER_VIDEO_FRAME \
+    ((RB_MIDI_BAUD + RB_VIDEO_FRAME_RATE * 10 - 1) / \
+        (RB_VIDEO_FRAME_RATE * 10) + 1)
 
 #define RB_CHLADNI_SIZE 64
 
+#define RB_NUM_CONTROLLERS 10
+#define RB_NUM_TRIGGERS 10
+
+#define RB_MAX_LIGHTS 2048
+#define RB_MAX_LIGHT_STRINGS 8
+
 #define RB_PANEL_WIDTH 8
 #define RB_PANEL_HEIGHT 8
-#define RB_NUM_PANELS_PER_STRING 6
-#define RB_NUM_STRINGS 2
-#define RB_NUM_PANELS (RB_NUM_PANELS_PER_STRING * RB_NUM_STRINGS)
-#define RB_NUM_LIGHTS (RB_PANEL_WIDTH * RB_PANEL_HEIGHT * RB_NUM_PANELS)
-
-#define RB_PROJECTION_WIDTH (RB_PANEL_WIDTH * 4)
-#define RB_PROJECTION_HEIGHT (RB_PANEL_HEIGHT * 3)
 
 #define RB_MAX_CONSECUTIVE_GENTLE_RESTART_NS (10 * 1000000000LLU)
 #define RB_GENTLE_RESTART_DELAY_NS 500000000LLU
@@ -49,6 +53,9 @@
 #define RB_PI (3.14159265358979f)
 #define RB_PI_D (3.14159265358979323846)
 #define RB_SQRT_2 (1.4142135623730950488f)
+
+#define RB_AUDIO_OVERDRIVE_THRESHOLD (0.75f)
+#define RB_AUDIO_LARGE_DC_THRESHOLD (0.25f)
 
 
 typedef enum {
@@ -62,6 +69,7 @@ typedef enum {
 typedef enum {
     RBS_MAIN,
     RBS_CONFIGURATION,
+    RBS_CONTROL_INPUT,
     RBS_AUDIO_INPUT,
     RBS_AUDIO_ANALYSIS,
     RBS_LIGHT_GENERATION,
@@ -77,7 +85,18 @@ typedef enum {
     RBAI_FILE,
     RBAI_ALSA,
     RBAI_OPENAL,
+    RBAI_PRUSS,
 } RBAudioInput;
+
+
+typedef enum {
+    RBCI_INVALID,
+    RBCI_NONE,
+    RBCI_TEST,
+    RBCI_HARNESS,
+    RBCI_BBB_UART4_MIDI,
+    RBCI_PRUSS_MIDI,
+} RBControlInput;
 
 
 typedef enum {
@@ -87,6 +106,17 @@ typedef enum {
     RBLO_SPIDEV,
     RBLO_PRUSS,
 } RBLightOutput;
+
+
+typedef enum {
+    RBDM_OFF = 0, // Must be entry 0, so that rbZero(&rbControls...) will work
+    RBDM_AUDIO,
+    RBDM_CONTROLS,
+    RBDM_PERF_METRICS,
+    RBDM_PROJECTION_GRID,
+    RBDM_IDENTIFY_PIXELS,
+    RBDM_COUNT,
+} RBDebugDisplayMode;
 
 
 #ifdef RB_USE_NEON
@@ -144,9 +174,10 @@ typedef struct {
     // defaults
     char configPath[PATH_MAX];
     
-    //
     RBAudioInput audioInput;
     char audioInputParam[PATH_MAX];
+    
+    RBControlInput controlInput;
     
     RBLightOutput lightOutput;
     char lightOutputParam[PATH_MAX];
@@ -157,37 +188,16 @@ typedef struct {
     float agcMax;
     float agcMin;
     float agcStrength;
-    // analysis tweaks?
-    // output mode?
-    // output device path?
-    // hot config port/etc.?
-    
-    int32_t mode;
     
     float brightness;
+    int32_t projectionWidth;
+    int32_t projectionHeight;
+    size_t numLightStrings;
+    size_t numLightsPerString;
+    RBVector2 lightPositions[RB_MAX_LIGHTS];
+    
+    int32_t mode;
 } RBConfiguration;
-
-
-typedef struct {
-    float audio[RB_AUDIO_FRAMES_PER_VIDEO_FRAME][RB_AUDIO_CHANNELS];
-} RBRawAudio;
-
-
-typedef struct {
-    float rawAudio[RB_AUDIO_FRAMES_PER_VIDEO_FRAME];
-    float bassAudio[RB_AUDIO_FRAMES_PER_VIDEO_FRAME];
-    float trebleAudio[RB_AUDIO_FRAMES_PER_VIDEO_FRAME];
-    
-    float bassEnergy;
-    float midEnergy;
-    float trebleEnergy;
-    float totalEnergy;
-    float leftRightBalance;
-    
-    bool peakDetected;
-    
-    float chladniPattern[RB_CHLADNI_SIZE][RB_CHLADNI_SIZE];
-} RBAnalyzedAudio;
 
 
 typedef struct {
@@ -198,11 +208,52 @@ typedef struct {
 
 
 typedef struct {
-    RBColor data[RB_NUM_PANELS][RB_PANEL_HEIGHT][RB_PANEL_WIDTH];
+    uint64_t frameNum;
+    bool overdriven;
+    bool largeDc;
+    float audio[RB_AUDIO_FRAMES_PER_VIDEO_FRAME][RB_AUDIO_CHANNELS];
+} RBRawAudio;
+
+
+typedef struct {
+    float controllers[RB_NUM_CONTROLLERS];
+    bool triggers[RB_NUM_TRIGGERS];
+    bool debugDisplayReset;
+    RBDebugDisplayMode debugDisplayMode;
+} RBControls;
+
+
+typedef struct {
+    uint64_t frameNum;
+    
+    RBControls controls;
+    
+    float rawAudio[RB_AUDIO_FRAMES_PER_VIDEO_FRAME];
+    float bassAudio[RB_AUDIO_FRAMES_PER_VIDEO_FRAME];
+    float trebleAudio[RB_AUDIO_FRAMES_PER_VIDEO_FRAME];
+    
+    float bassEnergy;
+    float midEnergy;
+    float trebleEnergy;
+    float totalEnergy;
+    float leftRightBalance;
+    
+    float agcValue;
+    
+    bool sourceOverdriven;
+    bool sourceLargeDc;
+    bool peakDetected;
+    
+    float chladniPattern[RB_CHLADNI_SIZE][RB_CHLADNI_SIZE];
+} RBAnalyzedAudio;
+
+
+typedef struct {
+    uint64_t frameNum;
+    size_t numLightStrings;
+    size_t numLightsPerString;
+    RBColor data[RB_MAX_LIGHTS];
 } RBRawLightFrame;
-
-
-RBPanelConfig const g_rbPanelConfigs[RB_NUM_PANELS];
 
 
 // Tell the main program which subsystem is currently running (in this thread).
@@ -228,6 +279,11 @@ void rbRequestHardwareReset(void);
 // a gentle restart; false if this is first-time init.
 bool rbIsRestarting(void);
 
+RBConfiguration const * rbGetConfiguration(void);
+void rbComputeLightPositionsFromPanelList(RBVector2 * pLightPositions,
+    size_t numLightPositions, RBPanelConfig const * pPanelConfigs,
+    size_t numPanels);
+
 static inline RBTime rbTimeFromMs(int32_t ms)
 {
     return ms;
@@ -238,7 +294,18 @@ static inline int32_t rbMsFromTime(RBTime time)
     return time;
 }
 
+// rbGetTime() returns the *frame* time; it's invariant during computation of
+// a frame. This is usually handy but if you are trying to time something
+// (say, to measure performance), you need to use rbGetRealTime().
 RBTime rbGetTime(void);
+
+// This returns the time since the last frame, in seconds.
+float rbGetDeltaTimeSeconds(void);
+
+// rbGetRealTime() reads the clock at the exact point it is called. You should
+// not use it for timing animations; rbGetTime() is better for that.
+RBTime rbGetRealTime(void);
+uint64_t rbGetRealTimeNs(void);
 
 static inline RBTime rbDiffTime(RBTime x, RBTime y)
 {
@@ -257,6 +324,10 @@ void rbStartTimer(RBTimer * pTimer, RBTime period);
 static inline void rbStopTimer(RBTimer * pTimer)
 {
     rbStartTimer(pTimer, 0);
+}
+
+static inline RBTime rbGetTimerPeriod(RBTimer * pTimer) {
+    return pTimer->period;
 }
 
 int32_t rbGetTimerPeriods(RBTimer * pTimer);
@@ -354,6 +425,16 @@ static inline int32_t rbClampI(int32_t i, int32_t iMin, int32_t iMax)
     }
 }
 
+static inline int32_t rbMinI(int32_t a, int32_t b)
+{
+    return a < b ? a : b;
+}
+
+static inline int32_t rbMaxI(int32_t a, int32_t b)
+{
+    return a > b ? a : b;
+}
+
 static inline float rbClampF(float f, float fMin, float fMax)
 {
     // This is structured carefully so that NaN will clamp as fMin.
@@ -367,6 +448,16 @@ static inline float rbClampF(float f, float fMin, float fMax)
     return fMin;
 }
 
+static inline float rbMinF(float a, float b)
+{
+    return a < b ? a : b;
+}
+
+static inline float rbMaxF(float a, float b)
+{
+    return a > b ? a : b;
+}
+
 static inline uint32_t rbRandomI(uint32_t range)
 {
     return ((rand() << 15) ^ rand()) % range;
@@ -377,6 +468,10 @@ static inline float rbRandomF(void)
     static float const randMul = 1.0f / ((float)RAND_MAX + 1.0f);
     return rand() * randMul;
 }
+
+
+#define rbMemoryBarrier() asm volatile("": : :"memory")
+
 
 #ifdef NDEBUG
 #define rbAssert(assertExpr) do {} while(false)
@@ -429,7 +524,7 @@ static inline float rbRandomF(void)
 // Framework: coordinates all the other subsystems
 void rbInitialize(int argc, char * argv[]);
 void rbShutdown(void);
-void rbProcess(uint64_t nsSinceLastProcess);
+void rbProcess(void);
 
 
 // Implemented in the harness!

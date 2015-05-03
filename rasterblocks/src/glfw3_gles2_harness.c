@@ -58,6 +58,8 @@
 
 #include "rasterblocks.h"
 
+#include "control_input.h"
+
 
 static void error_callback(int error, const char* description)
 {
@@ -79,38 +81,43 @@ static void key_callback(
     GLUS_UNUSED(action);
     GLUS_UNUSED(mods);
     
-/*
     if(action == GLFW_PRESS) {
         switch(key) {
-        case 'Q': ddh_mode = 0; break;
-        case 'W': ddh_mode = 1; break;
-        case 'E': ddh_mode = 2; break;
-        case 'R': ddh_mode = 3; break;
-        case 'T': ddh_mode = 4; break;
-        case 'Y': ddh_mode = 5; break;
-        case 'U': ddh_mode = 6; break;
-        case 'I': ddh_mode = 7; break;
-        case 'O': ddh_mode = 8; break;
-        case 'P': ddh_mode = 9; break;
+        case 'Q': gles2_harness_set_trigger(0); break;
+        case 'W': gles2_harness_set_trigger(1); break;
+        case 'E': gles2_harness_set_trigger(2); break;
+        case 'R': gles2_harness_set_trigger(3); break;
+        case 'T': gles2_harness_set_trigger(4); break;
+        case 'Y': gles2_harness_set_trigger(5); break;
+        case 'U': gles2_harness_set_trigger(6); break;
+        case 'I': gles2_harness_set_trigger(7); break;
+        case 'O': gles2_harness_set_trigger(8); break;
+        case 'P': gles2_harness_set_trigger(9); break;
         
-        case 'A': ddh_submode = 0; break;
-        case 'S': ddh_submode = 1; break;
-        case 'D': ddh_submode = 2; break;
-        case 'F': ddh_submode = 3; break;
-        case 'G': ddh_submode = 4; break;
-        case 'H': ddh_submode = 5; break;
-        case 'J': ddh_submode = 6; break;
-        case 'K': ddh_submode = 7; break;
-        case 'L': ddh_submode = 8; break;
-        case ';': ddh_submode = 9; break;
+        case 'A': gles2_harness_set_controller_inc(0, true); break;
+        case 'S': gles2_harness_set_controller_inc(1, true); break;
+        case 'D': gles2_harness_set_controller_inc(2, true); break;
+        case 'F': gles2_harness_set_controller_inc(3, true); break;
+        case 'G': gles2_harness_set_controller_inc(4, true); break;
+        case 'H': gles2_harness_set_controller_inc(5, true); break;
+        case 'J': gles2_harness_set_controller_inc(6, true); break;
+        case 'K': gles2_harness_set_controller_inc(7, true); break;
+        case 'L': gles2_harness_set_controller_inc(8, true); break;
+        case ';': gles2_harness_set_controller_inc(9, true); break;
         
-        case '[': ddh_button_a = true; break;
-        case ']': ddh_button_b = true; break;
+        case 'Z': gles2_harness_set_controller_dec(0, true); break;
+        case 'X': gles2_harness_set_controller_dec(1, true); break;
+        case 'C': gles2_harness_set_controller_dec(2, true); break;
+        case 'V': gles2_harness_set_controller_dec(3, true); break;
+        case 'B': gles2_harness_set_controller_dec(4, true); break;
+        case 'N': gles2_harness_set_controller_dec(5, true); break;
+        case 'M': gles2_harness_set_controller_dec(6, true); break;
+        case ',': gles2_harness_set_controller_dec(7, true); break;
+        case '.': gles2_harness_set_controller_dec(8, true); break;
+        case '/': gles2_harness_set_controller_dec(9, true); break;
         
-        case GLFW_KEY_LEFT: gles2_harness_input_left = true; break;
-        case GLFW_KEY_RIGHT: gles2_harness_input_right = true; break;
-        case GLFW_KEY_UP: gles2_harness_input_up = true; break;
-        case GLFW_KEY_DOWN: gles2_harness_input_down = true; break;
+        case '[': gles2_harness_debug_mode_prev(); break;
+        case ']': gles2_harness_debug_mode_next(); break;
         
         case GLFW_KEY_ESCAPE:
             glfwSetWindowShouldClose(window, GL_TRUE);
@@ -119,33 +126,37 @@ static void key_callback(
     }
     else if(action == GLFW_RELEASE) {
         switch(key) {
-        case '[': ddh_button_a = false; break;
-        case ']': ddh_button_b = false; break;
+        case 'A': gles2_harness_set_controller_inc(0, false); break;
+        case 'S': gles2_harness_set_controller_inc(1, false); break;
+        case 'D': gles2_harness_set_controller_inc(2, false); break;
+        case 'F': gles2_harness_set_controller_inc(3, false); break;
+        case 'G': gles2_harness_set_controller_inc(4, false); break;
+        case 'H': gles2_harness_set_controller_inc(5, false); break;
+        case 'J': gles2_harness_set_controller_inc(6, false); break;
+        case 'K': gles2_harness_set_controller_inc(7, false); break;
+        case 'L': gles2_harness_set_controller_inc(8, false); break;
+        case ';': gles2_harness_set_controller_inc(9, false); break;
         
-        case GLFW_KEY_LEFT: gles2_harness_input_left = false;
-        case GLFW_KEY_RIGHT: gles2_harness_input_right = false;
-        case GLFW_KEY_UP: gles2_harness_input_up = false;
-        case GLFW_KEY_DOWN: gles2_harness_input_down = false;
+        case 'Z': gles2_harness_set_controller_dec(0, false); break;
+        case 'X': gles2_harness_set_controller_dec(1, false); break;
+        case 'C': gles2_harness_set_controller_dec(2, false); break;
+        case 'V': gles2_harness_set_controller_dec(3, false); break;
+        case 'B': gles2_harness_set_controller_dec(4, false); break;
+        case 'N': gles2_harness_set_controller_dec(5, false); break;
+        case 'M': gles2_harness_set_controller_dec(6, false); break;
+        case ',': gles2_harness_set_controller_dec(7, false); break;
+        case '.': gles2_harness_set_controller_dec(8, false); break;
+        case '/': gles2_harness_set_controller_dec(9, false); break;
+        
+        default: break;
         }
     }
-*/
 }
 
 
 int main(int argc, char * argv[])
 {
     GLFWwindow* window;
-#ifdef RB_LINUX
-    struct timespec lastts;
-    
-    clock_gettime(CLOCK_MONOTONIC, &lastts);
-#endif
-#ifdef RB_OSX
-    uint64_t lasttime = mach_absolute_time();
-    mach_timebase_info_data_t timebase;
-    
-    mach_timebase_info(&timebase);
-#endif
 
     glfwSetErrorCallback(error_callback);
 
@@ -178,37 +189,12 @@ int main(int argc, char * argv[])
     while (!glfwWindowShouldClose(window))
     {
         int width = 0, height = 0;
-#ifdef RB_LINUX
-        struct timespec ts;
-#endif
-#ifdef RB_OSX
-        uint64_t time;
-#endif
-        uint64_t time_ns;
-
+        
         glfwGetFramebufferSize(window, &width, &height);
 
         gles2_harness_reshape(width, height);
         
-#ifdef RB_LINUX
-        clock_gettime(CLOCK_MONOTONIC, &ts);
-        ts.tv_nsec -= lastts.tv_nsec;
-        if(ts.tv_nsec < 0) {
-            ts.tv_nsec += 1000000000;
-            --ts.tv_sec;
-        }
-        assert(ts.tv_nsec >= 0 && ts.tv_nsec < 1000000000);
-        assert(ts.tv_sec >= 0);
-        lastts = ts;
-        time_ns = ts.tv_nsec + ts.tv_sec * 1000000000;
-#endif
-#ifdef RB_OSX
-        time = mach_absolute_time();
-        time_ns = ((time - lasttime) * timebase.numer) / timebase.denom;
-        lasttime = time;
-#endif
-        
-        gles2_harness_update((float)(time_ns / 1.0e9));
+        gles2_harness_update();
 
         glfwSwapBuffers(window);
         glfwPollEvents();

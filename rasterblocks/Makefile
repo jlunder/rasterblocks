@@ -29,7 +29,7 @@ ifeq ($(OS), LINUX)
 	CFLAGS_TARGET_DEBUG=-O0 -mtune=cortex-a8 -march=armv7-a $(CFLAGS_COMMON)
 	CPPFLAGS_COMMON=--std=gnu99 -fgnu89-inline -D_POSIX_C_SOURCE=200809L -D__USE_MISC
 	CPPFLAGS=$(CPPFLAGS_COMMON) -DRB_LINUX -DGLUS_ES2 -DRB_USE_SDL2_GLES2_HARNESS -DRB_USE_SNDFILE_INPUT -DRB_USE_ALSA_DEVICE -DRB_USE_PIXELPUSHER_OUTPUT -DRB_USE_OPENGL_OUTPUT
-	CPPFLAGS_TARGET=$(CPPFLAGS_COMMON) -DRB_LINUX -DRB_USE_TARGET_HARNESS -DRB_USE_SNDFILE_INPUT -DRB_USE_ALSA_DEVICE -DRB_USE_PIXELPUSHER_OUTPUT -DRB_USE_SPIDEV_OUTPUT -DRB_USE_PRUSS_IO -Icross-dep/include -Ipruss/include
+	CPPFLAGS_TARGET=$(CPPFLAGS_COMMON) -DRB_LINUX -DRB_USE_TARGET_HARNESS -DRB_USE_SNDFILE_INPUT -DRB_USE_ALSA_DEVICE -DRB_USE_BBB_UART4_MIDI_CONTROL_INPUT -DRB_USE_PIXELPUSHER_OUTPUT -DRB_USE_SPIDEV_OUTPUT -DRB_USE_PRUSS_IO -Icross-dep/include -Ipruss/include
 	LDFLAGS=-g -lSDL2 -lm -lGLESv2 -lsndfile -lasound -ljson-c
 	LDFLAGS_TARGET=-g -lm -Lcross-dep/lib -Wl,-rpath=cross-dep/lib -Wl,-rpath-link=cross-dep/lib -lsndfile -lasound -ljson -lrt
 endif
@@ -55,6 +55,9 @@ ifneq ($(BUILD_ON_TARGET),)
 	INSTALL_DIR := /usr/local/lib/rasterblocks
 endif
 
+RB_VERSION=1.1
+DT_NAME=rb-pruss-io-00A0
+
 MAKEDEPEND=@set -e; rm -f $@; \
 	$(CC) -M $(CPPFLAGS) $< > $@.$$$$; \
 	sed 's,\($*\)\.o[ :]*,build/\1.o $@ : ,g' < $@.$$$$ > $@; \
@@ -66,10 +69,10 @@ MAKEDEPEND_TARGET=@set -e; rm -f $@; \
 	rm -f $@.$$$$
 
 
-.PHONY: all cleanall clean
+.PHONY: all cleanall clean clean-dtc
 
 ifneq ($(PACKAGE_BUILD),)
-all: bin/rasterblocks-1.0_armhf.deb
+all: bin/rasterblocks-$(RB_VERSION)_armhf.deb
 else
 all: bin/rasterblocks
 endif
@@ -99,9 +102,32 @@ build/%.o: src/%.c
 	@$(MAKEDEPEND)
 	$(CC) -c -g $(CFLAGS) -o $@ $(CPPFLAGS) $<
 
-bin/pasm: $(wildcard pasm/*.c)
+ifeq ($(CROSS_BUILD),)
+# Don't build these tools with the cross-compiler!
+
+# We build pasm ourselves instead of using the shipped makefile.
+bin/pasm: $(wildcard pasm/*.{c,h})
 	@mkdir -p bin
 	$(CC) -g -Wall -D_UNIX_ -o $@ $(wildcard pasm/*.c) $(LDFLAGS)
+
+# This is super hacky. Instead of using the shipped makefiles for dtc, we
+# build it ourselves using this makefile. Fortunately the build is very
+# simple.
+# Things to note:
+# - Instead of using lex/yacc, we add a target to just copy the shipped
+#   preprocessed files (the dtc/% target)
+# - There are 4 binaries in this source: dtc, fdtdump and a couple others. The
+#   $(patsubst dtc/fdt%.c,,... strips those extras out of the list of source!
+# - There's an extra clean-dtc target to remove the lex/yacc .c/.h files
+dtc/%: dtc/%_shipped
+	cp $< $@
+bin/dtc: $(wildcard dtc/*.c dtc/*.h) $(patsubst %_shipped,%,$(wildcard dtc/*_shipped)) $(wildcard dtc/libfdt/*.c dtc/libfdt/*.h)
+	@mkdir -p bin
+	$(CC) -g -Wall -o $@ -I dtc/libfdt $(patsubst dtc/fdt%.c,,$(patsubst %.h,,$(sort $^)))
+clean-dtc:
+	rm -f $(patsubst %_shipped,%,$(wildcard dtc/*.c_shipped dtc/*.h_shipped))
+
+endif
 
 bin/rasterblocks: $(STAGE_LIGHTS_O)
 	@mkdir -p bin
@@ -131,7 +157,7 @@ endif
 src/pruss_io_pru0_bin.h: src/pruss_io_pru0.p src/pruss_io.hp bin/pasm
 	bin/pasm -c -CrbPrussIoPru0Code src/pruss_io_pru0.p src/pruss_io_pru0
 
-src/pruss_io_pru1_bin.h: src/pruss_io_pru0.p src/pruss_io.hp bin/pasm
+src/pruss_io_pru1_bin.h: src/pruss_io_pru1.p src/pruss_io.hp bin/pasm
 	bin/pasm -c -CrbPrussIoPru1Code src/pruss_io_pru1.p src/pruss_io_pru1
 
 build/%.target.o: src/%.c
@@ -158,12 +184,15 @@ pruss/lib/libprussdrv.a: $(wildcard pruss/src/*.{c,h}) pruss/src/Makefile
 pruss/lib/libprussdrvd.a: $(wildcard pruss/src/*.{c,h}) pruss/src/Makefile
 	CROSS_COMPILE=$(CC_TARGET_PREFIX) make -C pruss/src ../lib/libprussdrvd.a
 
+bin/$(DT_NAME).dtbo: $(DT_NAME).dts bin/dtc
+	bin/dtc -I dts -O dtb -o $@ -b 0 -@ $<
+
 else
 
 # We're in the host build env, use the cross-build script to perform the
 # target build.
 ifneq ($(TARGET_BUILD),)
-bin/rasterblocks.target: precise-chroot bin/pasm
+bin/rasterblocks.target bin/$(DT_NAME).dtbo: precise-chroot bin/pasm bin/dtc
 	./target-build
 endif
 
@@ -171,34 +200,32 @@ endif
 
 ifneq ($(PACKAGE_BUILD),)
 
+bin/package: $(wildcard package/DEBIAN/*) $(wildcard nodeserver/*) rasterblocks.service rasterblocks-nodeserver.service rasterblocks-button.service bin/$(DT_NAME).dtbo
+	rm -rf bin/package
+	cp -r package bin/package
+	mkdir -p bin/package/usr/lib/rasterblocks
+	mkdir -p bin/package/var/lib/rasterblocks
+	mkdir -p bin/package/lib/firmware
+	cp -r nodeserver bin/package/usr/lib/rasterblocks/
+	cp rasterblocks.service bin/package/usr/lib/rasterblocks
+	cp rasterblocks-nodeserver.service bin/package/usr/lib/rasterblocks
+	cp rasterblocks-button.service bin/package/usr/lib/rasterblocks
+	cp bin/$(DT_NAME).dtbo bin/package/lib/firmware
+
 ifeq ($(CROSS_BUILD)$(BUILD_ON_TARGET),)
 # Neither the cross-build env nor the target has tools to build a host package
-bin/rasterblocks-1.0_x64.deb: $(wildcard package/DEBIAN/*) $(wildcard nodeserver/*) rasterblocks.service rasterblocks-nodeserver.service rasterblocks-button.service bin/rasterblocks
-	mkdir -p package/usr/lib/rasterblocks
-	mkdir -p package/var/lib/rasterblocks
-	cp -r nodeserver package/usr/lib/rasterblocks/
-	rm -r package/usr/lib/rasterblocks/nodeserver/node_modules
-	cp config/host_config.json package/usr/lib/rasterblocks/config.json
-	cp bin/rasterblocks package/usr/lib/rasterblocks/rasterblocks
-	cp rasterblocks.service package/usr/lib/rasterblocks
-	cp rasterblocks-nodeserver.service package/usr/lib/rasterblocks
-	cp rasterblocks-button.service package/usr/lib/rasterblocks
-	dpkg-deb --build package $@
+bin/rasterblocks-$(RB_VERSION)_x64.deb: bin/package bin/rasterblocks
+	cp bin/rasterblocks bin/package/usr/lib/rasterblocks/rasterblocks
+	cp config/host_config.json bin/package/usr/lib/rasterblocks/config.json
+	dpkg-deb --build bin/package $@
 endif
 
 ifeq ($(CROSS_BUILD),)
 # The cross-build env doesn't have enough toolchain to build a package
-bin/rasterblocks-1.0_armhf.deb: $(wildcard package/DEBIAN/*) $(wildcard nodeserver/*) rasterblocks.service rasterblocks-nodeserver.service rasterblocks-button.service bin/rasterblocks.target
-	mkdir -p package/usr/lib/rasterblocks
-	mkdir -p package/var/lib/rasterblocks
-	cp -r nodeserver package/usr/lib/rasterblocks/
-	rm -rf package/usr/lib/rasterblocks/nodeserver/node_modules
-	cp config/target_config.json package/usr/lib/rasterblocks/config.json
-	cp bin/rasterblocks.target package/usr/lib/rasterblocks/rasterblocks
-	cp rasterblocks.service package/usr/lib/rasterblocks
-	cp rasterblocks-nodeserver.service package/usr/lib/rasterblocks
-	cp rasterblocks-button.service package/usr/lib/rasterblocks
-	dpkg-deb --build package $@
+bin/rasterblocks-$(RB_VERSION)_armhf.deb: bin/package bin/rasterblocks.target
+	cp bin/rasterblocks.target bin/package/usr/lib/rasterblocks/rasterblocks
+	cp config/target_config.json bin/package/usr/lib/rasterblocks/config.json
+	dpkg-deb --build bin/package $@
 endif
 
 endif
@@ -206,10 +233,8 @@ endif
 cleanall: clean
 	-sudo umount precise-chroot/home/rasterblocks
 	sudo rm -rf precise-chroot
-	rm -rf package/usr
-	rm -rf package/var
 
-clean:
-	@rm -f build/* bin/*
+clean: clean-dtc
+	@rm -rf build/* bin/*
 	@rm -f src/icons.h
 

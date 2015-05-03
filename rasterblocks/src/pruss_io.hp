@@ -61,13 +61,9 @@
 #define _PRU_memAccessPRUDataRAM_HP_
 
 
-#define AM33XX
-
 // ***************************************
 // *      Global Macro definitions       *
 // ***************************************
-
-#ifdef AM33XX
 
 // Refer to this mapping in the file - \prussdrv\include\pruss_intc_mapping.h
 #define PRU0_PRU1_INTERRUPT     17
@@ -77,6 +73,7 @@
 #define ARM_PRU0_INTERRUPT      21
 #define ARM_PRU1_INTERRUPT      22
 
+#define CONST_INTC      C0
 #define CONST_PRUCFG    C4
 #define CONST_PRUDRAM   C24
 #define CONST_L3RAM     C30
@@ -92,58 +89,26 @@
 // Address for the Constant table Programmable Pointer Register 1(CTPPR_1)
 #define CTPPR_1         0x2202C
 
-#else
+#define PRU0_PRU_CTRL_BASE 0x00022000
+#define PRU_CTRL_CONTROL   0x00
+#define PRU_CTRL_CYCLE     0x0C
 
-// Refer to this mapping in the file - \prussdrv\include\pruss_intc_mapping.h
-#define PRU0_PRU1_INTERRUPT     32
-#define PRU1_PRU0_INTERRUPT     33
-#define PRU0_ARM_INTERRUPT      34
-#define PRU1_ARM_INTERRUPT      35
-#define ARM_PRU0_INTERRUPT      36
-#define ARM_PRU1_INTERRUPT      37
 
-#define CONST_PRUDRAM   C3
-#define CONST_HPI       C15
-#define CONST_DSPL2     C28
-#define CONST_L3RAM     C30
-#define CONST_DDR       C31
+#define TSCADC_BASE          0x44e0d000
 
-// Address for the Constant table Programmable Pointer Register 0(CTPPR_0)
-#define CTPPR_0         0x7028
-// Address for the Constant table Programmable Pointer Register 1(CTPPR_1)
-#define CTPPR_1         0x702C
+#define TSCADC_SYSCONFIG     0x0010
+#define TSCADC_IRQSTATUS     0x0028
+#define TSCADC_IRQENABLE_CLR 0x0030
+#define TSCADC_DMAENABLE_CLR 0x003C
+#define TSCADC_CTRL          0x0040
+#define TSCADC_ADC_CLKDIV    0x004c
+#define TSCADC_IDLECONFIG    0x0058
+#define TSCADC_STEPCONFIG1   0x0064
+#define TSCADC_ADCSTAT       0x0044
+#define TSCADC_STEPENABLE    0x0054
+#define TSCADC_FIFO0COUNT    0x00e4
 
-#endif
-
-.macro  LD32
-.mparam dst,src
-    LBBO    dst,src,#0x00,4
-.endm
-
-.macro  LD16
-.mparam dst,src
-    LBBO    dst,src,#0x00,2
-.endm
-
-.macro  LD8
-.mparam dst,src
-    LBBO    dst,src,#0x00,1
-.endm
-
-.macro ST32
-.mparam src,dst
-    SBBO    src,dst,#0x00,4
-.endm
-
-.macro ST16
-.mparam src,dst
-    SBBO    src,dst,#0x00,2
-.endm
-
-.macro ST8
-.mparam src,dst
-    SBBO    src,dst,#0x00,1
-.endm
+#define TSCADC_FIFO0DATA_BASE (TSCADC_BASE + 0x0100)
 
 
 #define GPIO0             0x44E07000
@@ -222,40 +187,50 @@
 #define UART_MDR_OSM_SEL (1 << 0)
 
 
-#define GLOBAL_STATUS_RUN    0
-#define GLOBAL_STATUS_HALT   1
+#define PRU_MODE_INIT   0
+#define PRU_MODE_PAUSE  1
+#define PRU_MODE_RUN    2
+#define PRU_MODE_HALT   3
 
-#define FRAME_STATUS_MASK    0x03
-#define FRAME_MODE_MASK      0x0C
-#define FRAME_STATUS_IDLE    0x00
-#define FRAME_STATUS_ERROR   0x01
-#define FRAME_STATUS_READY   0x02
-#define FRAME_MODE_2W_2MHZ   0x00
-#define FRAME_MODE_2W_10MHZ  0x04
-#define FRAME_MODE_1W_800KHZ 0x08
-#define FRAME_MODE_PAUSE     0x10
+#define STATUS_NOMINAL           0
+#define STATUS_ERROR_COMMAND     0x00000001
+#define STATUS_ERROR_OVERRUN     0x00000002
+#define STATUS_ERROR_ADC_DESYNC  0x00000004
+#define STATUS_ERROR_ADC_TIMEOUT 0x00000008
+#define STATUS_ERROR_ADC_NO_DATA 0x00000010
+#define STATUS_BUSY              0x80000000
 
-#define MIDI_STATUS_EMPTY 0
-#define MIDI_STATUS_FULL  1
+#define OWNER_HOST 0
+#define OWNER_PRU0 1
+#define OWNER_PRU1 2
+
+#define COMMAND_AUDIO_IDLE 0x0000
+
+#define COMMAND_MIDI_IDLE 0x0000
+
+#define COMMAND_LIGHT_IDLE            0x0000
+#define COMMAND_LIGHT_MODE_MASK       0x00FF
+#define COMMAND_LIGHT_MODE_2W_2MHZ    0x0001
+#define COMMAND_LIGHT_MODE_2W_10MHZ   0x0002
+#define COMMAND_LIGHT_MODE_1W_800KHZ  0x0003
+#define COMMAND_LIGHT_END_FRAME_PAUSE 0x0100
 
 
-.struct global_control
+.struct pru_control
+    .u32 mode
     .u32 status
 .ends
 
 .struct buffer_control
+    .u32 owner
+    .u32 frame_num
+    .u32 command
     .u32 status
     .u32 address
     .u32 size
     .u32 capacity
+    .u32 pad
 .ends
-
-
-#define GLOBAL_OFS (0)
-#define FRAME0_OFS (SIZE(global_control) + SIZE(buffer_control) * 0)
-#define FRAME1_OFS (SIZE(global_control) + SIZE(buffer_control) * 1)
-#define MIDI0_OFS  (SIZE(global_control) + SIZE(buffer_control) * 2)
-#define MIDI1_OFS  (SIZE(global_control) + SIZE(buffer_control) * 3)
 
 
 #endif //_PRU_memAccessPRUDataRAM_HP_

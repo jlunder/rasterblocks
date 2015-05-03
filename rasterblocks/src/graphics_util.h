@@ -5,11 +5,29 @@
 #include "rasterblocks.h"
 
 
+#define RB_DEBUG_CHAR_WIDTH 4
+#define RB_DEBUG_CHAR_HEIGHT 6
+
+
 #ifdef RB_USE_NEON
 #endif
 
 
 typedef RBVector4 RBColorTemp;
+
+
+typedef struct {
+    int32_t x;
+    int32_t y;
+} RBCoord2I;
+
+
+typedef struct {
+    int32_t x;
+    int32_t y;
+    int32_t w;
+    int32_t h;
+} RBRect2I;
 
 
 typedef struct {
@@ -299,6 +317,11 @@ void rbTexture2Mix(RBTexture2 * pDestTex, RBTexture2 const * pSrcTexA,
     uint8_t alphaA, RBTexture2 const * pSrcTexB, uint8_t alphaB);
 void rbTexture2Rescale(RBTexture2 * pDestTex, RBTexture2 const * pSrcTex);
 
+void rbTexture2DebugTextF(RBTexture2 * pDestTex, int32_t du, int32_t dv,
+    RBColor c, char const * format, ...);
+void rbTexture2FillRect(RBTexture2 * pDestTex, int32_t du, int32_t dv,
+    int32_t dw, int32_t dh, RBColor c);
+
 void rbHarmonicPathGeneratorInitialize(RBHarmonicPathGenerator * pPathGen,
     float frequency, RBVector2 orientation,
     RBVector2 scale0, RBVector2 scale1, RBVector2 scale2, RBVector2 scale3);
@@ -376,6 +399,9 @@ static inline RBVector2 rbHarmonicPathGeneratorPos(
 #define t2bltsa rbTexture2BltSrcAlpha
 
 #define t2mix rbTexture2Mix
+
+#define t2dtextf rbTexture2DebugTextF
+#define t2rect rbTexture2FillRect
 
 
 #endif // GRAPHICS_UTIL_H_INCLUDED

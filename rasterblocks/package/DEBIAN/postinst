@@ -2,15 +2,13 @@
 
 INSTALL_DIR=/usr/lib/rasterblocks
 
-#pushd "$INSTALL_DIR/nodeserver"
-#npm install
-#popd
+pushd "$INSTALL_DIR/nodeserver"
+npm install
+popd
 
 cp "$INSTALL_DIR/config.json" "/var/lib/rasterblocks/config.json"
 
-systemctl enable "$INSTALL_DIR/rasterblocks-button.service"
-systemctl start rasterblocks-button.service
-#systemctl enable "$INSTALL_DIR/rasterblocks-nodeserver.service"
-#systemctl start rasterblocks-nodeserver.service
+systemctl enable "$INSTALL_DIR/rasterblocks-nodeserver.service"
+systemctl start rasterblocks-nodeserver.service
 systemctl enable "$INSTALL_DIR/rasterblocks.service"
 systemctl start rasterblocks.service

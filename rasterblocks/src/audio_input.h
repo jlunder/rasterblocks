@@ -11,5 +11,10 @@ void rbAudioInputShutdown(void);
 void rbAudioInputBlockingRead(RBRawAudio * pAudio);
 
 
+void rbAudioInputPrussInitialize(RBConfiguration const * pConfig);
+void rbAudioInputPrussShutdown(void);
+void rbAudioInputPrussBlockingRead(RBRawAudio * pAudio);
+
+
 #endif
 

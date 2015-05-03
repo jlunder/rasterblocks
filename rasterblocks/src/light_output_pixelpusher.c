@@ -12,10 +12,6 @@
 #include <unistd.h>
 
 
-static uint8_t * rbLightOutputPixelPusherEmitPanel(uint8_t * pBuf,
-    RBColor const pLights[RB_PANEL_HEIGHT][RB_PANEL_WIDTH]);
-
-
 static int g_rbPpSocket = -1;
 static struct sockaddr_in g_rbPpAddress;
 static uint32_t g_rbPpSeqNumber = 0;
@@ -48,23 +44,26 @@ void rbLightOutputPixelPusherShutdown(void)
 
 void rbLightOutputPixelPusherShowLights(RBRawLightFrame const * pFrame)
 {
-    uint8_t buf[4 + 1 + (RB_PANEL_WIDTH * RB_PANEL_HEIGHT) *
-        RB_NUM_PANELS_PER_STRING * 3];
+    size_t const numLightStrings = pFrame->numLightStrings;
+    size_t const numLightsPerString = pFrame->numLightsPerString;
+    uint8_t buf[4 + 1 + numLightsPerString * 3];
     uint8_t * pB;
+    RBColor const * pLights = pFrame->data;
     
     for(size_t k = 0; k < 1; ++k) {
-        for(size_t j = 0; j < RB_NUM_STRINGS; ++j) {
+        for(size_t j = 0; j < numLightStrings; ++j) {
             buf[0] = (g_rbPpSeqNumber >> 24) & 0xFF;
             buf[1] = (g_rbPpSeqNumber >> 16) & 0xFF;
             buf[2] = (g_rbPpSeqNumber >> 8) & 0xFF;
             buf[3] = (g_rbPpSeqNumber >> 0) & 0xFF;
             ++g_rbPpSeqNumber;
-            buf[4] = (uint8_t)(j + k * RB_NUM_STRINGS);
+            buf[4] = (uint8_t)(j + k * numLightStrings);
             pB = buf + 5;
-            for(size_t i = 0; i < RB_NUM_PANELS_PER_STRING; ++i) {
-                rbAssert(pB < buf + LENGTHOF(buf));
-                pB = rbLightOutputPixelPusherEmitPanel(pB,
-                    pFrame->data[j * RB_NUM_PANELS_PER_STRING + i]);
+            for(size_t i = 0; i < numLightsPerString; ++i) {
+                *(pB++) = pLights->b;
+                *(pB++) = pLights->g;
+                *(pB++) = pLights->r;
+                ++pLights;
             }
             rbAssert(pB == buf + LENGTHOF(buf));
         
@@ -73,36 +72,10 @@ void rbLightOutputPixelPusherShowLights(RBRawLightFrame const * pFrame)
         
             rbVerify(sendto(g_rbPpSocket, buf, sizeof buf, 0,
                     (struct sockaddr *)&g_rbPpAddress, sizeof g_rbPpAddress) ==
-                sizeof buf);
+                (int)sizeof buf);
         }
+        rbAssert((pLights - pFrame->data) < (ssize_t)LENGTHOF(pFrame->data));
     }
-}
-
-
-uint8_t * rbLightOutputPixelPusherEmitPanel(uint8_t * pBuf,
-    RBColor const pLights[RB_PANEL_HEIGHT][RB_PANEL_WIDTH])
-{
-    // This function looks a lot like rbLightOutputSpiDevEmitPanel but the data
-    // order is NOT the same!
-    RBColor const * pData = pLights[0];
-    for(size_t i = 0; i < RB_PANEL_HEIGHT; i += 2) {
-        for(size_t j = 0; j < RB_PANEL_WIDTH; ++j) {
-            *(pBuf++) = pData->b;
-            *(pBuf++) = pData->g;
-            *(pBuf++) = pData->r;
-            ++pData;
-        }
-        pData += RB_PANEL_WIDTH;
-        for(size_t j = 0; j < RB_PANEL_WIDTH; ++j) {
-            --pData;
-            *(pBuf++) = pData->b;
-            *(pBuf++) = pData->g;
-            *(pBuf++) = pData->r;
-        }
-        pData += RB_PANEL_WIDTH;
-    }
-    
-    return pBuf;
 }
 
 

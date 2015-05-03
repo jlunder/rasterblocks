@@ -3,6 +3,6 @@
 
 #include "rasterblocks.h"
 
-void rbParseJson(RBConfiguration * config,char* filename);
+void rbParseJson(RBConfiguration * pConfig,char* filename);
 
 #endif

@@ -4,9 +4,8 @@
 
 #include "audio_analysis.h"
 
-#define RB_AGC_SAMPLE_WINDOW_S 4
 
-static float const RB_AGC_ROOT_2 = 1.41421356237f;
+#define RB_AGC_SAMPLE_WINDOW_S 4
 
 #define NZEROS 4
 #define NPOLES 4
@@ -230,38 +229,32 @@ void rbAudioAnalysisShutdown(void)
 {
 }
 
-static void rbAudioAnalysisGatherChannels(RBRawAudio const * audio,
+static void rbAudioAnalysisGatherChannels(RBRawAudio const * pAudio,
     float *leftPower, float *rightPower, float* inputBuf)
 {
     for (size_t i = 0; i < RB_AUDIO_FRAMES_PER_VIDEO_FRAME; ++i) {
-        *leftPower += audio->audio[i][0] * audio->audio[i][0] *
+        *leftPower += pAudio->audio[i][0] * pAudio->audio[i][0] *
             (1.0f / RB_AUDIO_FRAMES_PER_VIDEO_FRAME);
-        *rightPower += audio->audio[i][1] * audio->audio[i][1] *
+        *rightPower += pAudio->audio[i][1] * pAudio->audio[i][1] *
             (1.0f / RB_AUDIO_FRAMES_PER_VIDEO_FRAME);
-        inputBuf[i] = (audio->audio[i][0] + audio->audio[i][1]) * 0.5;
+        inputBuf[i] = (pAudio->audio[i][0] + pAudio->audio[i][1]) * 0.5;
     }
     *leftPower = sqrtf(*leftPower);
     *rightPower = sqrtf(*rightPower);
 }
 
 
-static void rbAudioAnalysisCalculatePower(
-    float * inputBuf, float * bufLow, float * bufHi,
-    float * bassPower, float * midPower, float * treblePower)
+static void rbAudioAnalysisCalculatePower(float * buf, float * pPower)
 {
+    float power = 0;
+    
     for(size_t i = 0; i < RB_AUDIO_FRAMES_PER_VIDEO_FRAME; ++i) {
-        *bassPower += bufLow[i] * bufLow[i] *
-            (1.0f / RB_AUDIO_FRAMES_PER_VIDEO_FRAME);
-
-        *midPower += (bufHi[i] - bufLow[i]) *
-            (bufHi[i] - bufLow[i]) *
-            (1.0f / RB_AUDIO_FRAMES_PER_VIDEO_FRAME);
-
-        *treblePower += (inputBuf[i] - bufHi[i]) *
-            (inputBuf[i] - bufHi[i]) *
-            (1.0f / RB_AUDIO_FRAMES_PER_VIDEO_FRAME);
+        power += buf[i] * buf[i];
     }
+    
+    *pPower = power / RB_AUDIO_FRAMES_PER_VIDEO_FRAME;
 }
+
 
 static void rbAudioAnalysisCalculateEnergy(RBAnalyzedAudio * analysis,
     float bassPower, float midPower, float treblePower,
@@ -280,12 +273,13 @@ static void rbAudioAnalysisCalculateEnergy(RBAnalyzedAudio * analysis,
     }
 }
 
+
 static void rbAudioAnalysisUpdateAgc(RBAnalyzedAudio * pAnalysis)
 {
     float agcTarget = 0.0f;
     float agcValue = 1.0f;
     g_rbAgcIndex = (g_rbAgcIndex + 1) % LENGTHOF(g_rbAgcSamples);
-    g_rbAgcSamples[g_rbAgcIndex] = pAnalysis->totalEnergy * RB_AGC_ROOT_2;
+    g_rbAgcSamples[g_rbAgcIndex] = pAnalysis->totalEnergy * RB_SQRT_2;
     
     if(g_rbAgcMin < 1.0e-10f || isinf(g_rbAgcMin) || isnan(g_rbAgcMin)) {
         rbWarning("Insane configured AGC min %g", g_rbAgcMin);
@@ -318,7 +312,7 @@ static void rbAudioAnalysisUpdateAgc(RBAnalyzedAudio * pAnalysis)
     
     rbInfo("AGC tracking %.4f from %.4f\n", g_rbAgcTrackingValue, agcTarget);
     
-    agcValue = 1.0f / g_rbAgcTrackingValue;
+    agcValue = 0.7f / g_rbAgcTrackingValue;
     
     for(size_t i = 0; i < RB_AUDIO_FRAMES_PER_VIDEO_FRAME; ++i) {
         pAnalysis->rawAudio[i] *= agcValue;
@@ -331,13 +325,17 @@ static void rbAudioAnalysisUpdateAgc(RBAnalyzedAudio * pAnalysis)
     pAnalysis->trebleEnergy *= agcValue;
     
     pAnalysis->totalEnergy *= agcValue;
+    
+    pAnalysis->agcValue = g_rbAgcTrackingValue;
 }
 
 
-void rbAudioAnalysisAnalyze(RBRawAudio const * audio, RBAnalyzedAudio * pAnalysis)
+void rbAudioAnalysisAnalyze(RBRawAudio const * pAudio,
+    RBAnalyzedAudio * pAnalysis)
 {
     float inputBuf[RB_AUDIO_FRAMES_PER_VIDEO_FRAME];
     float bufLOW[RB_AUDIO_FRAMES_PER_VIDEO_FRAME];
+    float bufMID[RB_AUDIO_FRAMES_PER_VIDEO_FRAME];
     float bufHI[RB_AUDIO_FRAMES_PER_VIDEO_FRAME];
     float bassPower = 0.0f;
     float midPower = 0.0f;
@@ -347,24 +345,34 @@ void rbAudioAnalysisAnalyze(RBRawAudio const * audio, RBAnalyzedAudio * pAnalysi
     float rightPower = 0.0f;
         
     rbAssert(RB_AUDIO_CHANNELS == 2);
-    rbAudioAnalysisGatherChannels(audio, &leftPower, &rightPower, inputBuf);
+    rbAudioAnalysisGatherChannels(pAudio, &leftPower, &rightPower, inputBuf);
     
     rbAudioAnalysisLowPassFilter(g_rbXVLOW, g_rbYVLOW, g_rbGLOW,
         g_rbKLOW, inputBuf, bufLOW);
     rbAudioAnalysisLowPassFilter(g_rbXVHI, g_rbYVHI, g_rbGHI,
         g_rbKHI, inputBuf, bufHI);
 
-    rbAudioAnalysisCalculatePower(inputBuf, bufLOW, bufHI,
-        &bassPower, &midPower, &treblePower);
-
+    for(size_t i = 0; i < RB_AUDIO_FRAMES_PER_VIDEO_FRAME; ++i) {
+        bufMID[i] += bufHI[i] - bufLOW[i];
+        bufHI[i] = inputBuf[i] - bufHI[i];
+    }
+    rbAudioAnalysisCalculatePower(bufLOW, &bassPower);
+    rbAudioAnalysisCalculatePower(bufMID, &midPower);
+    rbAudioAnalysisCalculatePower(bufHI, &treblePower);
+    
+    pAnalysis->frameNum = pAudio->frameNum;
+    
     rbAudioAnalysisCalculateEnergy(pAnalysis, bassPower, midPower, treblePower,
         leftPower, rightPower);
-
+    
     memcpy(pAnalysis->rawAudio, inputBuf, sizeof pAnalysis->rawAudio);
     memcpy(pAnalysis->bassAudio, bufLOW, sizeof pAnalysis->bassAudio);
     memcpy(pAnalysis->trebleAudio, bufHI, sizeof pAnalysis->trebleAudio);
     
     rbAudioAnalysisUpdateAgc(pAnalysis);
+    
+    pAnalysis->sourceOverdriven = pAudio->overdriven;
+    pAnalysis->sourceLargeDc = pAudio->largeDc;
     
     pAnalysis->peakDetected = false;
     if(g_rbPeakDetected) {

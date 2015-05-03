@@ -2,17 +2,26 @@
 
 // Make connection to server when web page is fully loaded.
 var socket = io.connect();
-var gvalues = [0, 0.001, 0.01, 0.1, 1]; //agc min/max
+var gvalues = [0.0001, 0.001, 0.01, 0.1, 1]; //agc min/max
 $(document).ready(function() {
 	var sockApp = new SockApp(socket);
 
-	//$('#audioSourceParam').attr('placeholder', 'plughw:1,0');
-	$('#audioSource').change(function(){
-		if($('#audioSource').val() == 'SLAIS_ALSA'){
-			$('#audioSourceParam').attr('placeholder', 'plughw:1,0');
+	//$('#audioInputParam').attr('placeholder', 'plughw:1,0');
+	$('#audioInput').change(function(){
+		if($('#audioInput').val() == 'alsa'){
+			$('#audioInputParam').attr('placeholder', 'plughw:1,0');
 		} else {
-			$('#audioSourceParam').val('');
-			$('#audioSourceParam').attr('placeholder', '../test/clips/909Tom X1.wav');
+			$('#audioInputParam').val('');
+			$('#audioInputParam').attr('placeholder', '');
+		}
+	});
+
+	$('#lightOutput').change(function(){
+		if($('#lightOutput').val() == 'alsa'){
+			$('#lightOutputParam').attr('placeholder', '192.168.0.4');
+		} else {
+			$('#lightOutputParam').val('');
+			$('#lightOutputParam').attr('placeholder', '');
 		}
 	});
 
@@ -32,7 +41,7 @@ $(document).ready(function() {
 		range: 'min',
 		min: 300,
 		max: 1000,
-		value: 300,
+		value: 500,
 		step: 10,
 		slide: function(event, ui) {
 			$('#hi-amount').val(ui.value);
@@ -51,6 +60,18 @@ $(document).ready(function() {
 		}
 	});
 
+	$('#slider-bright').slider({
+		range: 'min',
+		min: 0.01,
+		max: 1.0,
+		value: 0.5,
+		step: 0.01,
+		slide: function(event, ui) {
+			$('#brightness').val(ui.value);
+		}
+	});
+	$('#brightness').val($('#slider-bright').slider('value'));
+	
 	$.get( "/config.json", function( config ) {
 		setConfig(config);
 	}, "json");
@@ -70,14 +91,17 @@ $(document).ready(function() {
 function getConfig() {
 	var config = {};
 	config.logLevel = $('#logLevel').val();
-	config.audioSource = $('#audioSource').val();
-	config.audioSourceParam = $('#audioSourceParam').val();
-	config.monitorAudio = $('#monitorAudio').prop('checked');
+	config.audioInput = $('#audioInput').val();
+	config.audioInputParam = $('#audioInputParam').val();
+	config.controlInput = $('#controlInput').val();
+	config.lightOutput = $('#lightOutput').val();
+	config.lightOutputParam = $('#lightOutputParam').val();
 	config.lowCutoff = $('#slider-low').slider('value');
 	config.hiCutoff = $('#slider-hi').slider('value');
 	config.agcMax = gvalues[$('#slider-gain').slider('values', 1)];
 	config.agcMin = gvalues[$('#slider-gain').slider('values', 0)];
 	config.agcStrength = parseFloat($('#gain-strength').val());
+	config.brightness = $('#slider-bright').slider('value');
 	return config;
 }
 function sendConfig(sockApp, socket){
@@ -104,9 +128,11 @@ function agcRangeToSliderValue(value) {
 function setConfig(config) {
 	$('#logLevel').val(config.logLevel);
 
-	$('#audioSource').val(config.audioSource);
-	$('#audioSourceParam').val(config.audioSourceParam);
-	$('#monitorAudio').prop('checked', config.monitorAudio);
+	$('#audioInput').val(config.audioInput);
+	$('#audioInputParam').val(config.audioInputParam);
+	$('#controlInput').val(config.controlInput);
+	$('#lightOutput').val(config.lightOutput);
+	$('#lightOutputParam').val(config.lightOutputParam);
 
 	$('#slider-low').slider('value', config.lowCutoff);
 	$('#lo-amount').val($('#slider-low').slider('value'));
@@ -117,5 +143,8 @@ function setConfig(config) {
 	$('#slider-gain').slider('values', 0, agcRangeToSliderValue(config.agcMin));
 	$('#gain-amount').val(gvalues[$('#slider-gain').slider('values', 0)] + ' - ' + gvalues[$('#slider-gain').slider('values', 1)]);
 	$('#gain-strength').val(config.agcStrength);
+	
+	$('#slider-bright').slider('value', config.brightness);
+	$('#brightness').val($('#slider-bright').slider('value'));
 }
 

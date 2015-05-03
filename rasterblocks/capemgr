@@ -1,0 +1,49 @@
+#!/usr/bin/python
+
+import sys, glob, re
+
+CAPEMGR = glob.glob('/sys/devices/bone_capemgr.*/slots')[0]
+
+# 6: ff:P-O-- Bone-Black-HDMIN,00A0,Texas Instrument,BB-BONELT-HDMIN
+slot_parser = re.compile('\\s*(\\d+):\\s+\\S+\\s+(.*)')
+
+def list_dtbos():
+  dtbos = []
+  lines = open(CAPEMGR, 'rt').readlines()
+  for l in lines:
+    slotno, slotstrs = slot_parser.match(l).groups()
+    slotnames = slotstrs.split(',')
+    if len(slotnames) >= 4:
+      dtbos.append(slotnames[3])
+  print ' '.join(dtbos)
+
+def stop_dtbo(name):
+  lines = open(CAPEMGR, 'rt').readlines()
+  for l in lines:
+    slotno, slotstrs = slot_parser.match(l).groups()
+    slotnames = slotstrs.split(',')
+    if len(slotnames) >= 4 and name == slotnames[3]:
+      print '  Killing cape #' + slotno
+      open(CAPEMGR, 'wt').write('-' + slotno + '\n')
+      break
+  else:
+    print '  DTBO', name, 'not loaded'
+
+def start_dtbo(name):
+  open(CAPEMGR, 'wt').write(name + '\n')
+
+if len(sys.argv) == 2 and sys.argv[1] == 'list':
+  list_dtbos()
+elif len(sys.argv) == 3 and sys.argv[1] == 'stop':
+  print 'Stopping', sys.argv[2]
+  stop_dtbo(sys.argv[2])
+elif len(sys.argv) == 3 and sys.argv[1] == 'start':
+  print 'Starting', sys.argv[2]
+  start_dtbo(sys.argv[2])
+elif len(sys.argv) == 3 and sys.argv[1] == 'restart':
+  print 'Restarting', sys.argv[2]
+  stop_dtbo(sys.argv[2])
+  start_dtbo(sys.argv[2])
+else:
+  print 'Invalid args'
+

@@ -22,14 +22,12 @@
 #define RB_TARGET_MAX_SPI_OPEN_RETRY 5
 #define RB_TARGET_SPI_DEVICE "/dev/spidev1.0"
 #define RB_TARGET_SPI_DEVICE_STARTUP_COMMAND \
-    "sh -c 'grep -q BB-SPIDEV0 /sys/devices/bone_capemgr.*/slots || " \
-    "echo BB-SPIDEV0 > /sys/devices/bone_capemgr.*/slots'"
-#define RB_TARGET_SPI_DEVICE_STARTUP_WAIT_NS 2000000000LLU
+    "sh -c 'grep -q BB-SPIDEV0 /sys/devices/bone_capemgr.9/slots || " \
+    "echo BB-SPIDEV0 > /sys/devices/bone_capemgr.9/slots'"
+#define RB_TARGET_SPI_DEVICE_STARTUP_WAIT_MS 2000
 
 
 static void rbLightOutputSpiDevStartSpiDevice(void);
-static uint8_t * rbLightOutputSpiDevEmitPanel(uint8_t * pBuf,
-    RBColor const pLights[RB_PANEL_HEIGHT][RB_PANEL_WIDTH]);
 
 
 static int g_rbSpiFd = -1;
@@ -60,8 +58,6 @@ void rbLightOutputSpiDevInitialize(RBConfiguration const * pConfig)
 void rbLightOutputSpiDevStartSpiDevice(void)
 {
     for(size_t i = 0; ; ++i) {
-        struct timespec rbeepTs;
-        
         g_rbSpiFd = open(RB_TARGET_SPI_DEVICE, O_RDWR);
         
         if(g_rbSpiFd >= 0) {
@@ -80,10 +76,7 @@ void rbLightOutputSpiDevStartSpiDevice(void)
             rbWarning("Failed to start up SPI\n");
         }
         
-        rbeepTs.tv_sec = RB_TARGET_SPI_DEVICE_STARTUP_WAIT_NS / 1000000000LLU;
-        rbeepTs.tv_nsec = RB_TARGET_SPI_DEVICE_STARTUP_WAIT_NS % 1000000000LLU;
-        
-        nanosleep(&rbeepTs, NULL);
+        rbSleep(rbTimeFromMs(RB_TARGET_SPI_DEVICE_STARTUP_WAIT_MS));
     }
 }
 
@@ -99,14 +92,24 @@ void rbLightOutputSpiDevShutdown(void)
 
 void rbLightOutputSpiDevShowLights(RBRawLightFrame const * pFrame)
 {
+    size_t const numLightStrings = pFrame->numLightsPerString;
+    size_t const numLightsPerString = pFrame->numLightsPerString;
+    
     struct spi_ioc_transfer xfer;
     int result;
-    uint8_t buf[RB_NUM_LIGHTS * 3];
+    uint8_t buf[numLightStrings * numLightsPerString * 3];
     uint8_t * pB = buf;
+    RBColor const * pLights = pFrame->data;
 
-    for(size_t i = 0; i < RB_NUM_PANELS; ++i) {
+    for(size_t j = 0; j < numLightStrings; ++j) {
         rbAssert(pB < buf + LENGTHOF(buf));
-        pB = rbLightOutputSpiDevEmitPanel(pB, pFrame->data[i]);
+        for(size_t i = 0; i < numLightsPerString; ++i) {
+            // WS2801 format! SPIDEV doesn't work for WS2812, so.
+            *(pB++) = pLights->b;
+            *(pB++) = pLights->r;
+            *(pB++) = pLights->g;
+            ++pLights;
+        }
     }
     rbAssert(pB == buf + LENGTHOF(buf));
 
@@ -119,33 +122,6 @@ void rbLightOutputSpiDevShowLights(RBRawLightFrame const * pFrame)
     if(result < 0) {
         rbError("SPI IOCTL failed: %s", strerror(result));
     }
-}
-
-
-uint8_t * rbLightOutputSpiDevEmitPanel(uint8_t * pBuf,
-    RBColor const pLights[RB_PANEL_HEIGHT][RB_PANEL_WIDTH])
-{
-    // This function looks a lot like rbLightOutputPixelPusherEmitPanel but the
-    // data order is NOT the same!
-    RBColor const * pData = pLights[0];
-    for(size_t i = 0; i < RB_PANEL_HEIGHT; i += 2) {
-        for(size_t j = 0; j < RB_PANEL_WIDTH; ++j) {
-            *(pBuf++) = pData->b;
-            *(pBuf++) = pData->r;
-            *(pBuf++) = pData->g;
-            ++pData;
-        }
-        pData += RB_PANEL_WIDTH;
-        for(size_t j = 0; j < RB_PANEL_WIDTH; ++j) {
-            --pData;
-            *(pBuf++) = pData->b;
-            *(pBuf++) = pData->r;
-            *(pBuf++) = pData->g;
-        }
-        pData += RB_PANEL_WIDTH;
-    }
-    
-    return pBuf;
 }
 
 

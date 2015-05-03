@@ -37,3 +37,9 @@ h1, h2 {
 	font-weight: bold;
 	background-color: #f3f3f3;
 }
+#brightness {
+	border: 0; 
+	color: #f6931f; 
+	font-weight: bold;
+	background-color: #f3f3f3;
+}

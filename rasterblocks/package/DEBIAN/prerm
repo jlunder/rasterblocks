@@ -4,10 +4,8 @@ INSTALL_DIR=/usr/lib/rasterblocks
 
 systemctl stop rasterblocks.service
 systemctl disable "$INSTALL_DIR/rasterblocks.service"
-#systemctl stop rasterblocks-nodeserver.service
-#systemctl disable "$INSTALL_DIR/rasterblocks-nodeserver.service"
-systemctl stop rasterblocks-button.service
-systemctl disable "$INSTALL_DIR/rasterblocks-button.service"
+systemctl stop rasterblocks-nodeserver.service
+systemctl disable "$INSTALL_DIR/rasterblocks-nodeserver.service"
 
 rm -rf "$INSTALL_DIR/nodeserver/node_modules"
 rm -f "/var/lib/rasterblocks/config.json"

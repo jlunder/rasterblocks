@@ -56,13 +56,6 @@ void checkSDLError(int line)
 /* Our program's entry point */
 int main(int argc, char *argv[])
 {
-#ifdef RB_LINUX
-    struct timespec lastts;
-#endif
-#ifdef RB_OSX
-    uint64_t lasttime = mach_absolute_time();
-    mach_timebase_info_data_t timebase;
-#endif
     SDL_Window *mainwindow; /* Our window handle */
     SDL_GLContext maincontext; /* Our opengl context handle */
     SDL_Event event;
@@ -98,24 +91,11 @@ int main(int argc, char *argv[])
     SDL_GL_SetSwapInterval(1);
  
  
-#ifdef RB_LINUX
-    clock_gettime(CLOCK_MONOTONIC, &lastts);
-#endif
-#ifdef RB_OSX
-    mach_timebase_info(&timebase);
-#endif
     gles2_harness_init(argc, argv);
 
     while (!quit)
     {
         int width = 0, height = 0;
-#ifdef RB_LINUX
-        struct timespec ts;
-#endif
-#ifdef RB_OSX
-        uint64_t time;
-#endif
-        uint64_t time_ns;
 
 		while(SDL_PollEvent(&event)) {
 			if(event.type == SDL_QUIT) {
@@ -126,22 +106,9 @@ int main(int argc, char *argv[])
         SDL_GetWindowSize(mainwindow, &width, &height);
         gles2_harness_reshape(width, height);
         
-#ifdef RB_LINUX
-        clock_gettime(CLOCK_MONOTONIC, &ts);
-        time_ns = (uint64_t)(ts.tv_nsec - lastts.tv_nsec) +
-            (uint64_t)(ts.tv_sec - lastts.tv_sec) * 1000000000LLU;
-        rbAssert(time_ns < 0x8000000000000000LLU);
-        lastts = ts;
-#endif
-#ifdef RB_OSX
-        time = mach_absolute_time();
-        time_ns = ((time - lasttime) * timebase.numer) / timebase.denom;
-        lasttime = time;
-#endif
-        
-        gles2_harness_update((float)(time_ns / 1.0e9));
+        gles2_harness_update();
 
-		SDL_GL_SwapWindow(mainwindow);
+        SDL_GL_SwapWindow(mainwindow);
     }
     
     gles2_harness_terminate();

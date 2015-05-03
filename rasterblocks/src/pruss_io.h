@@ -7,6 +7,7 @@
 
 void rbPrussIoInitialize(RBConfiguration * pConfig);
 void rbPrussIoShutdown(void);
+void rbPrussIoReadInput(void);
 
 
 #endif // PRUSS_IO_H_INCLUDED
