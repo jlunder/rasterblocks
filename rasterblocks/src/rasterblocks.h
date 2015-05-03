@@ -219,6 +219,11 @@ void rbRequestDelayedGentleRestart(void);
 // the whole process
 void rbRequestImmediateRestart(void);
 
+// If we suspect the hardware is in an insane state that can't be resolved
+// within the program itself, use RequestHardwareReset to reset the whole
+// system
+void rbRequestHardwareReset(void);
+
 // Returns true if we are in the middle of a subsystem rb*Initialize() due to
 // a gentle restart; false if this is first-time init.
 bool rbIsRestarting(void);

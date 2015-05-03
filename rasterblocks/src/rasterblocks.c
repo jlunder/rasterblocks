@@ -10,19 +10,20 @@
 
 
 RBPanelConfig const g_rbPanelConfigs[RB_NUM_PANELS] = {
-    {{ 8.0f,  0.0f}, { 1.0f,  0.0f}, { 0.0f,  1.0f}},
-    {{ 8.0f,  8.0f}, { 1.0f,  0.0f}, { 0.0f,  1.0f}},
-    {{ 8.0f, 16.0f}, { 1.0f,  0.0f}, { 0.0f,  1.0f}},
+
     {{ 7.0f, 23.0f}, {-1.0f,  0.0f}, { 0.0f, -1.0f}},
     {{ 7.0f, 15.0f}, {-1.0f,  0.0f}, { 0.0f, -1.0f}},
     {{ 7.0f,  7.0f}, {-1.0f,  0.0f}, { 0.0f, -1.0f}},
+    {{ 8.0f,  0.0f}, { 1.0f,  0.0f}, { 0.0f,  1.0f}},
+    {{ 8.0f,  8.0f}, { 1.0f,  0.0f}, { 0.0f,  1.0f}},
+    {{ 8.0f, 16.0f}, { 1.0f,  0.0f}, { 0.0f,  1.0f}},
     
-    {{24.0f,  0.0f}, { 1.0f,  0.0f}, { 0.0f,  1.0f}},
-    {{24.0f,  8.0f}, { 1.0f,  0.0f}, { 0.0f,  1.0f}},
-    {{24.0f, 16.0f}, { 1.0f,  0.0f}, { 0.0f,  1.0f}},
     {{23.0f, 23.0f}, {-1.0f,  0.0f}, { 0.0f, -1.0f}},
     {{23.0f, 15.0f}, {-1.0f,  0.0f}, { 0.0f, -1.0f}},
     {{23.0f,  7.0f}, {-1.0f,  0.0f}, { 0.0f, -1.0f}},
+    {{24.0f,  0.0f}, { 1.0f,  0.0f}, { 0.0f,  1.0f}},
+    {{24.0f,  8.0f}, { 1.0f,  0.0f}, { 0.0f,  1.0f}},
+    {{24.0f, 16.0f}, { 1.0f,  0.0f}, { 0.0f,  1.0f}},
     /*
     {{ 0.0f,  7.0f}, { 0.0f, -1.0f}, { 1.0f,  0.0f}},
     {{ 8.0f,  7.0f}, { 0.0f, -1.0f}, { 1.0f,  0.0f}},
@@ -112,6 +113,13 @@ void rbRequestDelayedGentleRestart(void)
 
 void rbRequestImmediateRestart(void)
 {
+    abort();
+}
+
+
+void rbRequestHardwareReset(void)
+{
+    system("reboot");
     abort();
 }
 
@@ -402,8 +410,8 @@ void rbProcess(uint64_t nsSinceLastProcess)
         else if((g_rbClockNs - g_rbGentleRestartFirstConsecutiveNs) >
                 RB_MAX_CONSECUTIVE_GENTLE_RESTART_NS) {
             // We have been continuously restarting for a long time, give up!
-            rbFatal("Continuous restart timeout exceeded\n");
-            rbRequestImmediateRestart();
+            rbError("Continuous restart timeout exceeded\n");
+            rbRequestHardwareReset();
         }
         
         ++g_rbGentleRestartConsecutiveCount;
