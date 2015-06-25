@@ -200,7 +200,7 @@ endif
 
 ifneq ($(PACKAGE_BUILD),)
 
-bin/package: $(wildcard package/DEBIAN/*) $(wildcard nodeserver/*) rasterblocks.service rasterblocks-nodeserver.service rasterblocks-button.service bin/$(DT_NAME).dtbo
+bin/package: $(wildcard package/DEBIAN/*) $(wildcard nodeserver/*) rasterblocks.service rasterblocks-nodeserver.service bin/$(DT_NAME).dtbo
 	rm -rf bin/package
 	cp -r package bin/package
 	mkdir -p bin/package/usr/lib/rasterblocks
@@ -209,7 +209,6 @@ bin/package: $(wildcard package/DEBIAN/*) $(wildcard nodeserver/*) rasterblocks.
 	cp -r nodeserver bin/package/usr/lib/rasterblocks/
 	cp rasterblocks.service bin/package/usr/lib/rasterblocks
 	cp rasterblocks-nodeserver.service bin/package/usr/lib/rasterblocks
-	cp rasterblocks-button.service bin/package/usr/lib/rasterblocks
 	cp bin/$(DT_NAME).dtbo bin/package/lib/firmware
 
 ifeq ($(CROSS_BUILD)$(BUILD_ON_TARGET),)
