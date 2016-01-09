@@ -55,7 +55,7 @@ ifneq ($(BUILD_ON_TARGET),)
 	INSTALL_DIR := /usr/local/lib/rasterblocks
 endif
 
-RB_VERSION=1.1
+RB_VERSION=1.2
 DT_NAME=rb-pruss-io-00A0
 
 MAKEDEPEND=@set -e; rm -f $@; \
@@ -77,10 +77,10 @@ else
 all: bin/rasterblocks
 endif
 
-STAGE_LIGHTS_SRC := $(basename $(notdir $(wildcard src/*.c)))
+RASTERBLOCKS_SRC := $(basename $(notdir $(wildcard src/*.c)))
 
-STAGE_LIGHTS_O := $(addprefix build/,$(addsuffix .o, $(STAGE_LIGHTS_SRC)))
-STAGE_LIGHTS_D := $(addprefix build/,$(addsuffix .d, $(STAGE_LIGHTS_SRC)))
+RASTERBLOCKS_O := $(addprefix build/,$(addsuffix .o, $(RASTERBLOCKS_SRC)))
+RASTERBLOCKS_D := $(addprefix build/,$(addsuffix .d, $(RASTERBLOCKS_SRC)))
 
 src/icons.h: $(wildcard icons/[0-9][0-9]*)
 	python make-icons.py $(wildcard icons/[0-9][0-9]*)
@@ -92,7 +92,7 @@ build/%.d: src/%.c src/icons.h
 ifeq ($(CROSS_BUILD)$(BUILD_ON_TARGET),)
 ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(MAKECMDGOALS),cleanall)
--include $(STAGE_LIGHTS_D)
+-include $(RASTERBLOCKS_D)
 endif
 endif
 endif
@@ -129,17 +129,17 @@ clean-dtc:
 
 endif
 
-bin/rasterblocks: $(STAGE_LIGHTS_O)
+bin/rasterblocks: $(RASTERBLOCKS_O)
 	@mkdir -p bin
-	$(CC) -o $@ $(STAGE_LIGHTS_O) $(LDFLAGS)
+	$(CC) -o $@ $(RASTERBLOCKS_O) $(LDFLAGS)
 
 ifneq ($(CROSS_BUILD)$(BUILD_ON_TARGET),)
 
 # Either we're building on target or we're in the cross-build env -- enable
 # the cross-build target directly.
-STAGE_LIGHTS_O_TARGET := $(addprefix build/,$(addsuffix .target.o, $(STAGE_LIGHTS_SRC)))
-STAGE_LIGHTS_O_TARGET_DEBUG := $(addprefix build/,$(addsuffix .target-debug.o, $(STAGE_LIGHTS_SRC)))
-STAGE_LIGHTS_D_TARGET := $(addprefix build/,$(addsuffix .target.d, $(STAGE_LIGHTS_SRC)))
+RASTERBLOCKS_O_TARGET := $(addprefix build/,$(addsuffix .target.o, $(RASTERBLOCKS_SRC)))
+RASTERBLOCKS_O_TARGET_DEBUG := $(addprefix build/,$(addsuffix .target-debug.o, $(RASTERBLOCKS_SRC)))
+RASTERBLOCKS_D_TARGET := $(addprefix build/,$(addsuffix .target.d, $(RASTERBLOCKS_SRC)))
 
 
 build/%.target.d: src/%.c src/icons.h src/pruss_io_pru0_bin.h src/pruss_io_pru1_bin.h
@@ -149,7 +149,7 @@ build/%.target.d: src/%.c src/icons.h src/pruss_io_pru0_bin.h src/pruss_io_pru1_
 ifneq ($(CROSS_BUILD)$(BUILD_ON_TARGET),)
 ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(MAKECMDGOALS),cleanall)
--include $(STAGE_LIGHTS_D_TARGET)
+-include $(RASTERBLOCKS_D_TARGET)
 endif
 endif
 endif
@@ -170,13 +170,13 @@ build/%.target-debug.o: src/%.c
 	@$(MAKEDEPEND_TARGET)
 	$(CC_TARGET) -c -g $(CFLAGS_TARGET_DEBUG) -o $@ $(CPPFLAGS_TARGET) $<
 
-bin/rasterblocks.target: $(STAGE_LIGHTS_O_TARGET) pruss/lib/libprussdrv.a bin/pasm
+bin/rasterblocks.target: $(RASTERBLOCKS_O_TARGET) pruss/lib/libprussdrv.a bin/pasm
 	@mkdir -p bin
-	$(CC_TARGET) -o $@ $(STAGE_LIGHTS_O_TARGET) pruss/lib/libprussdrv.a $(LDFLAGS_TARGET)
+	$(CC_TARGET) -o $@ $(RASTERBLOCKS_O_TARGET) pruss/lib/libprussdrv.a $(LDFLAGS_TARGET)
 
-bin/rasterblocks.target-debug: $(STAGE_LIGHTS_O_TARGET_DEBUG) pruss/lib/libprussdrvd.a bin/pasm
+bin/rasterblocks.target-debug: $(RASTERBLOCKS_O_TARGET_DEBUG) pruss/lib/libprussdrvd.a bin/pasm
 	@mkdir -p bin
-	$(CC_TARGET) -o $@ $(STAGE_LIGHTS_O_TARGET_DEBUG) pruss/lib/libprussdrv.a $(LDFLAGS_TARGET)
+	$(CC_TARGET) -o $@ $(RASTERBLOCKS_O_TARGET_DEBUG) pruss/lib/libprussdrv.a $(LDFLAGS_TARGET)
 
 pruss/lib/libprussdrv.a: $(wildcard pruss/src/*.{c,h}) pruss/src/Makefile
 	CROSS_COMPILE=$(CC_TARGET_PREFIX) make -C pruss/src ../lib/libprussdrv.a
