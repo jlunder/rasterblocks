@@ -1,0 +1,6 @@
+#!/bin/bash
+
+INSTALL_DIR=/usr/lib/rasterblocks
+
+systemctl stop rasterblocks.service
+systemctl disable "$INSTALL_DIR/rasterblocks.service"

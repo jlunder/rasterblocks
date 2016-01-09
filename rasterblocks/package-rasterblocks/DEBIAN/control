@@ -1,10 +1,10 @@
 Package: rasterblocks
 Version: 1.1
-Depends: nodejs, npm
+Depends: 
 Section: custom
 Priority: optional
 Architecture: all
 Essential: no
 Installed-Size: 1024
-Maintainer: Team 7
+Maintainer: Joseph Lunderville <jlunder@catfish.dhs.org>
 Description: Make flashy lights to music

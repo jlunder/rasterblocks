@@ -1,0 +1,6 @@
+#!/bin/bash
+
+INSTALL_DIR=/usr/lib/rasterblocks
+
+systemctl enable "$INSTALL_DIR/rasterblocks.service"
+systemctl start rasterblocks.service

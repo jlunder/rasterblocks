@@ -2,8 +2,6 @@
 
 INSTALL_DIR=/usr/lib/rasterblocks
 
-systemctl stop rasterblocks.service
-systemctl disable "$INSTALL_DIR/rasterblocks.service"
 systemctl stop rasterblocks-nodeserver.service
 systemctl disable "$INSTALL_DIR/rasterblocks-nodeserver.service"
 

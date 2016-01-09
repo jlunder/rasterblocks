@@ -200,31 +200,39 @@ endif
 
 ifneq ($(PACKAGE_BUILD),)
 
-bin/package: $(wildcard package/DEBIAN/*) $(wildcard nodeserver/*) rasterblocks.service rasterblocks-nodeserver.service bin/$(DT_NAME).dtbo
-	rm -rf bin/package
-	cp -r package bin/package
-	mkdir -p bin/package/usr/lib/rasterblocks
-	mkdir -p bin/package/var/lib/rasterblocks
-	mkdir -p bin/package/lib/firmware
-	cp -r nodeserver bin/package/usr/lib/rasterblocks/
-	cp rasterblocks.service bin/package/usr/lib/rasterblocks
-	cp rasterblocks-nodeserver.service bin/package/usr/lib/rasterblocks
-	cp bin/$(DT_NAME).dtbo bin/package/lib/firmware
+bin/package-rasterblocks: $(wildcard package-rasterblocks/DEBIAN/*) rasterblocks.service bin/$(DT_NAME).dtbo
+	rm -rf bin/package-rasterblocks
+	cp -r package-rasterblocks bin/package-rasterblocks
+	mkdir -p bin/package-rasterblocks/usr/lib/rasterblocks
+	mkdir -p bin/package-rasterblocks/var/lib/rasterblocks
+	mkdir -p bin/package-rasterblocks/lib/firmware
+	cp rasterblocks.service bin/package-rasterblocks/usr/lib/rasterblocks
+	cp bin/$(DT_NAME).dtbo bin/package-rasterblocks/lib/firmware
+
+bin/package-rasterblocks-nodeserver: $(wildcard package-rasterblocks-nodeserver/DEBIAN/*) $(wildcard nodeserver/*) rasterblocks-nodeserver.service
+	rm -rf bin/package-rasterblocks-nodeserver
+	cp -r package-rasterblocks-nodeserver bin/package-rasterblocks-nodeserver
+	mkdir -p bin/package-rasterblocks-nodeserver/usr/lib/rasterblocks
+	cp -r nodeserver bin/package-rasterblocks-nodeserver/usr/lib/rasterblocks/
+	cp rasterblocks-nodeserver.service bin/package-rasterblocks-nodeserver/usr/lib/rasterblocks
 
 ifeq ($(CROSS_BUILD)$(BUILD_ON_TARGET),)
 # Neither the cross-build env nor the target has tools to build a host package
-bin/rasterblocks-$(RB_VERSION)_x64.deb: bin/package bin/rasterblocks
-	cp bin/rasterblocks bin/package/usr/lib/rasterblocks/rasterblocks
-	cp config/host_config.json bin/package/usr/lib/rasterblocks/config.json
-	dpkg-deb --build bin/package $@
+bin/rasterblocks-$(RB_VERSION)_x64.deb: bin/package-rasterblocks bin/rasterblocks
+	cp bin/rasterblocks bin/package-rasterblocks/usr/lib/rasterblocks/rasterblocks
+	cp config/host_config.json bin/package-rasterblocks/usr/lib/rasterblocks/config.json
+	dpkg-deb --build bin/package-rasterblocks $@
 endif
 
 ifeq ($(CROSS_BUILD),)
 # The cross-build env doesn't have enough toolchain to build a package
-bin/rasterblocks-$(RB_VERSION)_armhf.deb: bin/package bin/rasterblocks.target
-	cp bin/rasterblocks.target bin/package/usr/lib/rasterblocks/rasterblocks
-	cp config/target_config.json bin/package/usr/lib/rasterblocks/config.json
-	dpkg-deb --build bin/package $@
+bin/rasterblocks-$(RB_VERSION)_armhf.deb: bin/package-rasterblocks bin/rasterblocks.target
+	cp bin/rasterblocks.target bin/package-rasterblocks/usr/lib/rasterblocks/rasterblocks
+	cp config/target_config.json bin/package-rasterblocks/usr/lib/rasterblocks/config.json
+	dpkg-deb --build bin/package-rasterblocks $@
+
+bin/rasterblocks-nodeserver-$(RB_VERSION)_all.deb: bin/package-rasterblocks-nodeserver
+	dpkg-deb --build bin/package-rasterblocks-nodeserver $@
 endif
 
 endif
