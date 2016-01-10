@@ -1,11 +1,11 @@
 Package: rasterblocks-nodeserver
-Version: 1.1
+Version: %VERSION%
 Depends: rasterblocks, nodejs, npm
 Section: custom
 Priority: optional
 Architecture: all
 Essential: no
 Installed-Size: 1024
-Maintainer: Team 7
+Maintainer: Joseph Lunderville <jlunder@catfish.dhs.org>
 Description: Make flashy lights to music; this is the node.js-based runtime
  controls

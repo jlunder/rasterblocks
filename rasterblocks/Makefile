@@ -203,6 +203,7 @@ ifneq ($(PACKAGE_BUILD),)
 bin/package-rasterblocks: $(wildcard package-rasterblocks/DEBIAN/*) rasterblocks.service bin/$(DT_NAME).dtbo
 	rm -rf bin/package-rasterblocks
 	cp -r package-rasterblocks bin/package-rasterblocks
+	sed "s/%VERSION%/$(RB_VERSION)/g" < package-rasterblocks/DEBIAN/control > bin/package-rasterblocks/DEBIAN/control
 	mkdir -p bin/package-rasterblocks/usr/lib/rasterblocks
 	mkdir -p bin/package-rasterblocks/var/lib/rasterblocks
 	mkdir -p bin/package-rasterblocks/lib/firmware
@@ -212,6 +213,7 @@ bin/package-rasterblocks: $(wildcard package-rasterblocks/DEBIAN/*) rasterblocks
 bin/package-rasterblocks-nodeserver: $(wildcard package-rasterblocks-nodeserver/DEBIAN/*) $(wildcard nodeserver/*) rasterblocks-nodeserver.service
 	rm -rf bin/package-rasterblocks-nodeserver
 	cp -r package-rasterblocks-nodeserver bin/package-rasterblocks-nodeserver
+	sed "s/%VERSION%/$(RB_VERSION)/g" < package-rasterblocks-nodeserver/DEBIAN/control > bin/package-rasterblocks-nodeserver/DEBIAN/control
 	mkdir -p bin/package-rasterblocks-nodeserver/usr/lib/rasterblocks
 	cp -r nodeserver bin/package-rasterblocks-nodeserver/usr/lib/rasterblocks/
 	cp rasterblocks-nodeserver.service bin/package-rasterblocks-nodeserver/usr/lib/rasterblocks
