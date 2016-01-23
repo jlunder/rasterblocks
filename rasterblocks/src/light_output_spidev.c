@@ -3,11 +3,7 @@
 
 #include "light_output.h"
 
-#include <arpa/inet.h>
-#include <netinet/in.h>
 #include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/unistd.h>
 #include <errno.h>

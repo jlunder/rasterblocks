@@ -6,6 +6,17 @@
 #include "control_input.h"
 #include "graphics_util.h"
 
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/unistd.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <termios.h>
+#include <unistd.h>
+
+#include <linux/types.h>
+#include <linux/spi/spidev.h>
+
 #include <prussdrv.h>
 #include <pruss_intc_mapping.h>
 
@@ -15,7 +26,9 @@
     "(grep -q rb-pruss-io /sys/devices/bone_capemgr.9/slots || " \
     "echo rb-pruss-io > /sys/devices/bone_capemgr.9/slots) && " \
     "(grep -q BB-ADC /sys/devices/bone_capemgr.9/slots || " \
-    "echo BB-ADC > /sys/devices/bone_capemgr.9/slots)\""
+    "echo BB-ADC > /sys/devices/bone_capemgr.9/slots) &&" \
+    "(grep -q BB-SPIDEV1 /sys/devices/bone_capemgr.9/slots || " \
+    "echo BB-SPIDEV1 > /sys/devices/bone_capemgr.9/slots)\""
 
 
 #define RB_PRUSS_IO_BUSY_WAIT_MS 10
@@ -54,7 +67,21 @@
 // modify the PRU assembler source if you change RB_AUDIO_CHANNELS.
 #define RB_PRUSS_IO_AUDIO_CHANNELS 2
 
-#define RB_PRUSS_IO_AUDIO_SCALE (2.0f / 4095.0f)
+#define RB_PRUSS_IO_AUDIO_MID_SCALE_FILTER_K (0.999f)
+
+#define RB_PRUSS_IO_AUDIO_MAX (4095.0f)
+#define RB_PRUSS_IO_AUDIO_SCALE (2.0f / RB_PRUSS_IO_AUDIO_MAX)
+// 0.999 = 0.1% decay per frame; in the absence of signal it should take ~600
+// frames = 10s for the peaks to decay 50%
+#define RB_PRUSS_IO_AUDIO_PEAK_DECAY (0.999f)
+// Peak target = 1.0f means decrease the input gain if peak values are > 50%
+// of the available input dynamic range; we are shooting for
+// PeakPos - PeakNeg = PEAK_TARGET
+#define RB_PRUSS_IO_AUDIO_PEAK_TARGET (1.0f)
+
+#define RB_PRUSS_IO_GAIN_SPI_DEVICE "/dev/spidev1.0"
+#define RB_PRUSS_IO_GAIN_MAX_SPI_OPEN_RETRY 5
+#define RB_PRUSS_IO_GAIN_SPI_DEVICE_STARTUP_WAIT_MS 2000
 
 
 #define RB_MODE_INIT  0
@@ -140,6 +167,19 @@ static uint8_t g_rbPrussIoCapturedMidi[RB_MIDI_MAX_CHARS_PER_VIDEO_FRAME];
 static uint16_t g_rbPrussIoCapturedAudio[RB_AUDIO_FRAMES_PER_VIDEO_FRAME][
     RB_PRUSS_IO_AUDIO_CHANNELS];
 
+static int g_rbPrussIoGainSpiFd = -1;
+
+static int16_t g_rbPrussIoLastGainSet;
+
+// mid scale and peak are recorded in units of ADC input value, normalized to
+// the -1..1 range
+static float g_rbPrussIoPeakPos;
+static float g_rbPrussIoPeakNeg;
+static float g_rbPrussIoMidScaleOffset;
+static float g_rbPrussIoGainScale;
+
+//static float g_rbPrussIoMidScaleAccums[4];
+
 
 #include "pruss_io_pru0_bin.h"
 #include "pruss_io_pru1_bin.h"
@@ -151,6 +191,12 @@ static void rbPrussIoStopPruss(void);
 static void rbPrussIoStopPrussIfNotInUse(void);
 static void rbPrussIoStartPrussInput(void);
 static void rbPrussIoStopPrussInputIfNotInUse(void);
+
+void rbPrussIoGainInitializeSpiDevice(void);
+void rbPrussIoGainStartSpiDevice(void);
+void rbPrussIoGainStopSpiDevice(void);
+void rbPrussIoGainAutoSet(void);
+void rbPrussIoGainSet(int16_t gain);
 
 
 void rbPrussIoInitialize(RBConfiguration * pConfig)
@@ -166,11 +212,16 @@ void rbPrussIoInitialize(RBConfiguration * pConfig)
     
     g_rbPrussIoNextInputFrameNum = 0;
     g_rbPrussIoNextOutputFrameNum = 0;
+    
+    g_rbPrussIoMidScaleOffset = RB_PRUSS_IO_AUDIO_MAX / 2.0f;
+    g_rbPrussIoPeakPos = g_rbPrussIoMidScaleOffset;
+    g_rbPrussIoPeakNeg = g_rbPrussIoMidScaleOffset;
 }
 
 
 void rbPrussIoShutdown(void)
 {
+    rbPrussIoGainStopSpiDevice();
     rbPrussIoStopPruss();
 }
 
@@ -369,6 +420,7 @@ void rbPrussIoStopPrussIfNotInUse(void)
 
 void rbPrussIoStartPrussInput(void)
 {
+    rbPrussIoGainInitializeSpiDevice();
     rbPrussIoStartPruss();
     
     if(!g_rbPrussIoAudioInputRunning && !g_rbPrussIoMidiInputRunning) {
@@ -399,6 +451,8 @@ void rbPrussIoReadInput(void)
     if(!g_rbPrussIoAudioInputRunning && !g_rbPrussIoMidiInputRunning) {
         return;
     }
+    
+    rbPrussIoGainAutoSet();
     
     do {
         rbMemoryBarrier();
@@ -434,7 +488,7 @@ void rbPrussIoReadInput(void)
             pControl->status);
     }
     
-    {
+    if(rbLogShouldLog(RBLL_INFO, __FILE__, __LINE__)) {
         char bb[10000];
         char * pb = bb;
         size_t size = (pControl->size > 20)?20:pControl->size;
@@ -470,6 +524,99 @@ void rbPrussIoReadInput(void)
     //TODO Ideally, we would capture multiple frames 
     UNUSED(g_rbPrussIoCapturedMidi);
     g_rbPrussIoCapturedMidiSize = 0;
+}
+
+
+void rbPrussIoGainInitializeSpiDevice(void)
+{
+    uint8_t mode = SPI_MODE_0;
+    uint8_t lsbFirst = 0;
+    uint8_t bitsPerWord = 8;
+    uint32_t maxSpeedHz = 500000;
+    
+    rbPrussIoGainStartSpiDevice();
+    rbVerify(g_rbPrussIoGainSpiFd >= 0);
+    
+    rbVerify(ioctl(g_rbPrussIoGainSpiFd, SPI_IOC_WR_MODE, &mode) >= 0);
+    rbVerify(ioctl(g_rbPrussIoGainSpiFd, SPI_IOC_WR_LSB_FIRST, &lsbFirst) >= 0);
+    rbVerify(ioctl(g_rbPrussIoGainSpiFd, SPI_IOC_WR_BITS_PER_WORD, &bitsPerWord) >= 0);
+    rbVerify(ioctl(g_rbPrussIoGainSpiFd, SPI_IOC_WR_MAX_SPEED_HZ, &maxSpeedHz) >= 0);
+    
+    g_rbPrussIoLastGainSet = -1;
+    g_rbPrussIoPeakPos = 0.2f;
+    g_rbPrussIoPeakNeg = -0.2f;
+    g_rbPrussIoMidScaleOffset = 0.0f;
+    g_rbPrussIoGainScale = 1.0f;
+}
+
+
+void rbPrussIoGainStartSpiDevice(void)
+{
+    for(size_t i = 0; ; ++i) {
+        g_rbPrussIoGainSpiFd = open(RB_PRUSS_IO_GAIN_SPI_DEVICE, O_RDWR);
+        
+        if(g_rbPrussIoGainSpiFd >= 0) {
+            // Done! Success.
+            return;
+        }
+        
+        if(i >= RB_PRUSS_IO_GAIN_MAX_SPI_OPEN_RETRY) {
+            rbFatal("open() failed for SPI device \"%s\": %s",
+                RB_PRUSS_IO_GAIN_SPI_DEVICE, strerror(errno));
+        }
+        
+        /*
+        rbWarning("BB SPI device not found, attempting startup\n");
+        int ret = system(RB_TARGET_SPI_DEVICE_STARTUP_COMMAND);
+        if(ret != 0) {
+            rbWarning("Failed to start up SPI\n");
+        }
+        */
+        
+        rbSleep(rbTimeFromMs(RB_PRUSS_IO_GAIN_SPI_DEVICE_STARTUP_WAIT_MS));
+    }
+}
+
+
+void rbPrussIoGainStopSpiDevice(void)
+{
+    if(g_rbPrussIoGainSpiFd >= 0) {
+        close(g_rbPrussIoGainSpiFd);
+        g_rbPrussIoGainSpiFd = -1;
+    }
+}
+
+
+void rbPrussIoGainAutoSet(void)
+{
+    int16_t gain = 0x100;
+    
+    rbPrussIoGainSet(0x100 - gain);
+}
+
+
+void rbPrussIoGainSet(int16_t gain)
+{
+    struct spi_ioc_transfer xfer;
+    int result;
+    uint8_t buf[4];
+    
+    rbAssert(gain >= 0 && gain <= 0x100);
+    
+    buf[0] = ((gain >> 8) & 0x03) | (0x00);
+    buf[1] = gain & 0xFF;
+    buf[2] = ((gain >> 8) & 0x03) | (0x10);
+    buf[3] = gain & 0xFF;
+    
+    memset(&xfer, 0, sizeof xfer);
+    
+    xfer.tx_buf = (unsigned long)buf;
+    xfer.len = sizeof buf;
+    
+    result = ioctl(g_rbPrussIoGainSpiFd, SPI_IOC_MESSAGE(1), &xfer);
+    if(result < 0) {
+        rbError("SPI IOCTL failed: %s", strerror(result));
+    }
 }
 
 
@@ -617,8 +764,9 @@ void rbAudioInputPrussBlockingRead(RBRawAudio * pAudio)
 {
     for(size_t j = 0; j < RB_AUDIO_FRAMES_PER_VIDEO_FRAME; ++j) {
         for(size_t i = 0; i < RB_PRUSS_IO_AUDIO_CHANNELS; ++i) {
-            pAudio->audio[j][i] = (float)g_rbPrussIoCapturedAudio[j][i] *
-                RB_PRUSS_IO_AUDIO_SCALE - 1.0f;
+            pAudio->audio[j][i] = ((float)g_rbPrussIoCapturedAudio[j][i] *
+                RB_PRUSS_IO_AUDIO_SCALE - 1.0f - g_rbPrussIoMidScaleOffset) *
+                g_rbPrussIoGainScale;
         }
     }
 }
