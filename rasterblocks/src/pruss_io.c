@@ -420,8 +420,8 @@ void rbPrussIoStopPrussIfNotInUse(void)
 
 void rbPrussIoStartPrussInput(void)
 {
-    rbPrussIoGainInitializeSpiDevice();
     rbPrussIoStartPruss();
+    rbPrussIoGainInitializeSpiDevice();
     
     if(!g_rbPrussIoAudioInputRunning && !g_rbPrussIoMidiInputRunning) {
         g_rbPrussIoDataRam->pru0.control.mode = RB_MODE_RUN;
