@@ -10,6 +10,8 @@
 
 #define RB_DEFAULT_CONFIG_PATH "/var/lib/rasterblocks/config.json"
 
+#define RB_DEFAULT_LUA_PATH "/var/lib/rasterblocks/display"
+
 #define RB_DEFAULT_INPUT_ALSA "plughw:1,0"
 #define RB_DEFAULT_INPUT_OPENAL ""
 #define RB_DEFAULT_INPUT_FILE "test/909Tom X1.wav"
@@ -51,6 +53,9 @@ void rbConfigurationSetDefaults(RBConfiguration * pConfig)
     //pConfig->pConfigPath[0] = 0;
     rbStrlcpy(pConfig->configPath, RB_DEFAULT_CONFIG_PATH,
         sizeof pConfig->configPath);
+    
+    rbStrlcpy(pConfig->luaPath, RB_DEFAULT_LUA_PATH,
+        sizeof pConfig->luaPath);
     
 #if defined RB_USE_ALSA_DEVICE
     pConfig->audioInput = RBAI_ALSA;
@@ -202,6 +207,14 @@ void rbConfigurationParseArgv(RBConfiguration * pConfig, int argc,
             if(i + 1 < argc) {
                 ++i;
                 pConfig->mode = atoi(argv[i]);
+            }
+        }
+        
+        else if(strcmp(argv[i], "-l") == 0) {
+            if(i + 1 < argc) {
+                ++i;
+                rbStrlcpy(pConfig->luaPath, argv[i],
+                    sizeof pConfig->luaPath);
             }
         }
     }

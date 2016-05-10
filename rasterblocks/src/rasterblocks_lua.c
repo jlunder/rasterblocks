@@ -13,37 +13,37 @@
 //   - button, label... table?
 
 
-int rbLuaRegisterTypes(lua_State * L);
+int rbLuaRegisterTypes(lua_State * l);
 
-int rbLuaPrint(lua_State * L);
+int rbLuaPrint(lua_State * l);
 
-int rbLuaSet(lua_State * L);
-int rbLuaPrint(lua_State * L);
+int rbLuaSet(lua_State * l);
+int rbLuaPrint(lua_State * l);
 
-int rbLuaLightGenerationCompositorAlloc(lua_State * L);
-int rbLuaLightGenerationStaticImageAlloc(lua_State * L);
-int rbLuaLightGenerationImageFilterAlloc(lua_State * L);
-int rbLuaLightGenerationRescaleAlloc(lua_State * L);
-int rbLuaLightGenerationTimedRotationAlloc(lua_State * L);
-int rbLuaLightGenerationControllerSelectAlloc(lua_State * L);
-int rbLuaLightGenerationControllerFadeAlloc(lua_State * L);
-int rbLuaLightGenerationTriggerFlashAlloc(lua_State * L);
-int rbLuaLightGenerationPlasmaAlloc(lua_State * L);
-int rbLuaLightGenerationBeatFlashAlloc(lua_State * L);
-int rbLuaLightGenerationPulsePlasmaAlloc(lua_State * L);
-int rbLuaLightGenerationPulseGridAlloc(lua_State * L);
-int rbLuaLightGenerationDashedCirclesAlloc(lua_State * L);
-int rbLuaLightGenerationSmokeSignalsAlloc(lua_State * L);
-int rbLuaLightGenerationFireworksAlloc(lua_State * L);
-int rbLuaLightGenerationVerticalBarsAlloc(lua_State * L);
-int rbLuaLightGenerationCriscrossAlloc(lua_State * L);
-int rbLuaLightGenerationVolumeBarsAlloc(lua_State * L);
-int rbLuaLightGenerationBeatStarsAlloc(lua_State * L);
-int rbLuaLightGenerationIconCheckerboardAlloc(lua_State * L);
-int rbLuaLightGenerationPulseCheckerboardAlloc(lua_State * L);
-int rbLuaLightGenerationParticleLissajousAlloc(lua_State * L);
-int rbLuaLightGenerationSignalLissajousAlloc(lua_State * L);
-int rbLuaLightGenerationOscilloscopeAlloc(lua_State * L);
+int rbLuaLightGenerationCompositorAlloc(lua_State * l);
+int rbLuaLightGenerationStaticImageAlloc(lua_State * l);
+int rbLuaLightGenerationImageFilterAlloc(lua_State * l);
+int rbLuaLightGenerationRescaleAlloc(lua_State * l);
+int rbLuaLightGenerationTimedRotationAlloc(lua_State * l);
+int rbLuaLightGenerationControllerSelectAlloc(lua_State * l);
+int rbLuaLightGenerationControllerFadeAlloc(lua_State * l);
+int rbLuaLightGenerationTriggerFlashAlloc(lua_State * l);
+int rbLuaLightGenerationPlasmaAlloc(lua_State * l);
+int rbLuaLightGenerationBeatFlashAlloc(lua_State * l);
+int rbLuaLightGenerationPulsePlasmaAlloc(lua_State * l);
+int rbLuaLightGenerationPulseGridAlloc(lua_State * l);
+int rbLuaLightGenerationDashedCirclesAlloc(lua_State * l);
+int rbLuaLightGenerationSmokeSignalsAlloc(lua_State * l);
+int rbLuaLightGenerationFireworksAlloc(lua_State * l);
+int rbLuaLightGenerationVerticalBarsAlloc(lua_State * l);
+int rbLuaLightGenerationCriscrossAlloc(lua_State * l);
+int rbLuaLightGenerationVolumeBarsAlloc(lua_State * l);
+int rbLuaLightGenerationBeatStarsAlloc(lua_State * l);
+int rbLuaLightGenerationIconCheckerboardAlloc(lua_State * l);
+int rbLuaLightGenerationPulseCheckerboardAlloc(lua_State * l);
+int rbLuaLightGenerationParticleLissajousAlloc(lua_State * l);
+int rbLuaLightGenerationSignalLissajousAlloc(lua_State * l);
+int rbLuaLightGenerationOscilloscopeAlloc(lua_State * l);
 
 
 // RBLightGenerator
@@ -53,66 +53,74 @@ static int tle_RBTime_metatable_index;
 static int tle_RBTexture1_metatable_index;
 static int tle_RBTexture2_metatable_index;
 
-static int tle_RBColor_eq(lua_State * L);
+static int tle_RBColor_eq(lua_State * l);
 
-static int tle_RBTime_eq(lua_State * L);
-static int tle_RBTime_lt(lua_State * L);
-static int tle_RBTime_le(lua_State * L);
+static int tle_RBTime_eq(lua_State * l);
+static int tle_RBTime_lt(lua_State * l);
+static int tle_RBTime_le(lua_State * l);
 
 
-void rbLuaInitialize(void)
+void rbLuaInitialize(RBConfiguration * pConfig)
 {
+    tle_initialize(pConfig->luaPath);
     lua_pushcfunction(tle_state, rbLuaRegisterTypes);
     rbVerify(tle_pcall(tle_state, 0, 0, false) == 0);
+    tle_dostring(tle_state, "include('display.lua')", true);
 }
 
 
-int rbLuaRegisterTypes(lua_State * L)
+void rbLuaShutdown(void)
 {
-    int top = lua_gettop(L);
+    tle_finalize();
+}
 
-    lua_newtable(L);
-    lua_pushcfunction(L, tle_RBColor_eq);
-    lua_setfield(L, -2, "__eq");
-    tle_RBColor_metatable_index = luaL_ref(L, LUA_REGISTRYINDEX);
-    
-    lua_newtable(L);
-    lua_pushcfunction(L, tle_RBTime_eq);
-    lua_setfield(L, -2, "__eq");
-    lua_pushcfunction(L, tle_RBTime_lt);
-    lua_setfield(L, -2, "__lt");
-    lua_pushcfunction(L, tle_RBTime_le);
-    lua_setfield(L, -2, "__le");
-    tle_RBTime_metatable_index = luaL_ref(L, LUA_REGISTRYINDEX);
-    
-    lua_newtable(L);
-    tle_RBTexture1_metatable_index = luaL_ref(L, LUA_REGISTRYINDEX);
-    
-    lua_newtable(L);
-    tle_RBTexture2_metatable_index = luaL_ref(L, LUA_REGISTRYINDEX);
-    
-    lua_newtable(L);
-    lua_pushcfunction(L, rbLuaPrint);
-    lua_setfield(L, -2, "print");
-    //lua_pushcfunction(L, rb_);
-    //lua_setfield(L, -2, "_");
-    lua_setglobal(L, "rb");
 
-    lua_settop(L, top);
+int rbLuaRegisterTypes(lua_State * l)
+{
+    int top = lua_gettop(l);
+
+    lua_newtable(l);
+    lua_pushcfunction(l, tle_RBColor_eq);
+    lua_setfield(l, -2, "__eq");
+    tle_RBColor_metatable_index = luaL_ref(l, LUA_REGISTRYINDEX);
+    
+    lua_newtable(l);
+    lua_pushcfunction(l, tle_RBTime_eq);
+    lua_setfield(l, -2, "__eq");
+    lua_pushcfunction(l, tle_RBTime_lt);
+    lua_setfield(l, -2, "__lt");
+    lua_pushcfunction(l, tle_RBTime_le);
+    lua_setfield(l, -2, "__le");
+    tle_RBTime_metatable_index = luaL_ref(l, LUA_REGISTRYINDEX);
+    
+    lua_newtable(l);
+    tle_RBTexture1_metatable_index = luaL_ref(l, LUA_REGISTRYINDEX);
+    
+    lua_newtable(l);
+    tle_RBTexture2_metatable_index = luaL_ref(l, LUA_REGISTRYINDEX);
+    
+    lua_newtable(l);
+    lua_pushcfunction(l, rbLuaPrint);
+    lua_setfield(l, -2, "print");
+    //lua_pushcfunction(l, rb_);
+    //lua_setfield(l, -2, "_");
+    lua_setglobal(l, "rb");
+
+    lua_settop(l, top);
 
     return 0;
 }
 
 
-int rbLuaPrint(lua_State * L)
+int rbLuaPrint(lua_State * l)
 {
-    int top = lua_gettop(L);
+    int top = lua_gettop(l);
     char const * str;
 
-    str = luaL_checkstring(L, 1);
+    str = luaL_checkstring(l, 1);
     printf("lua: %s\n", str);
 
-    lua_settop(L, top);
+    lua_settop(l, top);
 
     return 0;
 }
@@ -121,53 +129,53 @@ int rbLuaPrint(lua_State * L)
 // RBColor -------------------------------------------------------------
 
 
-bool tle_is_RBColor(lua_State * L, int idx)
+bool tle_is_RBColor(lua_State * l, int idx)
 {
     bool result = false;
     
-    if(lua_isuserdata(L, idx) && lua_getmetatable(L, idx)) {
-        lua_rawgeti(L, LUA_REGISTRYINDEX,
+    if(lua_isuserdata(l, idx) && lua_getmetatable(l, idx)) {
+        lua_rawgeti(l, LUA_REGISTRYINDEX,
             tle_RBColor_metatable_index);
-        if(lua_rawequal(L, -1, -2)) {
+        if(lua_rawequal(l, -1, -2)) {
             result = true;
         }
-        lua_pop(L, 2);
+        lua_pop(l, 2);
     }
     
     return result;
 }
 
 
-RBColor tle_to_RBColor(lua_State * L, int idx)
+RBColor tle_to_RBColor(lua_State * l, int idx)
 {
-    RBColor * p = (RBColor *)lua_touserdata(L, idx);
+    RBColor * p = (RBColor *)lua_touserdata(l, idx);
     
     if(p == NULL) {
-        luaL_error(L, "lua_touserdata returned NULL in "
+        luaL_error(l, "lua_touserdata returned NULL in "
             "tle_to_RBColor");
     }
     return *p;
 }
 
 
-void tle_push_RBColor(lua_State * L, RBColor value)
+void tle_push_RBColor(lua_State * l, RBColor value)
 {
-    RBColor * p = (RBColor *)lua_newuserdata(L,
+    RBColor * p = (RBColor *)lua_newuserdata(l,
         sizeof (RBColor));
     if(p == NULL) {
-        luaL_error(L, "lua_newuserdata returned NULL in "
+        luaL_error(l, "lua_newuserdata returned NULL in "
             "tle_push_RBColor");
     }
     *p = value;
-    lua_rawgeti(L, LUA_REGISTRYINDEX, tle_RBColor_metatable_index);
-    lua_setmetatable(L, -2);
+    lua_rawgeti(l, LUA_REGISTRYINDEX, tle_RBColor_metatable_index);
+    lua_setmetatable(l, -2);
 }
 
 
-static bool tle_eq_RBColor_RBColor(lua_State * L,
+static bool tle_eq_RBColor_RBColor(lua_State * l,
     RBColor x, RBColor y)
 {
-    (void)L;
+    (void)l;
 
     return x.r == y.r && x.g == y.g && x.b == y.b && x.a == y.a;
 }
@@ -181,53 +189,53 @@ TLE_MAKE_WRAPPER_2(tle_RBColor_eq,
 // RBTime -------------------------------------------------------------
 
 
-bool tle_is_RBTime(lua_State * L, int idx)
+bool tle_is_RBTime(lua_State * l, int idx)
 {
     bool result = false;
     
-    if(lua_isuserdata(L, idx) && lua_getmetatable(L, idx)) {
-        lua_rawgeti(L, LUA_REGISTRYINDEX,
+    if(lua_isuserdata(l, idx) && lua_getmetatable(l, idx)) {
+        lua_rawgeti(l, LUA_REGISTRYINDEX,
             tle_RBTime_metatable_index);
-        if(lua_rawequal(L, -1, -2)) {
+        if(lua_rawequal(l, -1, -2)) {
             result = true;
         }
-        lua_pop(L, 2);
+        lua_pop(l, 2);
     }
     
     return result;
 }
 
 
-RBTime tle_to_RBTime(lua_State * L, int idx)
+RBTime tle_to_RBTime(lua_State * l, int idx)
 {
-    RBTime * p = (RBTime *)lua_touserdata(L, idx);
+    RBTime * p = (RBTime *)lua_touserdata(l, idx);
     
     if(p == NULL) {
-        luaL_error(L, "lua_touserdata returned NULL in "
+        luaL_error(l, "lua_touserdata returned NULL in "
             "tle_to_RBTime");
     }
     return *p;
 }
 
 
-void tle_push_RBTime(lua_State * L, RBTime value)
+void tle_push_RBTime(lua_State * l, RBTime value)
 {
-    RBTime * p = (RBTime *)lua_newuserdata(L,
+    RBTime * p = (RBTime *)lua_newuserdata(l,
         sizeof (RBTime));
     if(p == NULL) {
-        luaL_error(L, "lua_newuserdata returned NULL in "
+        luaL_error(l, "lua_newuserdata returned NULL in "
             "tle_push_RBTime");
     }
     *p = value;
-    lua_rawgeti(L, LUA_REGISTRYINDEX, tle_RBTime_metatable_index);
-    lua_setmetatable(L, -2);
+    lua_rawgeti(l, LUA_REGISTRYINDEX, tle_RBTime_metatable_index);
+    lua_setmetatable(l, -2);
 }
 
 
-static bool tle_eq_RBTime_RBTime(lua_State * L,
+static bool tle_eq_RBTime_RBTime(lua_State * l,
     RBTime x, RBTime y)
 {
-    (void)L;
+    (void)l;
 
     return x == y;
 }
@@ -238,10 +246,10 @@ TLE_MAKE_WRAPPER_2(tle_RBTime_eq,
     tle_eq_RBTime_RBTime)
 
 
-static bool tle_lt_RBTime_RBTime(lua_State * L,
+static bool tle_lt_RBTime_RBTime(lua_State * l,
     RBTime x, RBTime y)
 {
-    (void)L;
+    (void)l;
 
     return rbDiffTime(x, y) < 0;
 }
@@ -252,10 +260,10 @@ TLE_MAKE_WRAPPER_2(tle_RBTime_lt,
     tle_lt_RBTime_RBTime)
 
 
-static bool tle_le_RBTime_RBTime(lua_State * L,
+static bool tle_le_RBTime_RBTime(lua_State * l,
     RBTime x, RBTime y)
 {
-    (void)L;
+    (void)l;
 
     return rbDiffTime(x, y) <= 0;
 }
@@ -269,122 +277,122 @@ TLE_MAKE_WRAPPER_2(tle_RBTime_le,
 // RBTexture1 ----------------------------------------------------------
 
 
-bool tle_is_RBTexture1(lua_State * L, int idx)
+bool tle_is_RBTexture1(lua_State * l, int idx)
 {
     bool result = false;
     
-    if(lua_isuserdata(L, idx) && lua_getmetatable(L, idx)) {
-        lua_rawgeti(L, LUA_REGISTRYINDEX,
+    if(lua_isuserdata(l, idx) && lua_getmetatable(l, idx)) {
+        lua_rawgeti(l, LUA_REGISTRYINDEX,
             tle_RBTexture1_metatable_index);
-        if(lua_rawequal(L, -1, -2)) {
+        if(lua_rawequal(l, -1, -2)) {
             result = true;
         }
-        lua_pop(L, 2);
+        lua_pop(l, 2);
     }
     
     return result;
 }
 
 
-RBTexture1 * tle_to_RBTexture1(lua_State * L, int idx)
+RBTexture1 * tle_to_RBTexture1(lua_State * l, int idx)
 {
-    RBTexture1 * p = (RBTexture1 *)lua_touserdata(L, idx);
+    RBTexture1 * p = (RBTexture1 *)lua_touserdata(l, idx);
     
     if(p == NULL) {
-        luaL_error(L, "lua_touserdata returned NULL in "
+        luaL_error(l, "lua_touserdata returned NULL in "
             "tle_to_RBTexture1");
     }
     return p;
 }
 
 
-void tle_push_RBTexture1(lua_State * L, RBTexture1 * value)
+void tle_push_RBTexture1(lua_State * l, RBTexture1 * value)
 {
     size_t size = rbTexture1ComputeSize(rbTexture1GetWidth(value));
-    RBTexture1 * p = (RBTexture1 *)lua_newuserdata(L, size);
+    RBTexture1 * p = (RBTexture1 *)lua_newuserdata(l, size);
     if(p == NULL) {
-        luaL_error(L, "lua_newuserdata returned NULL in "
+        luaL_error(l, "lua_newuserdata returned NULL in "
             "tle_push_RBTexture1");
     }
     memcpy(p, value, size);
-    lua_rawgeti(L, LUA_REGISTRYINDEX, tle_RBTexture1_metatable_index);
-    lua_setmetatable(L, -2);
+    lua_rawgeti(l, LUA_REGISTRYINDEX, tle_RBTexture1_metatable_index);
+    lua_setmetatable(l, -2);
 }
 
 
 // RBTexture2 ----------------------------------------------------------
 
 
-bool tle_is_RBTexture2(lua_State * L, int idx)
+bool tle_is_RBTexture2(lua_State * l, int idx)
 {
     bool result = false;
     
-    if(lua_isuserdata(L, idx) && lua_getmetatable(L, idx)) {
-        lua_rawgeti(L, LUA_REGISTRYINDEX,
+    if(lua_isuserdata(l, idx) && lua_getmetatable(l, idx)) {
+        lua_rawgeti(l, LUA_REGISTRYINDEX,
             tle_RBTexture2_metatable_index);
-        if(lua_rawequal(L, -1, -2)) {
+        if(lua_rawequal(l, -1, -2)) {
             result = true;
         }
-        lua_pop(L, 2);
+        lua_pop(l, 2);
     }
     
     return result;
 }
 
 
-RBTexture2 * tle_to_RBTexture2(lua_State * L, int idx)
+RBTexture2 * tle_to_RBTexture2(lua_State * l, int idx)
 {
-    RBTexture2 * p = (RBTexture2 *)lua_touserdata(L, idx);
+    RBTexture2 * p = (RBTexture2 *)lua_touserdata(l, idx);
     
     if(p == NULL) {
-        luaL_error(L, "lua_touserdata returned NULL in "
+        luaL_error(l, "lua_touserdata returned NULL in "
             "tle_to_RBTexture2");
     }
     return p;
 }
 
 
-void tle_push_RBTexture2(lua_State * L, RBTexture2 * value)
+void tle_push_RBTexture2(lua_State * l, RBTexture2 * value)
 {
     size_t size = rbTexture2ComputeSize(rbTexture2GetWidth(value),
         rbTexture2GetHeight(value));
-    RBTexture2 * p = (RBTexture2 *)lua_newuserdata(L, size);
+    RBTexture2 * p = (RBTexture2 *)lua_newuserdata(l, size);
     if(p == NULL) {
-        luaL_error(L, "lua_newuserdata returned NULL in "
+        luaL_error(l, "lua_newuserdata returned NULL in "
             "tle_push_RBTexture2");
     }
     memcpy(p, value, size);
-    lua_rawgeti(L, LUA_REGISTRYINDEX, tle_RBTexture2_metatable_index);
-    lua_setmetatable(L, -2);
+    lua_rawgeti(l, LUA_REGISTRYINDEX, tle_RBTexture2_metatable_index);
+    lua_setmetatable(l, -2);
 }
 
 
 
 /*
-void rotterbox_init_lua(lua_State * L)
+void rotterbox_init_lua(lua_State * l)
 {
-    int stack_top = lua_gettop(L);
+    int stack_top = lua_gettop(l);
 
-    rotterbox_lua_register_types(L);
+    rotterbox_lua_register_types(l);
 
-    lua_newtable(L);
-    lua_pushvalue(L, -1);
-    lua_setglobal(L, "_sequencer");
-    lua_pushcfunction(L, &rotterbox_lua_sequencer_enqueue_data);
-    lua_setfield(L, -2, "_enqueue_data");
-    lua_pushcfunction(L, &rotterbox_lua_sequencer_get_play_time_wrapper);
-    lua_setfield(L, -2, "_get_play_time");
+    lua_newtable(l);
+    lua_pushvalue(l, -1);
+    lua_setglobal(l, "_sequencer");
+    lua_pushcfunction(l, &rotterbox_lua_sequencer_enqueue_data);
+    lua_setfield(l, -2, "_enqueue_data");
+    lua_pushcfunction(l, &rotterbox_lua_sequencer_get_play_time_wrapper);
+    lua_setfield(l, -2, "_get_play_time");
 
-    lua_settop(L, stack_top);
+    lua_settop(l, stack_top);
 }
 */
 
 /*
 static inline sequencer_timestamp_t tle_to_sequencer_timespan_t(
-    lua_State * L, int idx)
+    lua_State * l, int idx)
 {
-    lua_Number as_number = floor(lua_tonumber(L, idx));
-    luaL_argcheck(L, (as_number <= SEQUENCER_TIMESPAN_MAX)
+    lua_Number as_number = floor(lua_tonumber(l, idx));
+    luaL_argcheck(l, (as_number <= SEQUENCER_TIMESPAN_MAX)
         && (as_number >= -SEQUENCER_TIMESPAN_MAX), idx,
         "timespan out of range");
     return (sequencer_timestamp_t)as_number;

@@ -58,12 +58,12 @@ endif
 RB_VERSION=1.2
 DT_NAME=rb-pruss-io-00A0
 
-MAKEDEPEND=@set -e; rm -f $@; \
+MAKEDEPEND=set -e; rm -f $@; \
 	$(CC) -M $(CPPFLAGS) $< > $@.$$$$; \
 	sed 's,\($*\)\.o[ :]*,build/\1.o $@ : ,g' < $@.$$$$ > $@; \
 	rm -f $@.$$$$
 
-MAKEDEPEND_TARGET=@set -e; rm -f $@; \
+MAKEDEPEND_TARGET=set -e; rm -f $@; \
 	$(CC_TARGET) -M $(CPPFLAGS_TARGET) $< > $@.$$$$; \
 	sed 's,\($*\)\.o[ :]*,build/\1.target.o build/\1.target-debug.o $@ : ,g' < $@.$$$$ > $@; \
 	rm -f $@.$$$$
@@ -88,6 +88,10 @@ build/%.d: src/%.c
 	@mkdir -p build
 	@$(MAKEDEPEND)
 
+build/lua__%.d: src/lua/%.c
+	@mkdir -p build
+	@$(MAKEDEPEND)
+
 ifeq ($(CROSS_BUILD)$(BUILD_ON_TARGET),)
 ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(MAKECMDGOALS),cleanall)
@@ -97,6 +101,11 @@ endif
 endif
 
 build/%.o: src/%.c
+	@mkdir -p build
+	@$(MAKEDEPEND)
+	$(CC) -c -g $(CFLAGS) -o $@ $(CPPFLAGS) $<
+
+build/lua__%.o: src/lua/%.c
 	@mkdir -p build
 	@$(MAKEDEPEND)
 	$(CC) -c -g $(CFLAGS) -o $@ $(CPPFLAGS) $<
@@ -142,6 +151,10 @@ RASTERBLOCKS_D_TARGET := $(addprefix build/,$(addsuffix .target.d, $(RASTERBLOCK
 
 
 build/%.target.d: src/%.c src/pruss_io_pru0_bin.h src/pruss_io_pru1_bin.h
+	@mkdir -p build
+	@$(MAKEDEPEND_TARGET)
+
+build/lua__%.target.d: src/lua/%.c
 	@mkdir -p build
 	@$(MAKEDEPEND_TARGET)
 

@@ -8,6 +8,7 @@
 #include "light_generation.h"
 #include "light_output.h"
 #include "pruss_io.h"
+#include "rasterblocks_lua.h"
 
 #ifdef RB_OSX
 #include <mach/mach.h>
@@ -462,6 +463,10 @@ void rbInitialize(int argc, char * argv[])
     rbHotConfigurationInitialize(&g_rbConfiguration);
     
     rbChangeSubsystem(RBS_MAIN);
+    rbInfo("Initializing Lua interpreter\n");
+    rbLuaInitialize(&g_rbConfiguration);
+    
+    rbChangeSubsystem(RBS_MAIN);
     // If something goes wrong during init, reinit'ing won't help -- that
     // should be a fatal error!
     rbAssert(!g_rbGentleRestartRequested);
@@ -475,6 +480,8 @@ void rbShutdown(void)
     RBSubsystem lastSubsystem = rbChangeSubsystem(RBS_MAIN);
     
     rbAssert(lastSubsystem == RBS_MAIN);
+    
+    rbLuaShutdown();
     
     rbChangeSubsystem(RBS_HOT_CONFIGURATION);
     rbHotConfigurationShutdown();

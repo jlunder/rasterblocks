@@ -1,3 +1,5 @@
+rb.print("hello world");
+ --[[
 pal_black_red_gold_white_fs = rb.palette_from_pwl({
     {{0.00, 0.00, 0.00, 1}, 2},
     {{0.25, 0.00, 0.00, 1}, 2},
@@ -17,7 +19,7 @@ pal_black_blue_green_white_fs = rb.palette_from_pwl({
     {{0.00, 1.00, 0.25, 1}, 1},
     {{1.00, 1.00, 1.00, 1}, 0},
 })
-
+]]
 --pal_black_blue_green_white_fs_alpha = rb.alpha_palette_from_palette(pal_black_blue_green_white_fs)
 
 --[[

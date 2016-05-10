@@ -8,13 +8,13 @@ int tle_lua_globals_metatable_index;
 
 jmp_buf tle_panic_target;
 int tle_in_protected_function;
-char const * tle_script_base;
+char tle_script_base[PATH_MAX];
 
 
-int tle_lua_atpanic_handler(lua_State * L);
-int tle_initialize_state(lua_State * L);
-int tle_lua_include(lua_State * L);
-int tle_lua_import(lua_State * L);
+int tle_lua_atpanic_handler(lua_State * l);
+int tle_initialize_state(lua_State * l);
+int tle_lua_include(lua_State * l);
+int tle_lua_import(lua_State * l);
 
 
 #define TLE_PROTECT_PROLOGUE \
@@ -31,7 +31,7 @@ void tle_initialize(char const * script_base)
 {
     tle_state = luaL_newstate();
 
-    tle_script_base = script_base;
+    rbStrlcpy(tle_script_base, script_base, sizeof tle_script_base);
 
     TLE_PROTECT_PROLOGUE
 
@@ -49,51 +49,51 @@ void tle_finalize(void)
 }
 
 
-int tle_lua_atpanic_handler(lua_State * L)
+int tle_lua_atpanic_handler(lua_State * l)
 {
-    printf("error during Lua setup: %s\n", lua_tostring(L, -1));
+    printf("error during Lua setup: %s\n", lua_tostring(l, -1));
     longjmp(tle_panic_target, 1);
 }
 
 
-int tle_initialize_state(lua_State * L)
+int tle_initialize_state(lua_State * l)
 {
-    int top = lua_gettop(L);
+    int top = lua_gettop(l);
     
-    luaL_openlibs(L);
-    lua_getglobal(L, "debug");
-    lua_getfield(L, -1, "traceback");
-    tle_traceback_index = luaL_ref(L, LUA_REGISTRYINDEX);
-    lua_pop(L, 1);
+    luaL_openlibs(l);
+    lua_getglobal(l, "debug");
+    lua_getfield(l, -1, "traceback");
+    tle_traceback_index = luaL_ref(l, LUA_REGISTRYINDEX);
+    lua_pop(l, 1);
     
-    lua_newtable(L);
-    tle_lua_module_table_index = luaL_ref(L, LUA_REGISTRYINDEX);
+    lua_newtable(l);
+    tle_lua_module_table_index = luaL_ref(l, LUA_REGISTRYINDEX);
     
-    lua_newtable(L);
-    lua_rawgeti(L, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS);
-    lua_setfield(L, -2, "__index");
-    tle_lua_globals_metatable_index = luaL_ref(L, LUA_REGISTRYINDEX);
+    lua_newtable(l);
+    lua_rawgeti(l, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS);
+    lua_setfield(l, -2, "__index");
+    tle_lua_globals_metatable_index = luaL_ref(l, LUA_REGISTRYINDEX);
     
-    lua_pushcfunction(L, &tle_lua_include);
-    lua_setglobal(L, "include");
+    lua_pushcfunction(l, &tle_lua_include);
+    lua_setglobal(l, "include");
     
-    lua_pushcfunction(L, &tle_lua_import);
-    lua_setglobal(L, "import");
+    lua_pushcfunction(l, &tle_lua_import);
+    lua_setglobal(l, "import");
     
-    lua_settop(L, top);
+    lua_settop(l, top);
 
     return 0;
 }
 
 
-int tle_dostring(lua_State * L, char const * code, bool newenv)
+int tle_dostring(lua_State * l, char const * code, bool newenv)
 {
     int result;
     
     TLE_PROTECT_PROLOGUE
 
-    luaL_loadstring(L, code);
-    result = tle_pcall(L, 0, 0, newenv);
+    luaL_loadstring(l, code);
+    result = tle_pcall(l, 0, 0, newenv);
 
     TLE_PROTECT_EPILOGUE
 
@@ -101,15 +101,15 @@ int tle_dostring(lua_State * L, char const * code, bool newenv)
 }
 
 
-int tle_dofile(lua_State * L, char const * path, bool newenv)
+int tle_dofile(lua_State * l, char const * path, bool newenv)
 {
     int result;
     
     TLE_PROTECT_PROLOGUE
 
-    lua_pushcfunction(L, &tle_lua_include);
-    lua_pushstring(L, path);
-    result = tle_pcall(L, 1, 0, newenv);
+    lua_pushcfunction(l, &tle_lua_include);
+    lua_pushstring(l, path);
+    result = tle_pcall(l, 1, 0, newenv);
 
     TLE_PROTECT_EPILOGUE
 
@@ -117,27 +117,27 @@ int tle_dofile(lua_State * L, char const * path, bool newenv)
 }
 
 
-int tle_pcall(lua_State * L, int nargs, int nresults, bool newenv)
+int tle_pcall(lua_State * l, int nargs, int nresults, bool newenv)
 {
     int result;
 
     TLE_PROTECT_PROLOGUE
 
-    lua_rawgeti(L, LUA_REGISTRYINDEX, tle_traceback_index);
+    lua_rawgeti(l, LUA_REGISTRYINDEX, tle_traceback_index);
     // traceback function has to go back past the arguments and function
-    lua_insert(L, -2 - nargs);
+    lua_insert(l, -2 - nargs);
 
     if(newenv) {
-        lua_newtable(L);
-        lua_rawgeti(L, LUA_REGISTRYINDEX, tle_lua_globals_metatable_index);
-        lua_setmetatable(L, -2);
-        lua_rawseti(L, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS);
+        lua_newtable(l);
+        lua_rawgeti(l, LUA_REGISTRYINDEX, tle_lua_globals_metatable_index);
+        lua_setmetatable(l, -2);
+        lua_rawseti(l, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS);
     }
 
-    result = lua_pcall(L, nargs, nresults, -2 - nargs);
+    result = lua_pcall(l, nargs, nresults, -2 - nargs);
     if(result != 0) {
         printf("error: %d\n", result);
-        printf("%s\n", lua_tostring(L, -1));
+        printf("%s\n", lua_tostring(l, -1));
     }
 
     TLE_PROTECT_EPILOGUE
@@ -146,138 +146,138 @@ int tle_pcall(lua_State * L, int nargs, int nresults, bool newenv)
 }
 
 
-int tle_lua_include(lua_State * L)
+int tle_lua_include(lua_State * l)
 {
-    int top = lua_gettop(L);
+    int top = lua_gettop(l);
     int result = -1;
     
     if(top != 1) {
-        luaL_error(L, "expected 1 parameter, string module name");
+        luaL_error(l, "expected 1 parameter, string module name");
     }
-    luaL_argcheck(L, lua_isstring(L, 1), 1, "expected string module name");
+    luaL_argcheck(l, lua_isstring(l, 1), 1, "expected string module name");
     
     // make the full path to the desired module
-    lua_pushstring(L, tle_script_base);
-    lua_pushvalue(L, 1);
-    lua_concat(L, 2);
+    lua_pushstring(l, tle_script_base);
+    lua_pushvalue(l, 1);
+    lua_concat(l, 2);
     
     // load the module!
-    result = luaL_loadfile(L, lua_tostring(L, -1));
+    result = luaL_loadfile(l, lua_tostring(l, -1));
     if(result != 0) {
         // syntax error, file not found, or some such occurred
-        lua_error(L);
+        lua_error(l);
     }
     
     // execute the module!
-    lua_call(L, 0, 0);
+    lua_call(l, 0, 0);
     
     return 0;
 }
 
 
-int tle_lua_import(lua_State * L)
+int tle_lua_import(lua_State * l)
 {
-    int top = lua_gettop(L);
+    int top = lua_gettop(l);
     int result = -1;
     int module_table_index = 0;
     int module_interface_index = 0;
     lua_Debug ar;
     
     if(top != 1) {
-        luaL_error(L, "expected 1 parameter, string module name");
+        luaL_error(l, "expected 1 parameter, string module name");
     }
-    luaL_argcheck(L, lua_isstring(L, 1), 1, "expected string module name");
+    luaL_argcheck(l, lua_isstring(l, 1), 1, "expected string module name");
     
     // try to find the table in the loaded-modules table
-    lua_rawgeti(L, LUA_REGISTRYINDEX, tle_lua_module_table_index);
-    module_table_index = lua_gettop(L);
-    lua_pushvalue(L, 1); // name of the module loaded
-    lua_gettable(L, -2); // loaded-modules table
-    module_interface_index = lua_gettop(L);
-    if(lua_isboolean(L, -1)) {
-        luaL_error(L, "circular import of %s (or import failed earlier)",
-            lua_tostring(L, 1));
+    lua_rawgeti(l, LUA_REGISTRYINDEX, tle_lua_module_table_index);
+    module_table_index = lua_gettop(l);
+    lua_pushvalue(l, 1); // name of the module loaded
+    lua_gettable(l, -2); // loaded-modules table
+    module_interface_index = lua_gettop(l);
+    if(lua_isboolean(l, -1)) {
+        luaL_error(l, "circular import of %s (or import failed earlier)",
+            lua_tostring(l, 1));
     }
-    if(!lua_istable(L, -1)) {
+    if(!lua_istable(l, -1)) {
         // module isn't loaded, load it
-        int load_top = lua_gettop(L);
+        int load_top = lua_gettop(l);
         
         // mark this module as loading
-        lua_pushvalue(L, 1); // name of the module loaded
-        lua_pushboolean(L, false);
-        lua_settable(L, module_table_index);
+        lua_pushvalue(l, 1); // name of the module loaded
+        lua_pushboolean(l, false);
+        lua_settable(l, module_table_index);
         
         // make the full path to the desired module
-        lua_pushstring(L, tle_script_base);
-        lua_pushvalue(L, 1); // name of the module loaded
-        lua_pushstring(L, ".lua");
-        lua_concat(L, 3);
+        lua_pushstring(l, tle_script_base);
+        lua_pushvalue(l, 1); // name of the module loaded
+        lua_pushstring(l, ".lua");
+        lua_concat(l, 3);
         
         // load the module!
-        result = luaL_loadfile(L, lua_tostring(L, -1));
+        result = luaL_loadfile(l, lua_tostring(l, -1));
         if(result != 0) {
             // syntax error, file not found, or some such occurred
-            lua_error(L);
+            lua_error(l);
         }
         
         // create the environment table -- it will exist only on the stack
         // until after the module is loaded, so that module load errors won't
         // create a global
-        lua_newtable(L);
+        lua_newtable(l);
         
         // give the environment a metatable that refers back to the globals
         // table so that the default lua functions are accessible
-        lua_rawgeti(L, LUA_REGISTRYINDEX,
+        lua_rawgeti(l, LUA_REGISTRYINDEX,
             tle_lua_globals_metatable_index);
-        lua_setmetatable(L, -2); // module environment table
+        lua_setmetatable(l, -2); // module environment table
         
         // use the fresh table as the default public interface
-        lua_pushvalue(L, -1); // module environment table
-        lua_replace(L, module_interface_index);
+        lua_pushvalue(l, -1); // module environment table
+        lua_replace(l, module_interface_index);
         // and the global environment for this module
-        lua_setupvalue(L, -2, 1); // module chunk
+        lua_setupvalue(l, -2, 1); // module chunk
         
         // execute the module!
-        lua_call(L, 0, 1);
+        lua_call(l, 0, 1);
         
         // did the module specify a public interface?
-        if(!lua_isnil(L, -1)) {
+        if(!lua_isnil(l, -1)) {
             // it did! make sure it's valid
-            if(!lua_istable(L, -1)) {
-                luaL_error(L, "module returned non-table environment");
+            if(!lua_istable(l, -1)) {
+                luaL_error(l, "module returned non-table environment");
             }
-            lua_replace(L, module_interface_index);
+            lua_replace(l, module_interface_index);
         } else {
             // no useful return value, default to using the environment table
             // as the public interace
-            lua_pop(L, 1);
+            lua_pop(l, 1);
         }
         
         // we're still here, so no errors -- commit the module environment to
         // the loaded-modules table
-        lua_pushvalue(L, 1); // name of the module loaded
-        lua_pushvalue(L, module_interface_index);
-        lua_settable(L, module_table_index);
+        lua_pushvalue(l, 1); // name of the module loaded
+        lua_pushvalue(l, module_interface_index);
+        lua_settable(l, module_table_index);
         
-        lua_settop(L, load_top);
+        lua_settop(l, load_top);
     }
     
     // add the module table to the caller's environment
-    if(lua_getstack(L, 1, &ar) == 0) {
-        luaL_error(L, "unable to determine caller on import");
+    if(lua_getstack(l, 1, &ar) == 0) {
+        luaL_error(l, "unable to determine caller on import");
     }
-    lua_getinfo(L, "f", &ar);
-    if(lua_isnil(L, -1)) {
-        luaL_error(L, "no function environment in caller");
+    lua_getinfo(l, "f", &ar);
+    if(lua_isnil(l, -1)) {
+        luaL_error(l, "no function environment in caller");
     }
     // get the caller's environment table
-    lua_getupvalue(L, -1, 1); // caller function
-    lua_pushvalue(L, 1); // name of the module loaded
-    lua_pushvalue(L, module_interface_index);
+    lua_getupvalue(l, -1, 1); // caller function
+    lua_pushvalue(l, 1); // name of the module loaded
+    lua_pushvalue(l, module_interface_index);
     // add the imported module to the caller's environment
-    lua_settable(L, -3); // caller's environment table
+    lua_settable(l, -3); // caller's environment table
     
-    lua_settop(L, top);
+    lua_settop(l, top);
     
     return 1;
 }

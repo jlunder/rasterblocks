@@ -179,6 +179,8 @@ typedef struct {
     // defaults
     char configPath[PATH_MAX];
     
+    char luaPath[PATH_MAX];
+    
     RBAudioInput audioInput;
     char audioInputParam[PATH_MAX];
     
@@ -259,6 +261,57 @@ typedef struct {
     size_t numLightsPerString;
     RBColor data[RB_MAX_LIGHTS];
 } RBRawLightFrame;
+
+
+#define rbMemoryBarrier() asm volatile("": : :"memory")
+
+
+#ifdef NDEBUG
+#define rbAssert(assertExpr) do {} while(false)
+#else
+#define rbAssert(assertExpr) \
+    do { \
+        if(!(assertExpr)) { \
+            rbLog(RBLL_ERROR, __FILE__, __LINE__, \
+                "Assert fail (%s:%d): expected %s\n", \
+                __FILE__, __LINE__, #assertExpr); \
+            rbRequestImmediateRestart(); \
+        } \
+    } while(false)
+#endif
+
+#define rbVerify(verifyExpr) \
+    do { \
+        if(!(verifyExpr)) { \
+            rbLog(RBLL_ERROR, __FILE__, __LINE__, \
+                "Fatal error (%s:%d): expected %s\n", __FILE__, __LINE__, \
+                #verifyExpr); \
+            rbRequestImmediateRestart(); \
+        } \
+    } while(false)
+
+#define rbFatal(...) \
+    do { \
+        if(rbLogShouldLog(RBLL_ERROR, __FILE__, __LINE__)) { \
+            rbLog(RBLL_ERROR, __FILE__, __LINE__, "Fatal error: "); \
+            rbLogOutput(__VA_ARGS__); \
+        } \
+        rbRequestImmediateRestart(); \
+    } while(false)
+
+#ifdef NDEBUG
+#define rbDebugInfo(...) do {} while(false)
+#else
+#define rbDebugInfo(...) rbLog(RBLL_INFO, __FILE__, __LINE__, __VA_ARGS__)
+#endif
+ 
+#define rbInfo(...) rbLog(RBLL_INFO, __FILE__, __LINE__, __VA_ARGS__)
+#define rbWarning(...) rbLog(RBLL_WARNING, __FILE__, __LINE__, __VA_ARGS__)
+#define rbError(...) rbLog(RBLL_ERROR, __FILE__, __LINE__, __VA_ARGS__)
+
+#define rbInfoEnabled() rbLogShouldLog(RBLL_INFO, __FILE__, __LINE__)
+#define rbWarningEnabled() rbLogShouldLog(RBLL_WARNING, __FILE__, __LINE__)
+#define rbErrorEnabled() rbLogShouldLog(RBLL_ERROR, __FILE__, __LINE__)
 
 
 // Tell the main program which subsystem is currently running (in this thread).
@@ -384,19 +437,10 @@ static inline int rbStricmp(char const * pa, char const * pb)
 
 static inline void rbStrlcpy(char * dest, char const * src, size_t destSize)
 {
-    size_t srcSize = strlen(src) + 1;
+    size_t srcSize = strlen(src);
     
-    if(destSize <= 0) {
-        return;
-    }
-    
-    if(srcSize >= destSize) {
-        memcpy(dest, src, destSize - 1);
-        dest[destSize - 1] = '\0';
-    }
-    else {
-        memcpy(dest, src, srcSize);
-    }
+    rbVerify(srcSize < destSize);
+    memcpy(dest, src, srcSize + 1);
 }
 
 
@@ -473,57 +517,6 @@ static inline float rbRandomF(void)
     static float const randMul = 1.0f / ((float)RAND_MAX + 1.0f);
     return rand() * randMul;
 }
-
-
-#define rbMemoryBarrier() asm volatile("": : :"memory")
-
-
-#ifdef NDEBUG
-#define rbAssert(assertExpr) do {} while(false)
-#else
-#define rbAssert(assertExpr) \
-    do { \
-        if(!(assertExpr)) { \
-            rbLog(RBLL_ERROR, __FILE__, __LINE__, \
-                "Assert fail (%s:%d): expected %s\n", \
-                __FILE__, __LINE__, #assertExpr); \
-            rbRequestImmediateRestart(); \
-        } \
-    } while(false)
-#endif
-
-#define rbVerify(verifyExpr) \
-    do { \
-        if(!(verifyExpr)) { \
-            rbLog(RBLL_ERROR, __FILE__, __LINE__, \
-                "Fatal error (%s:%d): expected %s\n", __FILE__, __LINE__, \
-                #verifyExpr); \
-            rbRequestImmediateRestart(); \
-        } \
-    } while(false)
-
-#define rbFatal(...) \
-    do { \
-        if(rbLogShouldLog(RBLL_ERROR, __FILE__, __LINE__)) { \
-            rbLog(RBLL_ERROR, __FILE__, __LINE__, "Fatal error: "); \
-            rbLogOutput(__VA_ARGS__); \
-        } \
-        rbRequestImmediateRestart(); \
-    } while(false)
-
-#ifdef NDEBUG
-#define rbDebugInfo(...) do {} while(false)
-#else
-#define rbDebugInfo(...) rbLog(RBLL_INFO, __FILE__, __LINE__, __VA_ARGS__)
-#endif
- 
-#define rbInfo(...) rbLog(RBLL_INFO, __FILE__, __LINE__, __VA_ARGS__)
-#define rbWarning(...) rbLog(RBLL_WARNING, __FILE__, __LINE__, __VA_ARGS__)
-#define rbError(...) rbLog(RBLL_ERROR, __FILE__, __LINE__, __VA_ARGS__)
-
-#define rbInfoEnabled() rbLogShouldLog(RBLL_INFO, __FILE__, __LINE__)
-#define rbWarningEnabled() rbLogShouldLog(RBLL_WARNING, __FILE__, __LINE__)
-#define rbErrorEnabled() rbLogShouldLog(RBLL_ERROR, __FILE__, __LINE__)
 
 
 // Framework: coordinates all the other subsystems

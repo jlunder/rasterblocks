@@ -5,7 +5,8 @@
 #include "rasterblocks.h"
 
 
-extern void rbLuaInitialize(void);
+extern void rbLuaInitialize(RBConfiguration * pConfig);
+extern void rbLuaShutdown(void);
 
 
 #endif // ROTTERBOX_LUA_H
