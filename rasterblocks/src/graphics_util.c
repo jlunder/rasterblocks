@@ -287,17 +287,22 @@ RBColor rbColorMixF(RBColor a, float aAlpha, RBColor b, float bAlpha)
 
 RBTexture1 * rbTexture1Alloc(size_t width)
 {
-    size_t size = sizeof (RBTexture1) + width * sizeof (RBColor);
+    size_t size = rbTexture1ComputeSize(width);
     RBTexture1 * pTex = malloc(size);
     
+    rbTexture1Construct(pTex, width);
+    
+    return pTex;
+}
+
+
+void rbTexture1Construct(RBTexture1 * pTex, size_t width)
+{
     rbAssert(width <= RB_MAX_REASONABLE_SIZE);
     rbAssert(width > 0);
     
     pTex->width = width;
-    pTex->size = width;
     rbZero(pTex->data, pTex->size * sizeof (RBColor));
-    
-    return pTex;
 }
 
 
@@ -447,10 +452,18 @@ void rbTexture1FillFromPiecewiseLinear(RBTexture1 * pTex,
 
 RBTexture2 * rbTexture2Alloc(size_t width, size_t height)
 {
-    size_t stride = (width + 1 + 3) & (~3);
-    size_t size = sizeof (RBTexture2) +
-        (stride) * (height + 1) * sizeof (RBColor);
+    size_t size = rbTexture2ComputeSize(width, height);
     RBTexture2 * pTex = malloc(size);
+    
+    rbTexture2Construct(pTex, width, height);
+    
+    return pTex;
+}
+
+
+void rbTexture2Construct(RBTexture2 * pTex, size_t width, size_t height)
+{
+    size_t stride = rbTexture2ComputeStride(width, height);
     
     rbAssert(width <= RB_MAX_REASONABLE_SIZE);
     rbAssert(width > 0);
@@ -462,8 +475,6 @@ RBTexture2 * rbTexture2Alloc(size_t width, size_t height)
     pTex->stride = stride;
     pTex->size = stride * height;
     rbZero(pTex->data, pTex->size * sizeof (RBColor));
-    
-    return pTex;
 }
 
 

@@ -6,6 +6,7 @@
 #include <ctype.h>
 #include <limits.h>
 #include <math.h>
+#include <setjmp.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -13,6 +14,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#include "lua/lauxlib.h"
+#include "lua/lua.h"
+#include "lua/lualib.h"
 
 
 #define UNUSED(x) (void)(x)

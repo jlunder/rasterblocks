@@ -77,15 +77,14 @@ else
 all: bin/rasterblocks
 endif
 
-RASTERBLOCKS_SRC := $(basename $(notdir $(wildcard src/*.c)))
+RASTERBLOCKS_SRC := \
+	$(basename $(notdir $(wildcard src/*.c))) \
+	$(addprefix lua__,$(basename $(notdir $(wildcard src/lua/*.c))))
 
 RASTERBLOCKS_O := $(addprefix build/,$(addsuffix .o, $(RASTERBLOCKS_SRC)))
 RASTERBLOCKS_D := $(addprefix build/,$(addsuffix .d, $(RASTERBLOCKS_SRC)))
 
-src/icons.h: $(wildcard icons/[0-9][0-9]*)
-	python make-icons.py $(wildcard icons/[0-9][0-9]*)
-
-build/%.d: src/%.c src/icons.h
+build/%.d: src/%.c
 	@mkdir -p build
 	@$(MAKEDEPEND)
 
@@ -142,7 +141,7 @@ RASTERBLOCKS_O_TARGET_DEBUG := $(addprefix build/,$(addsuffix .target-debug.o, $
 RASTERBLOCKS_D_TARGET := $(addprefix build/,$(addsuffix .target.d, $(RASTERBLOCKS_SRC)))
 
 
-build/%.target.d: src/%.c src/icons.h src/pruss_io_pru0_bin.h src/pruss_io_pru1_bin.h
+build/%.target.d: src/%.c src/pruss_io_pru0_bin.h src/pruss_io_pru1_bin.h
 	@mkdir -p build
 	@$(MAKEDEPEND_TARGET)
 
@@ -165,7 +164,17 @@ build/%.target.o: src/%.c
 	@$(MAKEDEPEND_TARGET)
 	$(CC_TARGET) -c -g $(CFLAGS_TARGET) -o $@ $(CPPFLAGS_TARGET) $<
 
+build/lua__%.target.o: src/lua/%.c
+	@mkdir -p build
+	@$(MAKEDEPEND_TARGET)
+	$(CC_TARGET) -c -g $(CFLAGS_TARGET) -o $@ $(CPPFLAGS_TARGET) $<
+
 build/%.target-debug.o: src/%.c
+	@mkdir -p build
+	@$(MAKEDEPEND_TARGET)
+	$(CC_TARGET) -c -g $(CFLAGS_TARGET_DEBUG) -o $@ $(CPPFLAGS_TARGET) $<
+
+build/lua__%.target-debug.o: src/lua/%.c
 	@mkdir -p build
 	@$(MAKEDEPEND_TARGET)
 	$(CC_TARGET) -c -g $(CFLAGS_TARGET_DEBUG) -o $@ $(CPPFLAGS_TARGET) $<
@@ -245,5 +254,4 @@ cleanall: clean
 
 clean: clean-dtc
 	@rm -rf build/* bin/*
-	@rm -f src/icons.h
 

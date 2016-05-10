@@ -247,7 +247,11 @@ static inline RBColorTemp rbColorTempClamp(RBColorTemp c)
         rbClampF(c.z, 0.0f, 1.0f), rbClampF(c.w, 0.0f, 1.0f));
 }
 
+static inline size_t rbTexture1ComputeSize(size_t width) {
+    return sizeof (RBTexture1) + width * sizeof (RBColor);
+}
 RBTexture1 * rbTexture1Alloc(size_t width);
+void rbTexture1Construct(RBTexture1 * pTex, size_t width);
 void rbTexture1Free(RBTexture1 * pTex);
 static inline size_t rbTexture1GetWidth(RBTexture1 const * pTex)
     { return pTex->width; }
@@ -272,7 +276,18 @@ RBColorTemp rbTexture1SampleLinearClamp(RBTexture1 const * pTex, float tc);
 void rbTexture1FillFromPiecewiseLinear(RBTexture1 * pTex,
     RBPiecewiseLinearColorSegment * pSegments, size_t count, bool repeat);
 
+static inline size_t rbTexture2ComputeStride(size_t width, size_t height) {
+    (void)height;
+    return (width + 1 + 3) & (~3);
+}
+
+static inline size_t rbTexture2ComputeSize(size_t width, size_t height) {
+    size_t stride = rbTexture2ComputeStride(width, height);
+    return sizeof (RBTexture2) + (stride) * (height + 1) * sizeof (RBColor);
+}
+
 RBTexture2 * rbTexture2Alloc(size_t width, size_t height);
+void rbTexture2Construct(RBTexture2 * pTex, size_t width, size_t height);
 void rbTexture2Free(RBTexture2 * pTex);
 static inline size_t rbTexture2GetWidth(RBTexture2 const * pTex)
     { return pTex->width; }
