@@ -302,6 +302,7 @@ void rbTexture1Construct(RBTexture1 * pTex, size_t width)
     rbAssert(width > 0);
     
     pTex->width = width;
+    pTex->size = width;
     rbZero(pTex->data, pTex->size * sizeof (RBColor));
 }
 

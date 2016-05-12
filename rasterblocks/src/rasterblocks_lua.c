@@ -15,38 +15,36 @@
 
 int rbLuaRegisterTypes(lua_State * l);
 
-int rbLuaPrint(lua_State * l);
+static int rbLuaPrint(lua_State * l);
+static int rbLuaPaletteFromPwl(lua_State * l);
 
-int rbLuaSet(lua_State * l);
-int rbLuaPrint(lua_State * l);
+/*
+static int rbLuaLightGenerationCompositorAlloc(lua_State * l);
+static int rbLuaLightGenerationStaticImageAlloc(lua_State * l);
+static int rbLuaLightGenerationImageFilterAlloc(lua_State * l);
+static int rbLuaLightGenerationRescaleAlloc(lua_State * l);
+static int rbLuaLightGenerationTimedRotationAlloc(lua_State * l);
+static int rbLuaLightGenerationControllerSelectAlloc(lua_State * l);
+static int rbLuaLightGenerationControllerFadeAlloc(lua_State * l);
+static int rbLuaLightGenerationTriggerFlashAlloc(lua_State * l);
+static int rbLuaLightGenerationPlasmaAlloc(lua_State * l);
+static int rbLuaLightGenerationBeatFlashAlloc(lua_State * l);
+static int rbLuaLightGenerationPulsePlasmaAlloc(lua_State * l);
+static int rbLuaLightGenerationPulseGridAlloc(lua_State * l);
+static int rbLuaLightGenerationDashedCirclesAlloc(lua_State * l);
+static int rbLuaLightGenerationSmokeSignalsAlloc(lua_State * l);
+static int rbLuaLightGenerationFireworksAlloc(lua_State * l);
+static int rbLuaLightGenerationVerticalBarsAlloc(lua_State * l);
+static int rbLuaLightGenerationCriscrossAlloc(lua_State * l);
+static int rbLuaLightGenerationVolumeBarsAlloc(lua_State * l);
+static int rbLuaLightGenerationBeatStarsAlloc(lua_State * l);
+static int rbLuaLightGenerationIconCheckerboardAlloc(lua_State * l);
+static int rbLuaLightGenerationPulseCheckerboardAlloc(lua_State * l);
+static int rbLuaLightGenerationParticleLissajousAlloc(lua_State * l);
+static int rbLuaLightGenerationSignalLissajousAlloc(lua_State * l);
+static int rbLuaLightGenerationOscilloscopeAlloc(lua_State * l);
+*/
 
-int rbLuaLightGenerationCompositorAlloc(lua_State * l);
-int rbLuaLightGenerationStaticImageAlloc(lua_State * l);
-int rbLuaLightGenerationImageFilterAlloc(lua_State * l);
-int rbLuaLightGenerationRescaleAlloc(lua_State * l);
-int rbLuaLightGenerationTimedRotationAlloc(lua_State * l);
-int rbLuaLightGenerationControllerSelectAlloc(lua_State * l);
-int rbLuaLightGenerationControllerFadeAlloc(lua_State * l);
-int rbLuaLightGenerationTriggerFlashAlloc(lua_State * l);
-int rbLuaLightGenerationPlasmaAlloc(lua_State * l);
-int rbLuaLightGenerationBeatFlashAlloc(lua_State * l);
-int rbLuaLightGenerationPulsePlasmaAlloc(lua_State * l);
-int rbLuaLightGenerationPulseGridAlloc(lua_State * l);
-int rbLuaLightGenerationDashedCirclesAlloc(lua_State * l);
-int rbLuaLightGenerationSmokeSignalsAlloc(lua_State * l);
-int rbLuaLightGenerationFireworksAlloc(lua_State * l);
-int rbLuaLightGenerationVerticalBarsAlloc(lua_State * l);
-int rbLuaLightGenerationCriscrossAlloc(lua_State * l);
-int rbLuaLightGenerationVolumeBarsAlloc(lua_State * l);
-int rbLuaLightGenerationBeatStarsAlloc(lua_State * l);
-int rbLuaLightGenerationIconCheckerboardAlloc(lua_State * l);
-int rbLuaLightGenerationPulseCheckerboardAlloc(lua_State * l);
-int rbLuaLightGenerationParticleLissajousAlloc(lua_State * l);
-int rbLuaLightGenerationSignalLissajousAlloc(lua_State * l);
-int rbLuaLightGenerationOscilloscopeAlloc(lua_State * l);
-
-
-// RBLightGenerator
 
 static int tle_RBColor_metatable_index;
 static int tle_RBTime_metatable_index;
@@ -59,6 +57,23 @@ static int tle_RBTime_eq(lua_State * l);
 static int tle_RBTime_lt(lua_State * l);
 static int tle_RBTime_le(lua_State * l);
 
+static bool tle_is_RBColor(lua_State * l, int idx);
+static RBColor tle_to_RBColor(lua_State * l, int idx);
+static void tle_push_RBColor(lua_State * l, RBColor value);
+static bool tle_eq_RBColor_RBColor(lua_State * l, RBColor x, RBColor y);
+static bool tle_is_RBTime(lua_State * l, int idx);
+static RBTime tle_to_RBTime(lua_State * l, int idx);
+static void tle_push_RBTime(lua_State * l, RBTime value);
+static bool tle_eq_RBTime_RBTime(lua_State * l, RBTime x, RBTime y);
+static bool tle_lt_RBTime_RBTime(lua_State * l, RBTime x, RBTime y);
+static bool tle_le_RBTime_RBTime(lua_State * l, RBTime x, RBTime y);
+static bool tle_is_RBTexture1(lua_State * l, int idx);
+static RBTexture1 * tle_to_RBTexture1(lua_State * l, int idx);
+static void tle_push_RBTexture1(lua_State * l, RBTexture1 * value);
+static bool tle_is_RBTexture2(lua_State * l, int idx);
+static RBTexture2 * tle_to_RBTexture2(lua_State * l, int idx);
+static void tle_push_RBTexture2(lua_State * l, RBTexture2 * value);
+
 
 void rbLuaInitialize(RBConfiguration * pConfig)
 {
@@ -66,6 +81,15 @@ void rbLuaInitialize(RBConfiguration * pConfig)
     lua_pushcfunction(tle_state, rbLuaRegisterTypes);
     rbVerify(tle_pcall(tle_state, 0, 0, false) == 0);
     tle_dostring(tle_state, "include('display.lua')", true);
+    
+    (void)tle_push_RBColor;
+    (void)tle_push_RBTime;
+    (void)tle_is_RBTexture1;
+    (void)tle_to_RBTexture1;
+    (void)tle_push_RBTexture1;
+    (void)tle_is_RBTexture2;
+    (void)tle_to_RBTexture2;
+    (void)tle_push_RBTexture2;
 }
 
 
@@ -102,8 +126,28 @@ int rbLuaRegisterTypes(lua_State * l)
     lua_newtable(l);
     lua_pushcfunction(l, rbLuaPrint);
     lua_setfield(l, -2, "print");
-    //lua_pushcfunction(l, rb_);
-    //lua_setfield(l, -2, "_");
+    lua_pushcfunction(l, rbLuaPaletteFromPwl);
+    lua_setfield(l, -2, "palette_from_pwl");
+    /*
+    lua_pushcfunction(l, rbLua);
+    lua_setfield(l, -2, "");
+    lua_pushcfunction(l, rbLua);
+    lua_setfield(l, -2, "");
+    lua_pushcfunction(l, rbLua);
+    lua_setfield(l, -2, "");
+    lua_pushcfunction(l, rbLua);
+    lua_setfield(l, -2, "");
+    lua_pushcfunction(l, rbLua);
+    lua_setfield(l, -2, "");
+    lua_pushcfunction(l, rbLua);
+    lua_setfield(l, -2, "");
+    lua_pushcfunction(l, rbLua);
+    lua_setfield(l, -2, "");
+    lua_pushcfunction(l, rbLua);
+    lua_setfield(l, -2, "");
+    lua_pushcfunction(l, rbLua);
+    lua_setfield(l, -2, "");
+    */
     lua_setglobal(l, "rb");
 
     lua_settop(l, top);
@@ -123,6 +167,75 @@ int rbLuaPrint(lua_State * l)
     lua_settop(l, top);
 
     return 0;
+}
+
+
+int rbLuaPaletteFromPwl(lua_State * l)
+{
+    //int top = lua_gettop(l);
+    int n;
+
+    luaL_checktype(l, 1, LUA_TTABLE);
+    lua_len(l, 1);
+    n = (int)luaL_checknumber(l, -1);
+    lua_pop(l, 1);
+    
+    {
+        size_t texWidth = 256;
+        RBPiecewiseLinearColorSegment pwl[n];
+        size_t size = rbTexture1ComputeSize(texWidth);
+        RBTexture1 * pTex;
+        
+        // Iterate array, pull elements into PWL array
+        for(int i = 1; i <= n; ++i) {
+            int top2 = lua_gettop(l);
+            int pwlTable, colorTable;
+            
+            lua_rawgeti(l, 1, i); // get PWL table from param
+            pwlTable = lua_gettop(l);
+            luaL_checktype(l, pwlTable, LUA_TTABLE);
+            
+            lua_rawgeti(l, pwlTable, 1); // get color table from PWL
+            colorTable = lua_gettop(l);
+            luaL_checktype(l, colorTable, LUA_TTABLE);
+            
+            lua_rawgeti(l, colorTable, 1); // get r from color
+            lua_rawgeti(l, colorTable, 2); // get g from color
+            lua_rawgeti(l, colorTable, 3); // get b from color
+            lua_rawgeti(l, colorTable, 4); // get a from color
+            pwl[i - 1].color.r = (uint8_t)rbClampF(
+                (float)luaL_checknumber(l, -4) * 256.0f, 0, 255);
+            pwl[i - 1].color.g = (uint8_t)rbClampF(
+                (float)luaL_checknumber(l, -3) * 256.0f, 0, 255);
+            pwl[i - 1].color.b = (uint8_t)rbClampF(
+                (float)luaL_checknumber(l, -2) * 256.0f, 0, 255);
+            pwl[i - 1].color.a = (uint8_t)rbClampF(
+                (float)luaL_checknumber(l, -1) * 256.0f, 0, 255);
+            
+            lua_rawgeti(l, pwlTable, 2); // get length of pwl element
+            pwl[i - 1].length = (size_t)luaL_checknumber(l, -1);
+            
+            lua_settop(l, top2);
+        }
+        
+        // Create and fill the texture
+        pTex = (RBTexture1 *)lua_newuserdata(l, size);
+        if(pTex == NULL) {
+            luaL_error(l, "lua_newuserdata returned NULL in "
+                "tle_push_RBTexture1");
+        }
+        lua_rawgeti(l, LUA_REGISTRYINDEX, tle_RBTexture1_metatable_index);
+        lua_setmetatable(l, -2);
+        rbTexture1Construct(pTex, texWidth);
+        rbTexture1FillFromPiecewiseLinear(pTex, pwl, LENGTHOF(pwl), false);
+        
+        for(size_t i = 0; i < 256; ++i) {
+            RBColor c = rbTexture1GetTexel(pTex, i);
+            printf("%3d: %3d %3d %3d %3d\n", i, c.r, c.g, c.b, c.a);
+        }
+        
+        return 1;
+    }
 }
 
 
