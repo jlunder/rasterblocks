@@ -1,24 +1,29 @@
-rb.print("hello world");
-
 pal_black_red_gold_white_fs = rb.palette_from_pwl({
-    {{0.00, 0.00, 0.00, 1}, 2},
-    {{0.25, 0.00, 0.00, 1}, 2},
-    {{0.50, 0.12, 0.00, 1}, 2},
-    {{1.00, 0.25, 0.00, 1}, 1},
-    {{1.00, 0.50, 0.00, 1}, 1},
-    {{1.00, 1.00, 0.00, 1}, 1},
-    {{1.00, 1.00, 1.00, 1}, 0},
+    {rb.color(0.00, 0.00, 0.00, 1), 2},
+    {rb.color(0.25, 0.00, 0.00, 1), 2},
+    {rb.color(0.50, 0.12, 0.00, 1), 2},
+    {rb.color(1.00, 0.25, 0.00, 1), 1},
+    {rb.color(1.00, 0.50, 0.00, 1), 1},
+    {rb.color(1.00, 1.00, 0.00, 1), 1},
+    {rb.color(1.00, 1.00, 1.00, 1), 0},
 })
 
 --pal_black_red_gold_white_fs_alpha = rb.alpha_palette_from_palette(pal_black_red_gold_white_fs)
 
 pal_black_blue_green_white_fs = rb.palette_from_pwl({
-    {{0.00, 0.00, 0.00, 1}, 1},
-    {{0.00, 0.25, 1.00, 1}, 1},
-    {{0.50, 0.00, 0.25, 1}, 1},
-    {{0.00, 1.00, 0.25, 1}, 1},
-    {{1.00, 1.00, 1.00, 1}, 0},
+    {rb.color(0.00, 0.00, 0.00, 1), 1},
+    {rb.color(0.00, 0.25, 1.00, 1), 1},
+    {rb.color(0.50, 0.00, 0.25, 1), 1},
+    {rb.color(0.00, 1.00, 0.25, 1), 1},
+    {rb.color(1.00, 1.00, 1.00, 1), 0},
 })
+
+rb.set_generator(
+    rb.gen_compositor(
+        rb.gen_pulse_checkerboard(rb.color(1, .5, .5)),        
+        rb.gen_oscilloscope(rb.color(1, 1, 1))        
+    )
+)
 
 --pal_black_blue_green_white_fs_alpha = rb.alpha_palette_from_palette(pal_black_blue_green_white_fs)
 

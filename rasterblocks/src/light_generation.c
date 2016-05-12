@@ -42,9 +42,6 @@ void rbLightGenerationGenerate(RBAnalyzedAudio const * pAnalysis,
 
 void rbLightGenerationSetGenerator(RBLightGenerator * pGenerator)
 {
-    if(g_rbPCurrentGenerator != NULL) {
-        rbLightGenerationGeneratorFree(g_rbPCurrentGenerator);
-    }
     g_rbPCurrentGenerator = pGenerator;
 }
 

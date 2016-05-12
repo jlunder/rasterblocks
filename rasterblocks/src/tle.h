@@ -15,6 +15,14 @@ extern int tle_dostring(lua_State * l, char const * code, bool newenv);
 extern int tle_dofile(lua_State * l, char const * path, bool newenv);
 extern int tle_pcall(lua_State * l, int nargs, int nresults, bool newenv);
 
+#define tle_verify(l, expr) \
+    do { \
+        if(!(expr)) { \
+            luaL_error(l, "tle_verify fail: expected " #expr); \
+        } \
+    } while(0)
+
+
 // witness my macro-fu. this is terrifying and yet compellingly convenient...
 
 
@@ -27,6 +35,15 @@ static int wrapper_name(lua_State * l)\
     return 1;\
 }\
 /* end define TLE_MAKE_WRAPPER_0 */
+
+
+#define TLE_MAKE_WRAPPER_0_VOID(wrapper_name, call_through)\
+static int wrapper_name(lua_State * l)\
+{\
+    call_through(l);\
+    return 0;\
+}\
+/* end define TLE_MAKE_WRAPPER_0_VOID */
 
 
 #define TLE_MAKE_WRAPPER_1(wrapper_name, return_type, parameter_1_type,\
@@ -45,6 +62,20 @@ static int wrapper_name(lua_State * l)\
 /* end define TLE_MAKE_WRAPPER_1 */
 
 
+#define TLE_MAKE_WRAPPER_1_VOID(wrapper_name, parameter_1_type,\
+    call_through)\
+static int wrapper_name(lua_State * l)\
+{\
+    parameter_1_type parameter_1;\
+    luaL_argcheck(l, tle_is_##parameter_1_type(l, 1), 1,\
+        "expected " #parameter_1_type);\
+    parameter_1 = tle_to_##parameter_1_type(l, 1);\
+    call_through(l, parameter_1);\
+    return 0;\
+}\
+/* end define TLE_MAKE_WRAPPER_1_VOID */
+
+
 #define TLE_MAKE_WRAPPER_2(wrapper_name, return_type, parameter_1_type,\
     parameter_2_type, call_through)\
 static int wrapper_name(lua_State * l)\
@@ -61,6 +92,25 @@ static int wrapper_name(lua_State * l)\
     result = call_through(l, parameter_1, parameter_2);\
     tle_push_##return_type(l, result);\
     return 1;\
+}\
+/* end define TLE_MAKE_WRAPPER_2 */
+
+
+#define TLE_MAKE_WRAPPER_2_VOID(wrapper_name, return_type, parameter_1_type,\
+    parameter_2_type, call_through)\
+static int wrapper_name(lua_State * l)\
+{\
+    parameter_1_type parameter_1;\
+    parameter_2_type parameter_2;\
+    luaL_argcheck(l, tle_is_##parameter_1_type(l, 1), 1,\
+        "expected " #parameter_1_type);\
+    luaL_argcheck(l, tle_is_##parameter_2_type(l, 2), 2,\
+        "expected " #parameter_2_type);\
+    parameter_1 = tle_to_##parameter_1_type(l, 1);\
+    parameter_2 = tle_to_##parameter_2_type(l, 2);\
+    call_through(l, parameter_1, parameter_2);\
+    tle_push_##return_type(l, result);\
+    return 0;\
 }\
 /* end define TLE_MAKE_WRAPPER_2 */
 

@@ -1,26 +1,32 @@
 #include "rasterblocks_lua.h"
 
 #include "graphics_util.h"
+#include "light_generation.h"
 #include "tle.h"
 
 
-// Bindings for:
-// - tgui types: point, size, rect, event, widgetid, fontid
-// - widget functions
-// - draw functions
-// - event handling wrappers: call through to lua handlers?
-// - draw handlers: widget toolkit
-//   - button, label... table?
+typedef RBLightGenerator * PRBLightGenerator;
+
+
+static int tle_RBColor_metatable_index;
+static int tle_RBTime_metatable_index;
+static int tle_RBTexture1_metatable_index;
+static int tle_RBTexture2_metatable_index;
+static int tle_PRBLightGenerator_metatable_index;
 
 
 int rbLuaRegisterTypes(lua_State * l);
 
 static int rbLuaPrint(lua_State * l);
-static int rbLuaPaletteFromPwl(lua_State * l);
 
-/*
+static int rbLuaPaletteFromPwl(lua_State * l);
+static int rbLuaColor(lua_State * l);
+
+static int rbLuaLightGenerationSetGenerator(lua_State * l);
+
 static int rbLuaLightGenerationCompositorAlloc(lua_State * l);
 static int rbLuaLightGenerationStaticImageAlloc(lua_State * l);
+/*
 static int rbLuaLightGenerationImageFilterAlloc(lua_State * l);
 static int rbLuaLightGenerationRescaleAlloc(lua_State * l);
 static int rbLuaLightGenerationTimedRotationAlloc(lua_State * l);
@@ -37,43 +43,46 @@ static int rbLuaLightGenerationFireworksAlloc(lua_State * l);
 static int rbLuaLightGenerationVerticalBarsAlloc(lua_State * l);
 static int rbLuaLightGenerationCriscrossAlloc(lua_State * l);
 static int rbLuaLightGenerationVolumeBarsAlloc(lua_State * l);
+*/
 static int rbLuaLightGenerationBeatStarsAlloc(lua_State * l);
 static int rbLuaLightGenerationIconCheckerboardAlloc(lua_State * l);
 static int rbLuaLightGenerationPulseCheckerboardAlloc(lua_State * l);
 static int rbLuaLightGenerationParticleLissajousAlloc(lua_State * l);
 static int rbLuaLightGenerationSignalLissajousAlloc(lua_State * l);
 static int rbLuaLightGenerationOscilloscopeAlloc(lua_State * l);
-*/
 
-
-static int tle_RBColor_metatable_index;
-static int tle_RBTime_metatable_index;
-static int tle_RBTexture1_metatable_index;
-static int tle_RBTexture2_metatable_index;
-
-static int tle_RBColor_eq(lua_State * l);
-
-static int tle_RBTime_eq(lua_State * l);
-static int tle_RBTime_lt(lua_State * l);
-static int tle_RBTime_le(lua_State * l);
 
 static bool tle_is_RBColor(lua_State * l, int idx);
 static RBColor tle_to_RBColor(lua_State * l, int idx);
 static void tle_push_RBColor(lua_State * l, RBColor value);
 static bool tle_eq_RBColor_RBColor(lua_State * l, RBColor x, RBColor y);
+
+static int tle_RBColor_eq(lua_State * l);
+
 static bool tle_is_RBTime(lua_State * l, int idx);
 static RBTime tle_to_RBTime(lua_State * l, int idx);
 static void tle_push_RBTime(lua_State * l, RBTime value);
 static bool tle_eq_RBTime_RBTime(lua_State * l, RBTime x, RBTime y);
 static bool tle_lt_RBTime_RBTime(lua_State * l, RBTime x, RBTime y);
 static bool tle_le_RBTime_RBTime(lua_State * l, RBTime x, RBTime y);
+
+static int tle_RBTime_eq(lua_State * l);
+static int tle_RBTime_lt(lua_State * l);
+static int tle_RBTime_le(lua_State * l);
+
 static bool tle_is_RBTexture1(lua_State * l, int idx);
 static RBTexture1 * tle_to_RBTexture1(lua_State * l, int idx);
 static void tle_push_RBTexture1(lua_State * l, RBTexture1 * value);
+
 static bool tle_is_RBTexture2(lua_State * l, int idx);
 static RBTexture2 * tle_to_RBTexture2(lua_State * l, int idx);
 static void tle_push_RBTexture2(lua_State * l, RBTexture2 * value);
 
+static bool tle_is_PRBLightGenerator(lua_State * l, int idx);
+static RBLightGenerator * tle_to_PRBLightGenerator(lua_State * l, int idx);
+static void tle_push_PRBLightGenerator(lua_State * l, RBLightGenerator * value);
+
+static int tle_PRBLightGenerator_gc(lua_State * l);
 
 void rbLuaInitialize(RBConfiguration * pConfig)
 {
@@ -95,6 +104,8 @@ void rbLuaInitialize(RBConfiguration * pConfig)
 
 void rbLuaShutdown(void)
 {
+    rbLightGenerationSetGenerator(NULL);
+    
     tle_finalize();
 }
 
@@ -124,17 +135,70 @@ int rbLuaRegisterTypes(lua_State * l)
     tle_RBTexture2_metatable_index = luaL_ref(l, LUA_REGISTRYINDEX);
     
     lua_newtable(l);
+    lua_pushcfunction(l, tle_PRBLightGenerator_gc);
+    lua_setfield(l, -2, "__gc");
+    tle_PRBLightGenerator_metatable_index = luaL_ref(l, LUA_REGISTRYINDEX);
+    
+    lua_newtable(l);
     lua_pushcfunction(l, rbLuaPrint);
     lua_setfield(l, -2, "print");
     lua_pushcfunction(l, rbLuaPaletteFromPwl);
     lua_setfield(l, -2, "palette_from_pwl");
+    lua_pushcfunction(l, rbLuaColor);
+    lua_setfield(l, -2, "color");
+    lua_pushcfunction(l, rbLuaLightGenerationSetGenerator);
+    lua_setfield(l, -2, "set_generator");
+    lua_pushcfunction(l, rbLuaLightGenerationCompositorAlloc);
+    lua_setfield(l, -2, "gen_compositor");
+    lua_pushcfunction(l, rbLuaLightGenerationStaticImageAlloc);
+    lua_setfield(l, -2, "gen_static_image");
     /*
-    lua_pushcfunction(l, rbLua);
-    lua_setfield(l, -2, "");
-    lua_pushcfunction(l, rbLua);
-    lua_setfield(l, -2, "");
-    lua_pushcfunction(l, rbLua);
-    lua_setfield(l, -2, "");
+    lua_pushcfunction(l, rbLuaLightGenerationImageFilterAlloc);
+    lua_setfield(l, -2, "gen_image_filter");
+    lua_pushcfunction(l, rbLuaLightGenerationRescaleAlloc);
+    lua_setfield(l, -2, "gen_rescale");
+    lua_pushcfunction(l, rbLuaLightGenerationTimedRotationAlloc);
+    lua_setfield(l, -2, "gen_timed_rotation");
+    lua_pushcfunction(l, rbLuaLightGenerationControllerSelectAlloc);
+    lua_setfield(l, -2, "gen_controller_select");
+    lua_pushcfunction(l, rbLuaLightGenerationControllerFadeAlloc);
+    lua_setfield(l, -2, "gen_controller_fade");
+    lua_pushcfunction(l, rbLuaLightGenerationTriggerFlashAlloc);
+    lua_setfield(l, -2, "gen_trigger_flash");
+    lua_pushcfunction(l, rbLuaLightGenerationPlasmaAlloc);
+    lua_setfield(l, -2, "gen_plasma");
+    lua_pushcfunction(l, rbLuaLightGenerationBeatFlashAlloc);
+    lua_setfield(l, -2, "gen_beat_flash");
+    lua_pushcfunction(l, rbLuaLightGenerationPulsePlasmaAlloc);
+    lua_setfield(l, -2, "gen_pulse_plasma");
+    lua_pushcfunction(l, rbLuaLightGenerationPulseGridAlloc);
+    lua_setfield(l, -2, "gen_pulse_grid");
+    lua_pushcfunction(l, rbLuaLightGenerationDashedCirclesAlloc);
+    lua_setfield(l, -2, "gen_dashed_circles");
+    lua_pushcfunction(l, rbLuaLightGenerationSmokeSignalsAlloc);
+    lua_setfield(l, -2, "gen_smoke_signals");
+    lua_pushcfunction(l, rbLuaLightGenerationFireworksAlloc);
+    lua_setfield(l, -2, "gen_fireworks");
+    lua_pushcfunction(l, rbLuaLightGenerationVerticalBarsAlloc);
+    lua_setfield(l, -2, "gen_vertical_bars");
+    lua_pushcfunction(l, rbLuaLightGenerationCriscrossAlloc);
+    lua_setfield(l, -2, "gen_criscross");
+    lua_pushcfunction(l, rbLuaLightGenerationVolumeBarsAlloc);
+    lua_setfield(l, -2, "gen_volume_bars");
+    */
+    lua_pushcfunction(l, rbLuaLightGenerationBeatStarsAlloc);
+    lua_setfield(l, -2, "gen_beat_stars");
+    lua_pushcfunction(l, rbLuaLightGenerationIconCheckerboardAlloc);
+    lua_setfield(l, -2, "gen_icon_checkerboard");
+    lua_pushcfunction(l, rbLuaLightGenerationPulseCheckerboardAlloc);
+    lua_setfield(l, -2, "gen_pulse_checkerboard");
+    lua_pushcfunction(l, rbLuaLightGenerationParticleLissajousAlloc);
+    lua_setfield(l, -2, "gen_particle_lissajous");
+    lua_pushcfunction(l, rbLuaLightGenerationSignalLissajousAlloc);
+    lua_setfield(l, -2, "gen_signal_lissajous");
+    lua_pushcfunction(l, rbLuaLightGenerationOscilloscopeAlloc);
+    lua_setfield(l, -2, "gen_oscilloscope");
+    /*
     lua_pushcfunction(l, rbLua);
     lua_setfield(l, -2, "");
     lua_pushcfunction(l, rbLua);
@@ -172,7 +236,6 @@ int rbLuaPrint(lua_State * l)
 
 int rbLuaPaletteFromPwl(lua_State * l)
 {
-    //int top = lua_gettop(l);
     int n;
 
     luaL_checktype(l, 1, LUA_TTABLE);
@@ -189,28 +252,16 @@ int rbLuaPaletteFromPwl(lua_State * l)
         // Iterate array, pull elements into PWL array
         for(int i = 1; i <= n; ++i) {
             int top2 = lua_gettop(l);
-            int pwlTable, colorTable;
+            int pwlTable;
             
-            lua_rawgeti(l, 1, i); // get PWL table from param
+            lua_rawgeti(l, 1, i); // get PWL entry table from param
             pwlTable = lua_gettop(l);
             luaL_checktype(l, pwlTable, LUA_TTABLE);
             
             lua_rawgeti(l, pwlTable, 1); // get color table from PWL
-            colorTable = lua_gettop(l);
-            luaL_checktype(l, colorTable, LUA_TTABLE);
-            
-            lua_rawgeti(l, colorTable, 1); // get r from color
-            lua_rawgeti(l, colorTable, 2); // get g from color
-            lua_rawgeti(l, colorTable, 3); // get b from color
-            lua_rawgeti(l, colorTable, 4); // get a from color
-            pwl[i - 1].color.r = (uint8_t)rbClampF(
-                (float)luaL_checknumber(l, -4) * 256.0f, 0, 255);
-            pwl[i - 1].color.g = (uint8_t)rbClampF(
-                (float)luaL_checknumber(l, -3) * 256.0f, 0, 255);
-            pwl[i - 1].color.b = (uint8_t)rbClampF(
-                (float)luaL_checknumber(l, -2) * 256.0f, 0, 255);
-            pwl[i - 1].color.a = (uint8_t)rbClampF(
-                (float)luaL_checknumber(l, -1) * 256.0f, 0, 255);
+            luaL_argcheck(l, tle_is_RBColor(l, -1), 1,
+                "expected table of {color, length} (element not color)");
+            pwl[i - 1].color = tle_to_RBColor(l, -1);
             
             lua_rawgeti(l, pwlTable, 2); // get length of pwl element
             pwl[i - 1].length = (size_t)luaL_checknumber(l, -1);
@@ -220,22 +271,183 @@ int rbLuaPaletteFromPwl(lua_State * l)
         
         // Create and fill the texture
         pTex = (RBTexture1 *)lua_newuserdata(l, size);
-        if(pTex == NULL) {
-            luaL_error(l, "lua_newuserdata returned NULL in "
-                "tle_push_RBTexture1");
-        }
         lua_rawgeti(l, LUA_REGISTRYINDEX, tle_RBTexture1_metatable_index);
         lua_setmetatable(l, -2);
         rbTexture1Construct(pTex, texWidth);
         rbTexture1FillFromPiecewiseLinear(pTex, pwl, LENGTHOF(pwl), false);
         
-        for(size_t i = 0; i < 256; ++i) {
-            RBColor c = rbTexture1GetTexel(pTex, i);
-            printf("%3d: %3d %3d %3d %3d\n", i, c.r, c.g, c.b, c.a);
-        }
-        
         return 1;
     }
+}
+
+
+int rbLuaColor(lua_State * l)
+{
+    int top = lua_gettop(l);
+    lua_Number r, g, b, a;
+
+    tle_verify(l, top == 3 || top == 4);
+    r = (int)luaL_checknumber(l, 1);
+    g = (int)luaL_checknumber(l, 2);
+    b = (int)luaL_checknumber(l, 3);
+    if(top == 4) {
+        a = (int)luaL_checknumber(l, 4);
+    }
+    else {
+        a = 1;
+    }
+    
+    tle_push_RBColor(l, colorf(r, g, b, a));
+    return 1;
+}
+
+
+static void rbLuaLightGenerationSetGenerator_PRBLightGenerator(lua_State * l,
+    RBLightGenerator * pGen)
+{
+    (void)l;
+    rbLightGenerationSetGenerator(pGen);
+}
+
+
+TLE_MAKE_WRAPPER_1_VOID(rbLuaLightGenerationSetGenerator,
+    PRBLightGenerator, rbLuaLightGenerationSetGenerator_PRBLightGenerator)
+
+
+int rbLuaLightGenerationCompositorAlloc(lua_State * l)
+{
+    int top = lua_gettop(l);
+    RBLightGenerator * pGen0 = NULL;
+    RBLightGenerator * pGen1 = NULL;
+    RBLightGenerator * pGen2 = NULL;
+    RBLightGenerator * pGen3 = NULL;
+    RBLightGenerator * pGenRes;
+
+    tle_verify(l, top <= 4);
+    
+    if(top >= 1) pGen0 = tle_to_PRBLightGenerator(l, 1);
+    if(top >= 2) pGen1 = tle_to_PRBLightGenerator(l, 2);
+    if(top >= 3) pGen2 = tle_to_PRBLightGenerator(l, 3);
+    if(top >= 4) pGen3 = tle_to_PRBLightGenerator(l, 4);
+    
+    pGenRes = rbLightGenerationCompositor4Alloc(pGen0, pGen1, pGen2, pGen3);
+    tle_verify(l, pGenRes != NULL);
+    tle_push_PRBLightGenerator(l, pGenRes);
+    
+    // Reference params so they're not collected out from under us
+    if(top >= 1) { lua_pushvalue(l, 1); lua_rawseti(l, -2, 2); }
+    if(top >= 2) { lua_pushvalue(l, 2); lua_rawseti(l, -2, 3); }
+    if(top >= 3) { lua_pushvalue(l, 3); lua_rawseti(l, -2, 4); }
+    if(top >= 4) { lua_pushvalue(l, 4); lua_rawseti(l, -2, 5); }
+    
+    return 1;
+}
+
+
+int rbLuaLightGenerationStaticImageAlloc(lua_State * l)
+{
+    RBLightGenerator * pGenRes;
+    (void)l;
+
+    tle_verify(l, lua_gettop(l) == 1);
+    tle_verify(l, tle_is_RBTexture2(l, 1));
+    pGenRes = rbLightGenerationStaticImageAlloc(tle_to_RBTexture2(l, 1));
+    tle_push_PRBLightGenerator(l, pGenRes);
+    
+    // Reference params so they're not collected out from under us
+    lua_pushvalue(l, 1);
+    lua_rawseti(l, -2, 2);
+    
+    return 1;
+}
+
+
+int rbLuaLightGenerationBeatStarsAlloc(lua_State * l)
+{
+    RBLightGenerator * pGenRes;
+    (void)l;
+
+    tle_verify(l, lua_gettop(l) == 1);
+    tle_verify(l, tle_is_RBColor(l, 1));
+    pGenRes = rbLightGenerationBeatStarsAlloc(tle_to_RBColor(l, 1));
+    tle_push_PRBLightGenerator(l, pGenRes);
+    
+    return 1;
+}
+
+
+
+int rbLuaLightGenerationIconCheckerboardAlloc(lua_State * l)
+{
+    RBLightGenerator * pGenRes;
+    (void)l;
+
+    tle_verify(l, lua_gettop(l) == 1);
+    tle_verify(l, tle_is_RBColor(l, 1));
+    pGenRes = rbLightGenerationIconCheckerboardAlloc(tle_to_RBColor(l, 1));
+    tle_push_PRBLightGenerator(l, pGenRes);
+    
+    return 1;
+}
+
+
+
+int rbLuaLightGenerationPulseCheckerboardAlloc(lua_State * l)
+{
+    RBLightGenerator * pGenRes;
+    (void)l;
+
+    tle_verify(l, lua_gettop(l) == 1);
+    tle_verify(l, tle_is_RBColor(l, 1));
+    pGenRes = rbLightGenerationPulseCheckerboardAlloc(tle_to_RBColor(l, 1));
+    tle_push_PRBLightGenerator(l, pGenRes);
+    
+    return 1;
+}
+
+
+
+int rbLuaLightGenerationParticleLissajousAlloc(lua_State * l)
+{
+    RBLightGenerator * pGenRes;
+    (void)l;
+
+    tle_verify(l, lua_gettop(l) == 1);
+    tle_verify(l, tle_is_RBColor(l, 1));
+    pGenRes = rbLightGenerationParticleLissajousAlloc(tle_to_RBColor(l, 1));
+    tle_push_PRBLightGenerator(l, pGenRes);
+    
+    return 1;
+}
+
+
+
+int rbLuaLightGenerationSignalLissajousAlloc(lua_State * l)
+{
+    RBLightGenerator * pGenRes;
+    (void)l;
+
+    tle_verify(l, lua_gettop(l) == 1);
+    tle_verify(l, tle_is_RBColor(l, 1));
+    pGenRes = rbLightGenerationSignalLissajousAlloc(tle_to_RBColor(l, 1));
+    tle_push_PRBLightGenerator(l, pGenRes);
+    
+    return 1;
+}
+
+
+
+int rbLuaLightGenerationOscilloscopeAlloc(lua_State * l)
+{
+    RBLightGenerator * pGenRes;
+    (void)l;
+
+    tle_verify(l, lua_gettop(l) == 1);
+    tle_verify(l, tle_is_RBColor(l, 1));
+    pGenRes = rbLightGenerationOscilloscopeAlloc(tle_to_RBColor(l, 1));
+    tle_push_PRBLightGenerator(l, pGenRes);
+    
+    return 1;
 }
 
 
@@ -262,11 +474,7 @@ bool tle_is_RBColor(lua_State * l, int idx)
 RBColor tle_to_RBColor(lua_State * l, int idx)
 {
     RBColor * p = (RBColor *)lua_touserdata(l, idx);
-    
-    if(p == NULL) {
-        luaL_error(l, "lua_touserdata returned NULL in "
-            "tle_to_RBColor");
-    }
+    tle_verify(l, p != NULL);
     return *p;
 }
 
@@ -275,10 +483,6 @@ void tle_push_RBColor(lua_State * l, RBColor value)
 {
     RBColor * p = (RBColor *)lua_newuserdata(l,
         sizeof (RBColor));
-    if(p == NULL) {
-        luaL_error(l, "lua_newuserdata returned NULL in "
-            "tle_push_RBColor");
-    }
     *p = value;
     lua_rawgeti(l, LUA_REGISTRYINDEX, tle_RBColor_metatable_index);
     lua_setmetatable(l, -2);
@@ -322,11 +526,7 @@ bool tle_is_RBTime(lua_State * l, int idx)
 RBTime tle_to_RBTime(lua_State * l, int idx)
 {
     RBTime * p = (RBTime *)lua_touserdata(l, idx);
-    
-    if(p == NULL) {
-        luaL_error(l, "lua_touserdata returned NULL in "
-            "tle_to_RBTime");
-    }
+    tle_verify(l, p != NULL);
     return *p;
 }
 
@@ -335,10 +535,6 @@ void tle_push_RBTime(lua_State * l, RBTime value)
 {
     RBTime * p = (RBTime *)lua_newuserdata(l,
         sizeof (RBTime));
-    if(p == NULL) {
-        luaL_error(l, "lua_newuserdata returned NULL in "
-            "tle_push_RBTime");
-    }
     *p = value;
     lua_rawgeti(l, LUA_REGISTRYINDEX, tle_RBTime_metatable_index);
     lua_setmetatable(l, -2);
@@ -410,11 +606,7 @@ bool tle_is_RBTexture1(lua_State * l, int idx)
 RBTexture1 * tle_to_RBTexture1(lua_State * l, int idx)
 {
     RBTexture1 * p = (RBTexture1 *)lua_touserdata(l, idx);
-    
-    if(p == NULL) {
-        luaL_error(l, "lua_touserdata returned NULL in "
-            "tle_to_RBTexture1");
-    }
+    tle_verify(l, p != NULL);
     return p;
 }
 
@@ -423,10 +615,6 @@ void tle_push_RBTexture1(lua_State * l, RBTexture1 * value)
 {
     size_t size = rbTexture1ComputeSize(rbTexture1GetWidth(value));
     RBTexture1 * p = (RBTexture1 *)lua_newuserdata(l, size);
-    if(p == NULL) {
-        luaL_error(l, "lua_newuserdata returned NULL in "
-            "tle_push_RBTexture1");
-    }
     memcpy(p, value, size);
     lua_rawgeti(l, LUA_REGISTRYINDEX, tle_RBTexture1_metatable_index);
     lua_setmetatable(l, -2);
@@ -456,11 +644,7 @@ bool tle_is_RBTexture2(lua_State * l, int idx)
 RBTexture2 * tle_to_RBTexture2(lua_State * l, int idx)
 {
     RBTexture2 * p = (RBTexture2 *)lua_touserdata(l, idx);
-    
-    if(p == NULL) {
-        luaL_error(l, "lua_touserdata returned NULL in "
-            "tle_to_RBTexture2");
-    }
+    tle_verify(l, p != NULL);
     return p;
 }
 
@@ -470,15 +654,62 @@ void tle_push_RBTexture2(lua_State * l, RBTexture2 * value)
     size_t size = rbTexture2ComputeSize(rbTexture2GetWidth(value),
         rbTexture2GetHeight(value));
     RBTexture2 * p = (RBTexture2 *)lua_newuserdata(l, size);
-    if(p == NULL) {
-        luaL_error(l, "lua_newuserdata returned NULL in "
-            "tle_push_RBTexture2");
-    }
     memcpy(p, value, size);
     lua_rawgeti(l, LUA_REGISTRYINDEX, tle_RBTexture2_metatable_index);
     lua_setmetatable(l, -2);
 }
 
+
+// RBLightGenerator ----------------------------------------------------
+
+
+bool tle_is_PRBLightGenerator(lua_State * l, int idx)
+{
+    bool result = false;
+    
+    if(lua_istable(l, idx) && lua_getmetatable(l, idx)) {
+        lua_rawgeti(l, LUA_REGISTRYINDEX,
+            tle_PRBLightGenerator_metatable_index);
+        if(lua_rawequal(l, -1, -2)) {
+            result = true;
+        }
+        lua_pop(l, 2);
+    }
+    
+    return result;
+}
+
+
+RBLightGenerator * tle_to_PRBLightGenerator(lua_State * l, int idx)
+{
+    RBLightGenerator * p;
+    lua_rawgeti(l, idx, 1);
+    p = (RBLightGenerator *)lua_touserdata(l, -1);
+    lua_pop(l, 1);
+    return p;
+}
+
+
+void tle_push_PRBLightGenerator(lua_State * l, RBLightGenerator * value)
+{
+    lua_createtable(l, 5, 0);
+    lua_pushlightuserdata(l, value);
+    lua_rawseti(l, -2, 1);
+    lua_rawgeti(l, LUA_REGISTRYINDEX, tle_PRBLightGenerator_metatable_index);
+    lua_setmetatable(l, -2);
+}
+
+
+static void tle_PRBLightGenerator_gc_PRBLightGenerator(lua_State * l,
+    RBLightGenerator * p)
+{
+    (void)l;
+    rbLightGenerationGeneratorFree(p);
+}
+
+
+TLE_MAKE_WRAPPER_1_VOID(tle_PRBLightGenerator_gc,
+    PRBLightGenerator, tle_PRBLightGenerator_gc_PRBLightGenerator)
 
 
 /*
