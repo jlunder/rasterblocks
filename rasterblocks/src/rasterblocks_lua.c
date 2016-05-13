@@ -21,6 +21,7 @@ static int rbLuaPrint(lua_State * l);
 
 static int rbLuaPaletteFromPwl(lua_State * l);
 static int rbLuaColor(lua_State * l);
+static int rbLuaTime(lua_State * l);
 
 static int rbLuaLightGenerationSetGenerator(lua_State * l);
 
@@ -32,13 +33,11 @@ static int rbLuaLightGenerationTimedRotationAlloc(lua_State * l);
 static int rbLuaLightGenerationControllerSelectAlloc(lua_State * l);
 static int rbLuaLightGenerationControllerFadeAlloc(lua_State * l);
 static int rbLuaLightGenerationTriggerFlashAlloc(lua_State * l);
-/*
 static int rbLuaLightGenerationPlasmaAlloc(lua_State * l);
 static int rbLuaLightGenerationBeatFlashAlloc(lua_State * l);
 static int rbLuaLightGenerationPulsePlasmaAlloc(lua_State * l);
 static int rbLuaLightGenerationPulseGridAlloc(lua_State * l);
 static int rbLuaLightGenerationDashedCirclesAlloc(lua_State * l);
-*/
 static int rbLuaLightGenerationSmokeSignalsAlloc(lua_State * l);
 static int rbLuaLightGenerationFireworksAlloc(lua_State * l);
 static int rbLuaLightGenerationVerticalBarsAlloc(lua_State * l);
@@ -146,6 +145,8 @@ int rbLuaRegisterTypes(lua_State * l)
     lua_setfield(l, -2, "palette_from_pwl");
     lua_pushcfunction(l, rbLuaColor);
     lua_setfield(l, -2, "color");
+    lua_pushcfunction(l, rbLuaTime);
+    lua_setfield(l, -2, "time");
     lua_pushcfunction(l, rbLuaLightGenerationSetGenerator);
     lua_setfield(l, -2, "set_generator");
     lua_pushcfunction(l, rbLuaLightGenerationCompositorAlloc);
@@ -164,7 +165,6 @@ int rbLuaRegisterTypes(lua_State * l)
     lua_setfield(l, -2, "gen_controller_fade");
     lua_pushcfunction(l, rbLuaLightGenerationTriggerFlashAlloc);
     lua_setfield(l, -2, "gen_trigger_flash");
-    /*
     lua_pushcfunction(l, rbLuaLightGenerationPlasmaAlloc);
     lua_setfield(l, -2, "gen_plasma");
     lua_pushcfunction(l, rbLuaLightGenerationBeatFlashAlloc);
@@ -175,7 +175,6 @@ int rbLuaRegisterTypes(lua_State * l)
     lua_setfield(l, -2, "gen_pulse_grid");
     lua_pushcfunction(l, rbLuaLightGenerationDashedCirclesAlloc);
     lua_setfield(l, -2, "gen_dashed_circles");
-    */
     lua_pushcfunction(l, rbLuaLightGenerationSmokeSignalsAlloc);
     lua_setfield(l, -2, "gen_smoke_signals");
     lua_pushcfunction(l, rbLuaLightGenerationFireworksAlloc);
@@ -298,6 +297,18 @@ int rbLuaColor(lua_State * l)
     }
     
     tle_push_RBColor(l, colorf(r, g, b, a));
+    return 1;
+}
+
+
+int rbLuaTime(lua_State * l)
+{
+    int top = lua_gettop(l);
+    lua_Number t;
+
+    tle_verify(l, top == 1);
+    t = (int)luaL_checknumber(l, 1);
+    tle_push_RBTime(l, rbTimeFromMs((int32_t)(t * 1000 + 0.5f)));
     return 1;
 }
 
@@ -524,6 +535,98 @@ int rbLuaLightGenerationTriggerFlashAlloc(lua_State * l)
     luaL_argcheck(l, lua_isnumber(l, 2), 2, "expected number");
     pGenRes = rbLightGenerationTriggerFlashAlloc(tle_to_RBTexture1(l, 1),
         (int32_t)lua_tonumber(l, 2));
+    tle_push_PRBLightGenerator(l, pGenRes);
+    
+    // Reference params so they're not collected out from under us
+    lua_pushvalue(l, 1);
+    lua_rawseti(l, -2, 2);
+    
+    return 1;
+}
+
+
+static int rbLuaLightGenerationPlasmaAlloc(lua_State * l)
+{
+    RBLightGenerator * pGenRes;
+    (void)l;
+
+    tle_verify(l, lua_gettop(l) == 1);
+    luaL_argcheck(l, tle_is_RBTexture1(l, 1), 1, "expected RBTexture1");
+    pGenRes = rbLightGenerationPlasmaAlloc(tle_to_RBTexture1(l, 1));
+    tle_push_PRBLightGenerator(l, pGenRes);
+    
+    // Reference params so they're not collected out from under us
+    lua_pushvalue(l, 1);
+    lua_rawseti(l, -2, 2);
+    
+    return 1;
+}
+
+
+static int rbLuaLightGenerationBeatFlashAlloc(lua_State * l)
+{
+    RBLightGenerator * pGenRes;
+    (void)l;
+
+    tle_verify(l, lua_gettop(l) == 1);
+    luaL_argcheck(l, tle_is_RBTexture1(l, 1), 1, "expected RBTexture1");
+    pGenRes = rbLightGenerationBeatFlashAlloc(tle_to_RBTexture1(l, 1));
+    tle_push_PRBLightGenerator(l, pGenRes);
+    
+    // Reference params so they're not collected out from under us
+    lua_pushvalue(l, 1);
+    lua_rawseti(l, -2, 2);
+    
+    return 1;
+}
+
+
+static int rbLuaLightGenerationPulsePlasmaAlloc(lua_State * l)
+{
+    RBLightGenerator * pGenRes;
+    (void)l;
+
+    tle_verify(l, lua_gettop(l) == 1);
+    luaL_argcheck(l, tle_is_RBTexture1(l, 1), 1, "expected RBTexture1");
+    pGenRes = rbLightGenerationPulsePlasmaAlloc(tle_to_RBTexture1(l, 1));
+    tle_push_PRBLightGenerator(l, pGenRes);
+    
+    // Reference params so they're not collected out from under us
+    lua_pushvalue(l, 1);
+    lua_rawseti(l, -2, 2);
+    
+    return 1;
+}
+
+
+static int rbLuaLightGenerationPulseGridAlloc(lua_State * l)
+{
+    RBLightGenerator * pGenRes;
+    (void)l;
+
+    tle_verify(l, lua_gettop(l) == 2);
+    luaL_argcheck(l, tle_is_RBColor(l, 1), 1, "expected RBColor");
+    luaL_argcheck(l, tle_is_RBColor(l, 2), 2, "expected RBColor");
+    pGenRes = rbLightGenerationPulseGridAlloc(tle_to_RBColor(l, 1),
+        tle_to_RBColor(l, 2));
+    tle_push_PRBLightGenerator(l, pGenRes);
+    
+    // Reference params so they're not collected out from under us
+    lua_pushvalue(l, 1);
+    lua_rawseti(l, -2, 2);
+    
+    return 1;
+}
+
+
+static int rbLuaLightGenerationDashedCirclesAlloc(lua_State * l)
+{
+    RBLightGenerator * pGenRes;
+    (void)l;
+
+    tle_verify(l, lua_gettop(l) == 1);
+    luaL_argcheck(l, tle_is_RBTexture1(l, 1), 1, "expected RBTexture1");
+    pGenRes = rbLightGenerationDashedCirclesAlloc(tle_to_RBTexture1(l, 1));
     tle_push_PRBLightGenerator(l, pGenRes);
     
     // Reference params so they're not collected out from under us
@@ -999,25 +1102,6 @@ int tle_PRBLightGenerator_gc(lua_State * l)
     return 0;
 }
 
-
-/*
-void rotterbox_init_lua(lua_State * l)
-{
-    int stack_top = lua_gettop(l);
-
-    rotterbox_lua_register_types(l);
-
-    lua_newtable(l);
-    lua_pushvalue(l, -1);
-    lua_setglobal(l, "_sequencer");
-    lua_pushcfunction(l, &rotterbox_lua_sequencer_enqueue_data);
-    lua_setfield(l, -2, "_enqueue_data");
-    lua_pushcfunction(l, &rotterbox_lua_sequencer_get_play_time_wrapper);
-    lua_setfield(l, -2, "_get_play_time");
-
-    lua_settop(l, stack_top);
-}
-*/
 
 /*
 static inline sequencer_timestamp_t tle_to_sequencer_timespan_t(
