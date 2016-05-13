@@ -40,7 +40,6 @@ void rbLightGenerationControllerFadeFree(void * pData)
     RBLightGeneratorControllerFade * pControllerFade =
         (RBLightGeneratorControllerFade *)pData;
     
-    rbLightGenerationGeneratorFree(pControllerFade->pGenerator);
     free(pControllerFade);
 }
 

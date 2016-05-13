@@ -62,9 +62,6 @@ void rbLightGenerationControllerSelectFree(void * pData)
     RBLightGeneratorControllerSelect * pControllerSelect =
         (RBLightGeneratorControllerSelect *)pData;
     
-    for(size_t i = 0; i < pControllerSelect->numGenerators; ++i) {
-        rbLightGenerationGeneratorFree(pControllerSelect->pGenerators[i]);
-    }
     free(pControllerSelect);
 }
 

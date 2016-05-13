@@ -19,9 +19,13 @@ pal_black_blue_green_white_fs = rb.palette_from_pwl({
 })
 
 rb.set_generator(
-    rb.gen_compositor(
-        rb.gen_pulse_checkerboard(rb.color(1, .5, .5)),        
-        rb.gen_oscilloscope(rb.color(1, 1, 1))        
+    rb.gen_controller_fade(
+        rb.gen_compositor(
+--            rb.gen_pulse_checkerboard(rb.color(1, .5, .5)),        
+--            rb.gen_oscilloscope(rb.color(1, 1, 1))        
+            rb.gen_fireworks(pal_black_blue_green_white_fs, 0)        
+        ),
+        7
     )
 )
 

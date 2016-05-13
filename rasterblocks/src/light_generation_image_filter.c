@@ -41,7 +41,6 @@ void rbLightGenerationImageFilterFree(void * pData)
     RBLightGeneratorImageFilter * pImageFilter =
         (RBLightGeneratorImageFilter *)pData;
     
-    rbLightGenerationGeneratorFree(pImageFilter->pGenerator);
     rbTexture2Free(pImageFilter->pTempTexture);
     free(pImageFilter);
 }

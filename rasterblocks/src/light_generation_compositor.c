@@ -60,12 +60,7 @@ void rbLightGenerationCompositorFree(void * pData)
     RBLightGeneratorCompositor * pCompositor =
         (RBLightGeneratorCompositor *)pData;
     
-    for(size_t i = 0; i < LENGTHOF(pCompositor->pGenerators); ++i) {
-        if(pCompositor->pGenerators[i] != NULL) {
-            rbLightGenerationGeneratorFree(pCompositor->pGenerators[i]);
-        }
-    }
-    free(pData);
+    free(pCompositor);
 }
 
 

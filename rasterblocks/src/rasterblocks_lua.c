@@ -26,24 +26,24 @@ static int rbLuaLightGenerationSetGenerator(lua_State * l);
 
 static int rbLuaLightGenerationCompositorAlloc(lua_State * l);
 static int rbLuaLightGenerationStaticImageAlloc(lua_State * l);
-/*
 static int rbLuaLightGenerationImageFilterAlloc(lua_State * l);
 static int rbLuaLightGenerationRescaleAlloc(lua_State * l);
 static int rbLuaLightGenerationTimedRotationAlloc(lua_State * l);
 static int rbLuaLightGenerationControllerSelectAlloc(lua_State * l);
 static int rbLuaLightGenerationControllerFadeAlloc(lua_State * l);
 static int rbLuaLightGenerationTriggerFlashAlloc(lua_State * l);
+/*
 static int rbLuaLightGenerationPlasmaAlloc(lua_State * l);
 static int rbLuaLightGenerationBeatFlashAlloc(lua_State * l);
 static int rbLuaLightGenerationPulsePlasmaAlloc(lua_State * l);
 static int rbLuaLightGenerationPulseGridAlloc(lua_State * l);
 static int rbLuaLightGenerationDashedCirclesAlloc(lua_State * l);
+*/
 static int rbLuaLightGenerationSmokeSignalsAlloc(lua_State * l);
 static int rbLuaLightGenerationFireworksAlloc(lua_State * l);
 static int rbLuaLightGenerationVerticalBarsAlloc(lua_State * l);
 static int rbLuaLightGenerationCriscrossAlloc(lua_State * l);
 static int rbLuaLightGenerationVolumeBarsAlloc(lua_State * l);
-*/
 static int rbLuaLightGenerationBeatStarsAlloc(lua_State * l);
 static int rbLuaLightGenerationIconCheckerboardAlloc(lua_State * l);
 static int rbLuaLightGenerationPulseCheckerboardAlloc(lua_State * l);
@@ -152,7 +152,6 @@ int rbLuaRegisterTypes(lua_State * l)
     lua_setfield(l, -2, "gen_compositor");
     lua_pushcfunction(l, rbLuaLightGenerationStaticImageAlloc);
     lua_setfield(l, -2, "gen_static_image");
-    /*
     lua_pushcfunction(l, rbLuaLightGenerationImageFilterAlloc);
     lua_setfield(l, -2, "gen_image_filter");
     lua_pushcfunction(l, rbLuaLightGenerationRescaleAlloc);
@@ -165,6 +164,7 @@ int rbLuaRegisterTypes(lua_State * l)
     lua_setfield(l, -2, "gen_controller_fade");
     lua_pushcfunction(l, rbLuaLightGenerationTriggerFlashAlloc);
     lua_setfield(l, -2, "gen_trigger_flash");
+    /*
     lua_pushcfunction(l, rbLuaLightGenerationPlasmaAlloc);
     lua_setfield(l, -2, "gen_plasma");
     lua_pushcfunction(l, rbLuaLightGenerationBeatFlashAlloc);
@@ -175,6 +175,7 @@ int rbLuaRegisterTypes(lua_State * l)
     lua_setfield(l, -2, "gen_pulse_grid");
     lua_pushcfunction(l, rbLuaLightGenerationDashedCirclesAlloc);
     lua_setfield(l, -2, "gen_dashed_circles");
+    */
     lua_pushcfunction(l, rbLuaLightGenerationSmokeSignalsAlloc);
     lua_setfield(l, -2, "gen_smoke_signals");
     lua_pushcfunction(l, rbLuaLightGenerationFireworksAlloc);
@@ -185,7 +186,6 @@ int rbLuaRegisterTypes(lua_State * l)
     lua_setfield(l, -2, "gen_criscross");
     lua_pushcfunction(l, rbLuaLightGenerationVolumeBarsAlloc);
     lua_setfield(l, -2, "gen_volume_bars");
-    */
     lua_pushcfunction(l, rbLuaLightGenerationBeatStarsAlloc);
     lua_setfield(l, -2, "gen_beat_stars");
     lua_pushcfunction(l, rbLuaLightGenerationIconCheckerboardAlloc);
@@ -325,10 +325,26 @@ int rbLuaLightGenerationCompositorAlloc(lua_State * l)
 
     tle_verify(l, top <= 4);
     
-    if(top >= 1) pGen0 = tle_to_PRBLightGenerator(l, 1);
-    if(top >= 2) pGen1 = tle_to_PRBLightGenerator(l, 2);
-    if(top >= 3) pGen2 = tle_to_PRBLightGenerator(l, 3);
-    if(top >= 4) pGen3 = tle_to_PRBLightGenerator(l, 4);
+    if(top >= 1) {
+        luaL_argcheck(l, tle_is_PRBLightGenerator(l, 1), 1,
+            "expected RBLightGenerator");
+        pGen0 = tle_to_PRBLightGenerator(l, 1);
+    }
+    if(top >= 2) {
+        luaL_argcheck(l, tle_is_PRBLightGenerator(l, 2), 2,
+            "expected RBLightGenerator");
+        pGen1 = tle_to_PRBLightGenerator(l, 2);
+    }
+    if(top >= 3) {
+        luaL_argcheck(l, tle_is_PRBLightGenerator(l, 3), 3,
+            "expected RBLightGenerator");
+        pGen2 = tle_to_PRBLightGenerator(l, 3);
+    }
+    if(top >= 4) {
+        luaL_argcheck(l, tle_is_PRBLightGenerator(l, 4), 4,
+            "expected RBLightGenerator");
+        pGen3 = tle_to_PRBLightGenerator(l, 4);
+    }
     
     pGenRes = rbLightGenerationCompositor4Alloc(pGen0, pGen1, pGen2, pGen3);
     tle_verify(l, pGenRes != NULL);
@@ -350,13 +366,280 @@ int rbLuaLightGenerationStaticImageAlloc(lua_State * l)
     (void)l;
 
     tle_verify(l, lua_gettop(l) == 1);
-    tle_verify(l, tle_is_RBTexture2(l, 1));
+    luaL_argcheck(l, tle_is_RBTexture2(l, 1), 1, "expected RBTexture2");
     pGenRes = rbLightGenerationStaticImageAlloc(tle_to_RBTexture2(l, 1));
     tle_push_PRBLightGenerator(l, pGenRes);
     
     // Reference params so they're not collected out from under us
     lua_pushvalue(l, 1);
     lua_rawseti(l, -2, 2);
+    
+    return 1;
+}
+
+
+int rbLuaLightGenerationImageFilterAlloc(lua_State * l)
+{
+    RBLightGenerator * pGenRes;
+    (void)l;
+
+    tle_verify(l, lua_gettop(l) == 2);
+    luaL_argcheck(l, tle_is_PRBLightGenerator(l, 1), 1,
+        "expected RBLightGenerator");
+    luaL_argcheck(l, tle_is_RBTexture2(l, 2), 2, "expected RBTexture2");
+    pGenRes = rbLightGenerationImageFilterAlloc(
+        tle_to_PRBLightGenerator(l, 1), tle_to_RBTexture2(l, 2));
+    tle_push_PRBLightGenerator(l, pGenRes);
+    
+    // Reference params so they're not collected out from under us
+    lua_pushvalue(l, 1);
+    lua_rawseti(l, -2, 2);
+    lua_pushvalue(l, 2);
+    lua_rawseti(l, -2, 3);
+    
+    return 1;
+}
+
+
+int rbLuaLightGenerationRescaleAlloc(lua_State * l)
+{
+    RBLightGenerator * pGenRes;
+    (void)l;
+
+    tle_verify(l, lua_gettop(l) == 2);
+    luaL_argcheck(l, tle_is_PRBLightGenerator(l, 1), 1,
+        "expected RBLightGenerator");
+    luaL_argcheck(l, tle_is_RBTexture2(l, 2), 2, "expected number");
+    luaL_argcheck(l, tle_is_RBTexture2(l, 3), 3, "expected number");
+    pGenRes = rbLightGenerationRescaleAlloc(
+        tle_to_PRBLightGenerator(l, 1), (size_t)lua_tonumber(l, 2),
+        (size_t)lua_tonumber(l, 3));
+    tle_push_PRBLightGenerator(l, pGenRes);
+    
+    // Reference params so they're not collected out from under us
+    lua_pushvalue(l, 1);
+    lua_rawseti(l, -2, 2);
+    
+    return 1;
+}
+
+
+int rbLuaLightGenerationTimedRotationAlloc(lua_State * l)
+{
+    int top = lua_gettop(l);
+    RBLightGenerator * pGenRes;
+    size_t n;
+
+    tle_verify(l, top == 3);
+    luaL_argcheck(l, lua_istable(l, 1), 1, "expected table");
+    luaL_argcheck(l, lua_isnumber(l, 2), 2, "expected number");
+    luaL_argcheck(l, tle_is_RBTime(l, 3), 3, "expected RBTime");
+    
+    lua_len(l, 1);
+    n = (size_t)lua_tonumber(l, -1);
+    lua_pop(l, 1);
+    {
+        RBLightGenerator * pGens[n];
+        
+        for(size_t i = 0; i < n; ++i) {
+            lua_rawgeti(l, 1, i + 1);
+            pGens[i] = tle_to_PRBLightGenerator(l, -1);
+            lua_pop(l, 1);
+        }
+        pGenRes = rbLightGenerationTimedRotationAlloc(pGens, n,
+            (int32_t)lua_tonumber(l, 2), tle_to_RBTime(l, 3));
+    }
+    tle_push_PRBLightGenerator(l, pGenRes);
+    
+    // Reference params so they're not collected out from under us
+    lua_pushvalue(l, 1); // This is sketchy: we should make a new table
+    lua_rawseti(l, -2, 2); // (instead of referencing the old one)
+    
+    return 1;
+}
+
+
+int rbLuaLightGenerationControllerSelectAlloc(lua_State * l)
+{
+    int top = lua_gettop(l);
+    RBLightGenerator * pGenRes;
+    size_t n;
+
+    tle_verify(l, top == 2);
+    luaL_argcheck(l, lua_istable(l, 1), 1, "expected table");
+    luaL_argcheck(l, lua_isnumber(l, 2), 2, "expected number");
+    
+    lua_len(l, 1);
+    n = (size_t)lua_tonumber(l, -1);
+    lua_pop(l, 1);
+    {
+        RBLightGenerator * pGens[n];
+        
+        for(size_t i = 0; i < n; ++i) {
+            lua_rawgeti(l, 1, i + 1);
+            pGens[i] = tle_to_PRBLightGenerator(l, -1);
+            lua_pop(l, 1);
+        }
+        pGenRes = rbLightGenerationControllerSelectAlloc(pGens, n,
+            (int32_t)lua_tonumber(l, 2));
+    }
+    tle_push_PRBLightGenerator(l, pGenRes);
+    
+    // Reference params so they're not collected out from under us
+    lua_pushvalue(l, 1); // This is sketchy: we should make a new table
+    lua_rawseti(l, -2, 2); // (instead of referencing the old one)
+    
+    return 1;
+}
+
+
+int rbLuaLightGenerationControllerFadeAlloc(lua_State * l)
+{
+    RBLightGenerator * pGenRes;
+    (void)l;
+
+    tle_verify(l, lua_gettop(l) == 2);
+    luaL_argcheck(l, tle_is_PRBLightGenerator(l, 1), 1,
+        "expected RBLightGenerator");
+    luaL_argcheck(l, lua_isnumber(l, 2), 2, "expected number");
+    pGenRes = rbLightGenerationControllerFadeAlloc(
+        tle_to_PRBLightGenerator(l, 1), (int32_t)lua_tonumber(l, 2));
+    tle_push_PRBLightGenerator(l, pGenRes);
+    
+    // Reference params so they're not collected out from under us
+    lua_pushvalue(l, 1);
+    lua_rawseti(l, -2, 2);
+    
+    return 1;
+}
+
+
+int rbLuaLightGenerationTriggerFlashAlloc(lua_State * l)
+{
+    RBLightGenerator * pGenRes;
+    (void)l;
+
+    tle_verify(l, lua_gettop(l) == 2);
+    luaL_argcheck(l, tle_is_RBTexture1(l, 1), 1, "expected RBTexture1");
+    luaL_argcheck(l, lua_isnumber(l, 2), 2, "expected number");
+    pGenRes = rbLightGenerationTriggerFlashAlloc(tle_to_RBTexture1(l, 1),
+        (int32_t)lua_tonumber(l, 2));
+    tle_push_PRBLightGenerator(l, pGenRes);
+    
+    // Reference params so they're not collected out from under us
+    lua_pushvalue(l, 1);
+    lua_rawseti(l, -2, 2);
+    
+    return 1;
+}
+
+
+int rbLuaLightGenerationSmokeSignalsAlloc(lua_State * l)
+{
+    RBLightGenerator * pGenRes;
+    (void)l;
+
+    tle_verify(l, lua_gettop(l) == 1);
+    luaL_argcheck(l, tle_is_RBTexture1(l, 1), 1, "expected RBTexture1");
+    pGenRes = rbLightGenerationSmokeSignalsAlloc(tle_to_RBTexture1(l, 1));
+    tle_push_PRBLightGenerator(l, pGenRes);
+    
+    // Reference params so they're not collected out from under us
+    lua_pushvalue(l, 1);
+    lua_rawseti(l, -2, 2);
+    
+    return 1;
+}
+
+
+int rbLuaLightGenerationFireworksAlloc(lua_State * l)
+{
+    RBLightGenerator * pGenRes;
+    (void)l;
+
+    tle_verify(l, lua_gettop(l) == 2);
+    luaL_argcheck(l, tle_is_RBTexture1(l, 1), 1, "expected RBTexture1");
+    luaL_argcheck(l, lua_isnumber(l, 2), 2, "expected number");
+    pGenRes = rbLightGenerationFireworksAlloc(tle_to_RBTexture1(l, 1),
+        (int32_t)lua_tonumber(l, 2));
+    tle_push_PRBLightGenerator(l, pGenRes);
+    
+    // Reference params so they're not collected out from under us
+    lua_pushvalue(l, 1);
+    lua_rawseti(l, -2, 2);
+    
+    return 1;
+}
+
+
+int rbLuaLightGenerationVerticalBarsAlloc(lua_State * l)
+{
+    RBLightGenerator * pGenRes;
+    (void)l;
+
+    tle_verify(l, lua_gettop(l) == 5);
+    luaL_argcheck(l, tle_is_RBTexture1(l, 1), 1, "expected RBTexture1");
+    luaL_argcheck(l, tle_is_RBTexture1(l, 2), 2, "expected RBTexture1");
+    luaL_argcheck(l, lua_isnumber(l, 3), 3, "expected number");
+    luaL_argcheck(l, tle_is_RBTime(l, 4), 4, "expected RBTime");
+    luaL_argcheck(l, tle_is_RBTime(l, 5), 5, "expected RBTime");
+    
+    pGenRes = rbLightGenerationVerticalBarsAlloc(tle_to_RBTexture1(l, 1),
+        tle_to_RBTexture1(l, 2), (size_t)luaL_checknumber(l, 3),
+        tle_to_RBTime(l, 4), tle_to_RBTime(l, 5));
+    tle_push_PRBLightGenerator(l, pGenRes);
+    
+    // Reference params so they're not collected out from under us
+    lua_pushvalue(l, 1);
+    lua_rawseti(l, -2, 2);
+    lua_pushvalue(l, 2);
+    lua_rawseti(l, -2, 3);
+    
+    return 1;
+}
+
+
+int rbLuaLightGenerationCriscrossAlloc(lua_State * l)
+{
+    RBLightGenerator * pGenRes;
+    (void)l;
+
+    tle_verify(l, lua_gettop(l) == 4);
+    luaL_argcheck(l, tle_is_RBTexture1(l, 1), 1, "expected RBTexture1");
+    luaL_argcheck(l, lua_isnumber(l, 2), 2, "expected number");
+    luaL_argcheck(l, tle_is_RBTime(l, 3), 3, "expected RBTime");
+    luaL_argcheck(l, tle_is_RBTime(l, 4), 4, "expected RBTime");
+    
+    pGenRes = rbLightGenerationCriscrossAlloc(tle_to_RBTexture1(l, 1),
+        (size_t)luaL_checknumber(l, 2), tle_to_RBTime(l, 3),
+        tle_to_RBTime(l, 4));
+    tle_push_PRBLightGenerator(l, pGenRes);
+    
+    // Reference params so they're not collected out from under us
+    lua_pushvalue(l, 1);
+    lua_rawseti(l, -2, 2);
+    
+    return 1;
+}
+
+
+int rbLuaLightGenerationVolumeBarsAlloc(lua_State * l)
+{
+    RBLightGenerator * pGenRes;
+    (void)l;
+
+    tle_verify(l, lua_gettop(l) == 2);
+    luaL_argcheck(l, tle_is_RBTexture1(l, 1), 1, "expected RBTexture1");
+    luaL_argcheck(l, tle_is_RBTexture1(l, 2), 2, "expected RBTexture1");
+    pGenRes = rbLightGenerationVolumeBarsAlloc(tle_to_RBTexture1(l, 1),
+        tle_to_RBTexture1(l, 2));
+    tle_push_PRBLightGenerator(l, pGenRes);
+    
+    // Reference params so they're not collected out from under us
+    lua_pushvalue(l, 1);
+    lua_rawseti(l, -2, 2);
+    lua_pushvalue(l, 2);
+    lua_rawseti(l, -2, 3);
     
     return 1;
 }
@@ -374,7 +657,6 @@ int rbLuaLightGenerationBeatStarsAlloc(lua_State * l)
     
     return 1;
 }
-
 
 
 int rbLuaLightGenerationIconCheckerboardAlloc(lua_State * l)
@@ -398,7 +680,7 @@ int rbLuaLightGenerationPulseCheckerboardAlloc(lua_State * l)
     (void)l;
 
     tle_verify(l, lua_gettop(l) == 1);
-    tle_verify(l, tle_is_RBColor(l, 1));
+    luaL_argcheck(l, tle_is_RBColor(l, 1), 1, "expected RBColor");
     pGenRes = rbLightGenerationPulseCheckerboardAlloc(tle_to_RBColor(l, 1));
     tle_push_PRBLightGenerator(l, pGenRes);
     
@@ -413,7 +695,7 @@ int rbLuaLightGenerationParticleLissajousAlloc(lua_State * l)
     (void)l;
 
     tle_verify(l, lua_gettop(l) == 1);
-    tle_verify(l, tle_is_RBColor(l, 1));
+    luaL_argcheck(l, tle_is_RBColor(l, 1), 1, "expected RBColor");
     pGenRes = rbLightGenerationParticleLissajousAlloc(tle_to_RBColor(l, 1));
     tle_push_PRBLightGenerator(l, pGenRes);
     
@@ -428,7 +710,7 @@ int rbLuaLightGenerationSignalLissajousAlloc(lua_State * l)
     (void)l;
 
     tle_verify(l, lua_gettop(l) == 1);
-    tle_verify(l, tle_is_RBColor(l, 1));
+    luaL_argcheck(l, tle_is_RBColor(l, 1), 1, "expected RBColor");
     pGenRes = rbLightGenerationSignalLissajousAlloc(tle_to_RBColor(l, 1));
     tle_push_PRBLightGenerator(l, pGenRes);
     
@@ -443,7 +725,7 @@ int rbLuaLightGenerationOscilloscopeAlloc(lua_State * l)
     (void)l;
 
     tle_verify(l, lua_gettop(l) == 1);
-    tle_verify(l, tle_is_RBColor(l, 1));
+    luaL_argcheck(l, tle_is_RBColor(l, 1), 1, "expected RBColor");
     pGenRes = rbLightGenerationOscilloscopeAlloc(tle_to_RBColor(l, 1));
     tle_push_PRBLightGenerator(l, pGenRes);
     
@@ -700,16 +982,22 @@ void tle_push_PRBLightGenerator(lua_State * l, RBLightGenerator * value)
 }
 
 
-static void tle_PRBLightGenerator_gc_PRBLightGenerator(lua_State * l,
-    RBLightGenerator * p)
+int tle_PRBLightGenerator_gc(lua_State * l)
 {
-    (void)l;
+    RBLightGenerator * p;
+    
+    lua_rawgeti(l, 1, 1);
+    p = (RBLightGenerator *)lua_touserdata(l, -1);
+    lua_pop(l, 1);
+    
+    // Clear the Lua lightuserdata so we don't double-free ever
+    lua_pushnil(l);
+    lua_rawseti(l, 1, 1);
+    
     rbLightGenerationGeneratorFree(p);
+    
+    return 0;
 }
-
-
-TLE_MAKE_WRAPPER_1_VOID(tle_PRBLightGenerator_gc,
-    PRBLightGenerator, tle_PRBLightGenerator_gc_PRBLightGenerator)
 
 
 /*

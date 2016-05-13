@@ -38,7 +38,6 @@ void rbLightGenerationRescaleFree(void * pData)
 {
     RBLightGeneratorRescale * pRescale = (RBLightGeneratorRescale *)pData;
     
-    rbLightGenerationGeneratorFree(pRescale->pGenerator);
     rbTexture2Free(pRescale->pTexture);
     free(pRescale);
 }

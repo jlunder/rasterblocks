@@ -62,9 +62,6 @@ void rbLightGenerationTimedRotationFree(void * pData)
     RBLightGeneratorTimedRotation * pTimedRotation =
         (RBLightGeneratorTimedRotation *)pData;
     
-    for(size_t i = 0; i < pTimedRotation->numGenerators; ++i) {
-        rbLightGenerationGeneratorFree(pTimedRotation->pGenerators[i]);
-    }
     free(pTimedRotation);
 }
 
