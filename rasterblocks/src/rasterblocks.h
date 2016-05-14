@@ -80,6 +80,7 @@ typedef enum {
     RBS_LIGHT_GENERATION,
     RBS_LIGHT_OUTPUT,
     RBS_HOT_CONFIGURATION,
+    RBS_LUA,
     RBS_COUNT
 } RBSubsystem;
 

@@ -36,6 +36,9 @@ RBLightGenerator * rbLightGenerationVerticalBarsAlloc(
     pVerticalBars->numBars = numBars;
     rbStartTimer(&pVerticalBars->spawnTimer, spawnInterval);
     pVerticalBars->fadeTime = fadeTime;
+    if(pVerticalBars->fadeTime <= 0) {
+        pVerticalBars->fadeTime = 1;
+    }
     pVerticalBars->pFadeTimers = (RBTimer *)malloc(sizeof (RBTimer) * numBars * 2);
     for(size_t i = 0; i < numBars * 2; ++i) {
         rbStopTimer(&pVerticalBars->pFadeTimers[i]);

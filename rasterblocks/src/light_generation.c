@@ -4,6 +4,7 @@
 
 
 static RBLightGenerator * g_rbPCurrentGenerator = NULL;
+static RBLightGenerator * g_rbPDefaultGenerator = NULL;
 
 
 void rbLightGenerationInitialize(RBConfiguration const * pConfig)
@@ -12,14 +13,19 @@ void rbLightGenerationInitialize(RBConfiguration const * pConfig)
     
     rbLightGenerationShutdown();
     
-    rbLightGenerationSetGenerator(
-        rbLightGenerationOscilloscopeAlloc(colori(255, 255, 255, 255)));
+    g_rbPDefaultGenerator = rbLightGenerationOscilloscopeAlloc(
+        colori(127, 127, 127, 255));
+    rbLightGenerationSetGenerator(g_rbPDefaultGenerator);
 }
 
 
 void rbLightGenerationShutdown(void)
 {
     rbLightGenerationSetGenerator(NULL);
+    if(g_rbPDefaultGenerator != NULL) {
+        rbLightGenerationGeneratorFree(g_rbPDefaultGenerator);
+    }
+    g_rbPDefaultGenerator = NULL;
 }
 
 

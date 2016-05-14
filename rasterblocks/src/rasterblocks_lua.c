@@ -13,6 +13,7 @@ static int tle_RBTime_metatable_index;
 static int tle_RBTexture1_metatable_index;
 static int tle_RBTexture2_metatable_index;
 static int tle_PRBLightGenerator_metatable_index;
+static int rbLuaCurrentGeneratorIndex;
 
 
 int rbLuaRegisterTypes(lua_State * l);
@@ -138,6 +139,9 @@ int rbLuaRegisterTypes(lua_State * l)
     lua_setfield(l, -2, "__gc");
     tle_PRBLightGenerator_metatable_index = luaL_ref(l, LUA_REGISTRYINDEX);
     
+    lua_pushnil(l);
+    rbLuaCurrentGeneratorIndex = luaL_ref(l, LUA_REGISTRYINDEX);
+    
     lua_newtable(l);
     lua_pushcfunction(l, rbLuaPrint);
     lua_setfield(l, -2, "print");
@@ -225,7 +229,7 @@ int rbLuaPrint(lua_State * l)
     char const * str;
 
     str = luaL_checkstring(l, 1);
-    printf("lua: %s\n", str);
+    rbInfo("%s\n", str);
 
     lua_settop(l, top);
 
@@ -286,11 +290,11 @@ int rbLuaColor(lua_State * l)
     lua_Number r, g, b, a;
 
     tle_verify(l, top == 3 || top == 4);
-    r = (int)luaL_checknumber(l, 1);
-    g = (int)luaL_checknumber(l, 2);
-    b = (int)luaL_checknumber(l, 3);
+    r = luaL_checknumber(l, 1);
+    g = luaL_checknumber(l, 2);
+    b = luaL_checknumber(l, 3);
     if(top == 4) {
-        a = (int)luaL_checknumber(l, 4);
+        a = luaL_checknumber(l, 4);
     }
     else {
         a = 1;
@@ -307,22 +311,27 @@ int rbLuaTime(lua_State * l)
     lua_Number t;
 
     tle_verify(l, top == 1);
-    t = (int)luaL_checknumber(l, 1);
+    t = luaL_checknumber(l, 1);
     tle_push_RBTime(l, rbTimeFromMs((int32_t)(t * 1000 + 0.5f)));
     return 1;
 }
 
 
-static void rbLuaLightGenerationSetGenerator_PRBLightGenerator(lua_State * l,
-    RBLightGenerator * pGen)
+int rbLuaLightGenerationSetGenerator(lua_State * l)
 {
     (void)l;
-    rbLightGenerationSetGenerator(pGen);
+
+    tle_verify(l, lua_gettop(l) == 1);
+    luaL_argcheck(l, tle_is_PRBLightGenerator(l, 1), 1,
+        "expected RBLightGenerator");
+    rbLightGenerationSetGenerator(tle_to_PRBLightGenerator(l, 1));
+    
+    // Reference params so they're not collected out from under us
+    lua_pushvalue(l, 1);
+    lua_rawseti(l, LUA_REGISTRYINDEX, rbLuaCurrentGeneratorIndex);
+    
+    return 1;
 }
-
-
-TLE_MAKE_WRAPPER_1_VOID(rbLuaLightGenerationSetGenerator,
-    PRBLightGenerator, rbLuaLightGenerationSetGenerator_PRBLightGenerator)
 
 
 int rbLuaLightGenerationCompositorAlloc(lua_State * l)
@@ -443,8 +452,8 @@ int rbLuaLightGenerationTimedRotationAlloc(lua_State * l)
 
     tle_verify(l, top == 3);
     luaL_argcheck(l, lua_istable(l, 1), 1, "expected table");
-    luaL_argcheck(l, lua_isnumber(l, 2), 2, "expected number");
-    luaL_argcheck(l, tle_is_RBTime(l, 3), 3, "expected RBTime");
+    luaL_argcheck(l, tle_is_RBTime(l, 2), 2, "expected RBTime");
+    luaL_argcheck(l, lua_isnumber(l, 3), 3, "expected number");
     
     lua_len(l, 1);
     n = (size_t)lua_tonumber(l, -1);
@@ -458,7 +467,7 @@ int rbLuaLightGenerationTimedRotationAlloc(lua_State * l)
             lua_pop(l, 1);
         }
         pGenRes = rbLightGenerationTimedRotationAlloc(pGens, n,
-            (int32_t)lua_tonumber(l, 2), tle_to_RBTime(l, 3));
+            tle_to_RBTime(l, 2), (int32_t)lua_tonumber(l, 3));
     }
     tle_push_PRBLightGenerator(l, pGenRes);
     

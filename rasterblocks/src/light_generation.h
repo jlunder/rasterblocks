@@ -79,7 +79,7 @@ RBLightGenerator * rbLightGenerationRescaleAlloc(
 
 RBLightGenerator * rbLightGenerationTimedRotationAlloc(
     RBLightGenerator * pGenerators[], size_t numGenerators, RBTime interval,
-    int32_t controllerNum);
+    int32_t triggerNum);
 RBLightGenerator * rbLightGenerationControllerSelectAlloc(
     RBLightGenerator * pGenerators[], size_t numGenerators,
     int32_t controllerNum);

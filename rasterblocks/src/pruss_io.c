@@ -715,9 +715,9 @@ void rbLightOutputPrussShowLights(RBRawLightFrame const * pFrame)
         }
         
         // Color order for WS2812 is grb -- 2801 is brg
-        *(uint64_t *)&g_rbPrussIoLightOutputBufs[buf][i +  0] = g;
+        *(uint64_t *)&g_rbPrussIoLightOutputBufs[buf][i +  0] = b;
         *(uint64_t *)&g_rbPrussIoLightOutputBufs[buf][i +  8] = r;
-        *(uint64_t *)&g_rbPrussIoLightOutputBufs[buf][i + 16] = b;
+        *(uint64_t *)&g_rbPrussIoLightOutputBufs[buf][i + 16] = g;
         
         i += 3 * RB_PRUSS_IO_NUM_STRINGS;
     }

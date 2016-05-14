@@ -31,6 +31,7 @@ static char const * const g_rbSubsystemNames[RBS_COUNT] = {
     "LIGHT_GENERATION",
     "LIGHT_OUTPUT",
     "HOT_CONFIGURATION",
+    "LUA",
 };
 
 
@@ -464,6 +465,7 @@ void rbInitialize(int argc, char * argv[])
     
     rbChangeSubsystem(RBS_MAIN);
     rbInfo("Initializing Lua interpreter\n");
+    rbChangeSubsystem(RBS_LUA);
     rbLuaInitialize(&g_rbConfiguration);
     
     rbChangeSubsystem(RBS_MAIN);
@@ -481,6 +483,7 @@ void rbShutdown(void)
     
     rbAssert(lastSubsystem == RBS_MAIN);
     
+    rbChangeSubsystem(RBS_LUA);
     rbLuaShutdown();
     
     rbChangeSubsystem(RBS_HOT_CONFIGURATION);
