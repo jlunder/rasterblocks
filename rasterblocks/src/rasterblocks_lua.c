@@ -223,6 +223,11 @@ int rbLuaRegisterTypes(lua_State * l)
 }
 
 
+void rbLuaProcessParameters(void)
+{
+}
+
+
 int rbLuaPrint(lua_State * l)
 {
     int top = lua_gettop(l);

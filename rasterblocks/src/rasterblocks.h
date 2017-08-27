@@ -44,6 +44,8 @@
 
 #define RB_NUM_CONTROLLERS 10
 #define RB_NUM_TRIGGERS 10
+#define RB_NUM_PARAMETERS 40
+#define RB_PARAMETER_NAME_MAX 32
 
 #define RB_MAX_LIGHTS 2048
 #define RB_MAX_LIGHT_STRINGS 8
@@ -251,9 +253,12 @@ typedef struct {
     bool sourceOverdriven;
     bool sourceLargeDc;
     bool peakDetected;
-    
-    float chladniPattern[RB_CHLADNI_SIZE][RB_CHLADNI_SIZE];
 } RBAnalyzedAudio;
+
+
+typedef struct {
+    float parameters[RB_NUM_PARAMETERS];
+} RBParameters;
 
 
 typedef struct {

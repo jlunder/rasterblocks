@@ -8,6 +8,8 @@
 extern void rbLuaInitialize(RBConfiguration * pConfig);
 extern void rbLuaShutdown(void);
 
+extern void rbLuaProcessParameters(void);
+
 
 #endif // ROTTERBOX_LUA_H
 
