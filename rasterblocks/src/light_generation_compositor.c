@@ -110,14 +110,15 @@ void rbLightGenerationCompositorGenerate(void * pData,
                 pCompositor->layers[k].transformPosIndex, vector2(0.0f, 0.0f));
             RBVector2 scale = rbParameterGetV2(pParameters,
                 pCompositor->layers[k].transformScaleIndex,
-                vector2(1.0f, 1.0f));
+                vector2(1.0f, 0.0f));
             float invScaleLenSqr = 1.0f / v2lensq(scale);
-            float uMult = invScaleLenSqr / t2getw(pDestTexture);
-            float vMult = invScaleLenSqr / t2geth(pDestTexture);
+            float uMult = invScaleLenSqr / (t2getw(pDestTexture) - 1);
+            float vMult = invScaleLenSqr / (t2geth(pDestTexture) - 1);
             RBVector2 xInc = vector2(scale.x * uMult, scale.y * vMult);
             RBVector2 yInc = vector2(-scale.y * uMult, scale.x * vMult);
             RBVector2 lineTc =
-                v2add(v2scale(xInc, -pos.x), v2scale(yInc, -pos.y));
+                v2add(v2scale(xInc, -pos.x),
+                    v2scale(yInc, -pos.y));
             RBLightGenerationBlendMode blendMode =
                 pCompositor->layers[k].blendMode;
             for(size_t j = 0; j < t2geth(pFrame); ++j) {

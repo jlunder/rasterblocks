@@ -156,6 +156,8 @@ int rbLuaRegisterTypes(lua_State * l)
     lua_setfield(l, -2, "gett");
     lua_pushcfunction(l, rbLuaTexture1SetTexel);
     lua_setfield(l, -2, "sett");
+    lua_pushvalue(l, -1);
+    lua_setfield(l, -2, "__index");
     tle_RBTexture1_metatable_index = luaL_ref(l, LUA_REGISTRYINDEX);
     
     lua_newtable(l);
@@ -171,6 +173,8 @@ int rbLuaRegisterTypes(lua_State * l)
     lua_setfield(l, -2, "gett");
     lua_pushcfunction(l, rbLuaTexture2SetTexel);
     lua_setfield(l, -2, "sett");
+    lua_pushvalue(l, -1);
+    lua_setfield(l, -2, "__index");
     tle_RBTexture2_metatable_index = luaL_ref(l, LUA_REGISTRYINDEX);
     
     lua_newtable(l);
@@ -287,7 +291,7 @@ int rbLuaRunLuaParameterGeneration(lua_State * l)
     lua_getglobal(l, "generate_parameters");
 
     if(!lua_isfunction(l, -1)) {
-        rbWarning("Lua does not define generate_parameters");
+        rbWarning("Lua does not define generate_parameters\n");
         lua_settop(l, top);
         return 0;
     }
@@ -491,13 +495,16 @@ int rbLuaPaletteFromPwl(lua_State * l)
 int rbLuaTexture2Alloc(lua_State * l)
 {
     size_t texWidth, texHeight;
-    RBColor clearColor;
+    RBColor clearColor = colori(0, 0, 0, 0);
     size_t size;
     RBTexture2 * pTex;
 
+    tle_verify(l, lua_gettop(l) >= 2);
     texWidth = (size_t)luaL_checkinteger(l, 1);
     texHeight = (size_t)luaL_checkinteger(l, 2);
-    clearColor = tle_to_RBColor(l, 3);
+    if(lua_gettop(l) >= 3) {
+        clearColor = tle_to_RBColor(l, 3);
+    }
     
     size = rbTexture2ComputeSize(texWidth, texHeight);
     
@@ -541,6 +548,8 @@ int rbLuaLightGenerationCompositorAlloc(lua_State * l)
     pGenRes = rbLightGenerationCompositorAlloc();
     tle_verify(l, pGenRes != NULL);
     tle_push_PRBLightGenerator(l, pGenRes);
+    lua_pushcfunction(l, rbLuaLightGenerationCompositorAddLayer);
+    lua_setfield(l, -2, "add_layer");
     
     return 1;
 }
@@ -1005,10 +1014,7 @@ int rbLuaTexture1SampleNearestRepeat(lua_State * l)
     float u;
     RBColor c;
     
-    lua_rawgeti(l, 1, 1);
-    p = tle_to_RBTexture1(l, -1);
-    lua_pop(l, 1);
-    
+    p = tle_to_RBTexture1(l, 1);
     u = (float)lua_tonumber(l, 2);
     c = rbColorMakeCT(rbTexture1SampleNearestRepeat(p, u));
     tle_push_RBColor(l, c);
@@ -1024,10 +1030,7 @@ int rbLuaTexture1SampleNearestClamp(lua_State * l)
     float u;
     RBColor c;
     
-    lua_rawgeti(l, 1, 1);
-    p = tle_to_RBTexture1(l, -1);
-    lua_pop(l, 1);
-    
+    p = tle_to_RBTexture1(l, 1);
     u = (float)lua_tonumber(l, 2);
     c = rbColorMakeCT(rbTexture1SampleNearestClamp(p, u));
     tle_push_RBColor(l, c);
@@ -1043,10 +1046,7 @@ int rbLuaTexture1SampleLinearRepeat(lua_State * l)
     float u;
     RBColor c;
     
-    lua_rawgeti(l, 1, 1);
-    p = tle_to_RBTexture1(l, -1);
-    lua_pop(l, 1);
-    
+    p = tle_to_RBTexture1(l, 1);
     u = (float)lua_tonumber(l, 2);
     c = rbColorMakeCT(rbTexture1SampleLinearRepeat(p, u));
     tle_push_RBColor(l, c);
@@ -1062,10 +1062,7 @@ int rbLuaTexture1SampleLinearClamp(lua_State * l)
     float u;
     RBColor c;
     
-    lua_rawgeti(l, 1, 1);
-    p = tle_to_RBTexture1(l, -1);
-    lua_pop(l, 1);
-    
+    p = tle_to_RBTexture1(l, 1);
     u = (float)lua_tonumber(l, 2);
     c = rbColorMakeCT(rbTexture1SampleLinearClamp(p, u));
     tle_push_RBColor(l, c);
@@ -1080,10 +1077,7 @@ int rbLuaTexture1GetTexel(lua_State * l)
     size_t u;
     RBColor c;
     
-    lua_rawgeti(l, 1, 1);
-    p = tle_to_RBTexture1(l, -1);
-    lua_pop(l, 1);
-    
+    p = tle_to_RBTexture1(l, 1);
     u = (size_t)lua_tointeger(l, 2);
     c = rbTexture1GetTexel(p, u);
     tle_push_RBColor(l, c);
@@ -1098,10 +1092,7 @@ int rbLuaTexture1SetTexel(lua_State * l)
     size_t u;
     RBColor c;
     
-    lua_rawgeti(l, 1, 1);
-    p = tle_to_RBTexture1(l, -1);
-    lua_pop(l, 1);
-    
+    p = tle_to_RBTexture1(l, 1);
     u = (size_t)lua_tointeger(l, 2);
     c = tle_to_RBColor(l, 3);
     
@@ -1156,10 +1147,7 @@ int rbLuaTexture2SampleNearestRepeat(lua_State * l)
     float u, v;
     RBColor c;
     
-    lua_rawgeti(l, 1, 1);
-    p = tle_to_RBTexture2(l, -1);
-    lua_pop(l, 1);
-    
+    p = tle_to_RBTexture2(l, 1);
     u = (float)lua_tonumber(l, 2);
     v = (float)lua_tonumber(l, 3);
     c = rbColorMakeCT(rbTexture2SampleNearestRepeat(p, rbVector2Make(u, v)));
@@ -1175,10 +1163,7 @@ int rbLuaTexture2SampleNearestClamp(lua_State * l)
     float u, v;
     RBColor c;
     
-    lua_rawgeti(l, 1, 1);
-    p = tle_to_RBTexture2(l, -1);
-    lua_pop(l, 1);
-    
+    p = tle_to_RBTexture2(l, 1);
     u = (float)lua_tonumber(l, 2);
     v = (float)lua_tonumber(l, 3);
     c = rbColorMakeCT(rbTexture2SampleNearestClamp(p, rbVector2Make(u, v)));
@@ -1194,10 +1179,7 @@ int rbLuaTexture2SampleLinearRepeat(lua_State * l)
     float u, v;
     RBColor c;
     
-    lua_rawgeti(l, 1, 1);
-    p = tle_to_RBTexture2(l, -1);
-    lua_pop(l, 1);
-    
+    p = tle_to_RBTexture2(l, 1);
     u = (float)lua_tonumber(l, 2);
     v = (float)lua_tonumber(l, 3);
     c = rbColorMakeCT(rbTexture2SampleLinearRepeat(p, rbVector2Make(u, v)));
@@ -1232,10 +1214,7 @@ int rbLuaTexture2GetTexel(lua_State * l)
     size_t u, v;
     RBColor c;
     
-    lua_rawgeti(l, 1, 1);
-    p = tle_to_RBTexture2(l, -1);
-    lua_pop(l, 1);
-    
+    p = tle_to_RBTexture2(l, 1);
     u = (size_t)lua_tointeger(l, 2);
     v = (size_t)lua_tointeger(l, 3);
     c = rbTexture2GetTexel(p, u, v);
@@ -1251,10 +1230,7 @@ int rbLuaTexture2SetTexel(lua_State * l)
     size_t u, v;
     RBColor c;
     
-    lua_rawgeti(l, 1, 1);
-    p = tle_to_RBTexture2(l, -1);
-    lua_pop(l, 1);
-    
+    p = tle_to_RBTexture2(l, 1);
     u = (size_t)lua_tointeger(l, 2);
     v = (size_t)lua_tointeger(l, 3);
     c = tle_to_RBColor(l, 4);

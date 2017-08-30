@@ -16,7 +16,26 @@ gen_signal_lissajous(palette)
 gen_oscilloscope(palette)
 ]]
 
-rb.set_generator(rb.gen_fill(1))
+
+local refimg = rb.texture2(16, 24)
+for u = 0, 15 do
+    for v = 0, 23 do
+        local r = 0
+        local g = 0
+        local b = 0
+        if u == 7 or u == 8 then r = 1 end
+        if v == 12 or v == 13 then g = 1 end
+        if u == 0 or v == 0 or u == 15 or v == 23 then b = 1 end
+        refimg:sett(u, v, rb.color(r, g, b))
+    end
+end
+
+local comp = rb.gen_compositor()
+comp:add_layer(rb.gen_static_image(refimg),
+    rb.texture2(16, 24))
+rb.set_generator(comp)
+
+
 --rb.set_generator(rb.gen_fill(1))
 
 function generate_parameters(analysis, parameters)
