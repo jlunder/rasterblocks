@@ -7,6 +7,7 @@
 #include "graphics_util.h"
 #include "light_generation.h"
 #include "light_output.h"
+#include "parameter_generation.h"
 #include "pruss_io.h"
 #include "rasterblocks_lua.h"
 
@@ -449,6 +450,11 @@ void rbInitialize(int argc, char * argv[])
     rbAudioAnalysisInitialize(&g_rbConfiguration);
     
     rbChangeSubsystem(RBS_MAIN);
+    rbInfo("Initializing parameter generation\n");
+    rbChangeSubsystem(RBS_PARAMETER_GENERATION);
+    rbParameterGenerationInitialize(&g_rbConfiguration);
+    
+    rbChangeSubsystem(RBS_MAIN);
     rbInfo("Initializing light generation\n");
     rbChangeSubsystem(RBS_LIGHT_GENERATION);
     rbLightGenerationInitialize(&g_rbConfiguration);
@@ -494,6 +500,9 @@ void rbShutdown(void)
     
     rbChangeSubsystem(RBS_LIGHT_GENERATION);
     rbLightGenerationShutdown();
+    
+    rbChangeSubsystem(RBS_PARAMETER_GENERATION);
+    rbParameterGenerationShutdown();
     
     rbChangeSubsystem(RBS_AUDIO_ANALYSIS);
     rbAudioAnalysisShutdown();
@@ -571,6 +580,7 @@ void rbProcessSubsystems(bool * pConfigChanged)
     RBSubsystem lastSubsystem = rbChangeSubsystem(RBS_MAIN);
     RBRawAudio rawAudio;
     RBAnalyzedAudio analysis;
+    RBParameters parameters;
     RBTexture2 * pFrame =
         rbTexture2Alloc(g_rbConfiguration.projectionWidth,
             g_rbConfiguration.projectionHeight);
@@ -607,12 +617,15 @@ void rbProcessSubsystems(bool * pConfigChanged)
     rbChangeSubsystem(RBS_AUDIO_ANALYSIS);
     rbAudioAnalysisAnalyze(&rawAudio, &analysis);
     
+    rbChangeSubsystem(RBS_PARAMETER_GENERATION);
+    rbParameterGenerationGenerate(&analysis, &parameters);
+
     // Only generate lights if they'll actually be visible! Most of the debug
     // overlays fully take over the display.
     if((analysis.controls.debugDisplayMode == RBDM_OFF) ||
             (analysis.controls.debugDisplayMode == RBDM_PERF_METRICS)) {
         rbChangeSubsystem(RBS_LIGHT_GENERATION);
-        rbLightGenerationGenerate(&analysis, pFrame);
+        rbLightGenerationGenerate(&analysis, &parameters, pFrame);
     }
     
     rbChangeSubsystem(RBS_MAIN);
@@ -985,6 +998,9 @@ void rbProcessConfigChanged(void)
     
     rbChangeSubsystem(RBS_AUDIO_ANALYSIS);
     rbAudioAnalysisInitialize(&g_rbConfiguration);
+    
+    rbChangeSubsystem(RBS_PARAMETER_GENERATION);
+    rbParameterGenerationInitialize(&g_rbConfiguration);
     
     rbChangeSubsystem(RBS_LIGHT_GENERATION);
     rbLightGenerationInitialize(&g_rbConfiguration);

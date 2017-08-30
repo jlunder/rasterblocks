@@ -407,6 +407,18 @@ RBColorTemp rbTexture1SampleLinearClamp(RBTexture1 const * pTex, float tc)
 }
 
 
+void rbTexture1Clear(RBTexture1 * pDestTex, RBColor clearColor)
+{
+    size_t const size = pDestTex->size;
+    
+    RB_ASSERT_TEXTURE1_VALID(pDestTex);
+    
+    for(size_t i = 0; i < size; ++i) {
+        pDestTex->data[i] = clearColor;
+    }
+}
+
+
 void rbTexture1FillFromPiecewiseLinear(RBTexture1 * pTex,
     RBPiecewiseLinearColorSegment * pSegments, size_t count, bool repeat)
 {

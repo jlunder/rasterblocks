@@ -11,7 +11,8 @@ typedef struct
 
 
 void rbLightGenerationStaticImageGenerate(void * pData,
-    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame);
+    RBAnalyzedAudio const * pAnalysis, RBParameters const * pParameters,
+    RBTexture2 * pFrame);
 
 
 RBLightGenerator * rbLightGenerationStaticImageAlloc(RBTexture2 const * pTex)
@@ -31,13 +32,16 @@ RBLightGenerator * rbLightGenerationStaticImageAlloc(RBTexture2 const * pTex)
 
 
 void rbLightGenerationStaticImageGenerate(void * pData,
-    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame)
+    RBAnalyzedAudio const * pAnalysis, RBParameters const * pParameters,
+    RBTexture2 * pFrame)
 {
     RBLightGeneratorStaticImage * pStaticImage =
         (RBLightGeneratorStaticImage *)pData;
     RBTexture2 const * pTex = pStaticImage->pTexture;
     
     UNUSED(pAnalysis);
+    UNUSED(pParameters);
+    
     t2clear(pFrame, colori(0, 0, 0, 0));
     rbTexture2Blt(pFrame,
         ((int32_t)t2getw(pFrame) - (int32_t)t2getw(pTex)) / 2,

@@ -21,8 +21,7 @@ extern void rbParameterGenerationGenerate(RBAnalyzedAudio const * pAnalysis,
 extern size_t rbParameterGenerationAllocateParameters(size_t numParameters);
 extern void rbParameterGenerationSetGenerator(
     RBParameterGenerator * pGenerator, size_t parameterIndex,
-    size_t numParameters, char const * name);
-extern char const * rbParameterGenerationGetName(size_t parameterIndex);
+    size_t numParameters);
 
 
 #endif

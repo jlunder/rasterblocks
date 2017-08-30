@@ -5,6 +5,11 @@
 
 static RBLightGenerator * g_rbPCurrentGenerator = NULL;
 static RBLightGenerator * g_rbPDefaultGenerator = NULL;
+static union
+{
+    uint8_t allocation[sizeof (RBTexture1) + 2 * sizeof (RBColor)];
+    RBTexture1 texture;
+} g_rbGrayscaleAlphaPalette;
 
 
 void rbLightGenerationInitialize(RBConfiguration const * pConfig)
@@ -13,8 +18,13 @@ void rbLightGenerationInitialize(RBConfiguration const * pConfig)
     
     rbLightGenerationShutdown();
     
-    g_rbPDefaultGenerator = rbLightGenerationOscilloscopeAlloc(
-        colori(127, 127, 127, 255));
+    rbAssert(rbTexture1ComputeSize(2) <= sizeof g_rbGrayscaleAlphaPalette);
+    rbTexture1Construct(&g_rbGrayscaleAlphaPalette.texture, 2);
+    t1sett(&g_rbGrayscaleAlphaPalette.texture, 0, colori(0, 0, 0, 0));
+    t1sett(&g_rbGrayscaleAlphaPalette.texture, 1, colori(255, 255, 255, 255));
+    
+    g_rbPDefaultGenerator =
+        rbLightGenerationOscilloscopeAlloc(&g_rbGrayscaleAlphaPalette.texture);
     rbLightGenerationSetGenerator(g_rbPDefaultGenerator);
 }
 
@@ -30,11 +40,11 @@ void rbLightGenerationShutdown(void)
 
 
 void rbLightGenerationGenerate(RBAnalyzedAudio const * pAnalysis,
-    RBTexture2 * pFrame)
+    RBParameters const * pParameters, RBTexture2 * pFrame)
 {
     if(g_rbPCurrentGenerator != NULL) {
         rbLightGenerationGeneratorGenerate(g_rbPCurrentGenerator, pAnalysis,
-            pFrame);
+            pParameters, pFrame);
     }
     else {
         for(size_t j = 0; j < t2geth(pFrame); ++j) {
@@ -86,7 +96,7 @@ void rbLightGeneration<**>Free(void * pData)
 
 
 void rbLightGeneration<**>Generate(void * pData,
-    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame)
+    RBParameters const * pParameters, RBTexture2 * pFrame)
 {
     RBLightGenerator<**> * p<**> =
         (RBLightGenerator<**> *)pData;

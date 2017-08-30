@@ -238,6 +238,7 @@ static inline RBColorTemp rbColorTempMix(RBColorTemp a, float aAlpha,
 
 #define rbColorTempScale rbVector4Scale
 #define rbColorTempAdd rbVector4Add
+#define rbColorTempSub rbVector4Sub
 #define rbColorTempMul rbVector4EntrywiseMul
 
 static inline RBColorTemp rbColorTempClamp(RBColorTemp c)
@@ -272,6 +273,8 @@ RBColorTemp rbTexture1SampleNearestRepeat(RBTexture1 const * pTex, float tc);
 RBColorTemp rbTexture1SampleNearestClamp(RBTexture1 const * pTex, float tc);
 RBColorTemp rbTexture1SampleLinearRepeat(RBTexture1 const * pTex, float tc);
 RBColorTemp rbTexture1SampleLinearClamp(RBTexture1 const * pTex, float tc);
+
+void rbTexture1Clear(RBTexture1 * pDestTex, RBColor clearColor);
 
 void rbTexture1FillFromPiecewiseLinear(RBTexture1 * pTex,
     RBPiecewiseLinearColorSegment * pSegments, size_t count, bool repeat);
@@ -369,6 +372,7 @@ static inline RBVector2 rbHarmonicPathGeneratorPos(
 #define ctmix rbColorTempMix
 #define ctscale rbColorTempScale
 #define ctadd rbColorTempAdd
+#define ctsub rbColorTempSub
 #define ctmul rbColorTempMul
 #define ctclamp rbColorTempClamp
 
@@ -399,6 +403,8 @@ static inline RBVector2 rbHarmonicPathGeneratorPos(
 #define t1samplr rbTexture1SampleLinearRepeat
 #define t1samplc rbTexture1SampleLinearClamp
 
+#define t1clear rbTexture1Clear
+
 #define t2getw rbTexture2GetWidth
 #define t2geth rbTexture2GetHeight
 #define t2gett rbTexture2GetTexel
@@ -417,6 +423,45 @@ static inline RBVector2 rbHarmonicPathGeneratorPos(
 
 #define t2dtextf rbTexture2DebugTextF
 #define t2rect rbTexture2FillRect
+
+static inline RBVector2 rbParameterGetV2(RBParameters const * pParameters,
+    size_t index, RBVector2 defaultValue)
+{
+    if(index <= RB_NUM_PARAMETERS - 2) {
+        return vector2(pParameters->parameters[index + 0],
+            pParameters->parameters[index + 1]);
+    }
+    else {
+        return defaultValue;
+    }
+}
+
+static inline RBColorTemp rbParameterGetCTA1(RBParameters const * pParameters,
+    size_t index, RBColorTemp defaultValue)
+{
+    if(index <= RB_NUM_PARAMETERS - 3) {
+        return colortempf(pParameters->parameters[index + 0],
+            pParameters->parameters[index + 1],
+            pParameters->parameters[index + 2], 1.0f);
+    }
+    else {
+        return defaultValue;
+    }
+}
+
+static inline RBColorTemp rbParameterGetCT(RBParameters const * pParameters,
+    size_t index, RBColorTemp defaultValue)
+{
+    if(index <= RB_NUM_PARAMETERS - 4) {
+        return colortempf(pParameters->parameters[index + 0],
+            pParameters->parameters[index + 1],
+            pParameters->parameters[index + 2],
+            pParameters->parameters[index + 3]);
+    }
+    else {
+        return defaultValue;
+    }
+}
 
 
 #endif // GRAPHICS_UTIL_H_INCLUDED

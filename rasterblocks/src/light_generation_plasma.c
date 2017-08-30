@@ -6,17 +6,20 @@
 typedef struct
 {
     RBLightGenerator genDef;
-    RBTexture1 * pPalTex;
+    RBTexture1 * pPalette;
+    size_t scaleIndex;
     RBHarmonicPathGenerator paths[4];
 } RBLightGeneratorPlasma;
 
 
 void rbLightGenerationPlasmaFree(void * pData);
 void rbLightGenerationPlasmaGenerate(void * pData,
-    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame);
+    RBAnalyzedAudio const * pAnalysis, RBParameters const * pParameters,
+    RBTexture2 * pFrame);
 
 
-RBLightGenerator * rbLightGenerationPlasmaAlloc(RBTexture1 * pPalTex)
+RBLightGenerator * rbLightGenerationPlasmaAlloc(RBTexture1 * pPalette,
+    size_t scaleIndex)
 {
     RBLightGeneratorPlasma * pPlasma =
         (RBLightGeneratorPlasma *)malloc(
@@ -25,7 +28,8 @@ RBLightGenerator * rbLightGenerationPlasmaAlloc(RBTexture1 * pPalTex)
     pPlasma->genDef.pData = pPlasma;
     pPlasma->genDef.free = rbLightGenerationPlasmaFree;
     pPlasma->genDef.generate = rbLightGenerationPlasmaGenerate;
-    pPlasma->pPalTex = pPalTex;
+    pPlasma->pPalette = pPalette;
+    pPlasma->scaleIndex = scaleIndex;
     
     rbHarmonicPathGeneratorInitialize(&pPlasma->paths[0],
         1.0f / 19.42f, vector2(-1.0f, -1.0f), vector2( 10.0f,   0.0f),
@@ -54,13 +58,18 @@ void rbLightGenerationPlasmaFree(void * pData)
 
 
 void rbLightGenerationPlasmaGenerate(void * pData,
-    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame)
+    RBAnalyzedAudio const * pAnalysis, RBParameters const * pParameters,
+    RBTexture2 * pFrame)
 {
     RBLightGeneratorPlasma * pPlasma =
         (RBLightGeneratorPlasma *)pData;
+    RBTexture1 * pPalette = pPlasma->pPalette;
     RBVector2 pathPos[LENGTHOF(pPlasma->paths)];
+    float invScale =
+        1.0f / rbParameterGetF(pParameters, pPlasma->scaleIndex, 1.0f);
     
     UNUSED(pAnalysis);
+    
     for(size_t k = 0; k < LENGTHOF(pPlasma->paths); ++k) {
         rbHarmonicPathGeneratorUpdate(&pPlasma->paths[k]);
         pathPos[k] = rbHarmonicPathGeneratorPos(&pPlasma->paths[k]);
@@ -68,16 +77,15 @@ void rbLightGenerationPlasmaGenerate(void * pData,
     for(size_t j = 0; j < t2geth(pFrame); ++j) {
         for(size_t i = 0; i < t2getw(pFrame); ++i) {
             float a = 0.0f;
+            RBVector2 pos = vector2((i + 0.5f) * invScale,
+                (j + 0.5f) * invScale);
             
-            a += sinf(v2len(v2sub(vector2(i + 0.5f, j + 0.5f), pathPos[0])) *
-                (2.0f * RB_PI / 15.0f));
-//            a += sinf(v2len(v2sub(vector2(i + 0.5f, j + 0.5f), pathPos[1])) *
+            a += sinf(v2len(v2sub(pos, pathPos[0])) * (2.0f * RB_PI / 15.0f));
+//            a += sinf(v2len(v2sub(pos, pathPos[1])) *
 //                (2.0f * RB_PI / 20.0f));
-            a += sinf(v2len(v2sub(vector2(i + 0.5f, j + 0.5f), pathPos[2])) *
-                (2.0f * RB_PI / 19.0f));
-            a += sinf(v2len(v2sub(vector2(i + 0.5f, j + 0.5f), pathPos[3])) *
-                (2.0f * RB_PI / 13.0f));
-            t2sett(pFrame, i, j, colorct(t1samplc(pPlasma->pPalTex,
+            a += sinf(v2len(v2sub(pos, pathPos[2])) * (2.0f * RB_PI / 19.0f));
+            a += sinf(v2len(v2sub(pos, pathPos[3])) * (2.0f * RB_PI / 13.0f));
+            t2sett(pFrame, i, j, colorct(t1samplc(pPalette,
                 (a * (0.5f / 3)) + 0.5f)));
         }
     }

@@ -17,18 +17,19 @@
 typedef struct
 {
     RBLightGenerator genDef;
-    RBColor color;
     size_t sampleSkipRemainder;
     float data[RB_OSCILLOSCOPE_WINDOW];
+    RBTexture1 * pPalette;
 } RBLightGeneratorOscilloscope;
 
 
 void rbLightGenerationOscilloscopeFree(void * pData);
 void rbLightGenerationOscilloscopeGenerate(void * pData,
-    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame);
+    RBAnalyzedAudio const * pAnalysis, RBParameters const * pParameters,
+    RBTexture2 * pFrame);
 
 
-RBLightGenerator * rbLightGenerationOscilloscopeAlloc(RBColor color)
+RBLightGenerator * rbLightGenerationOscilloscopeAlloc(RBTexture1 * pPalette)
 {
     RBLightGeneratorOscilloscope * pOscilloscope =
         (RBLightGeneratorOscilloscope *)malloc(
@@ -37,9 +38,9 @@ RBLightGenerator * rbLightGenerationOscilloscopeAlloc(RBColor color)
     pOscilloscope->genDef.pData = pOscilloscope;
     pOscilloscope->genDef.free = rbLightGenerationOscilloscopeFree;
     pOscilloscope->genDef.generate = rbLightGenerationOscilloscopeGenerate;
-    pOscilloscope->color = color;
     pOscilloscope->sampleSkipRemainder = 0;
     rbZero(pOscilloscope->data, sizeof pOscilloscope->data);
+    pOscilloscope->pPalette = pPalette;
     
     return &pOscilloscope->genDef;
 }
@@ -55,16 +56,24 @@ void rbLightGenerationOscilloscopeFree(void * pData)
 
 
 void rbLightGenerationOscilloscopeGenerate(void * pData,
-    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame)
+    RBAnalyzedAudio const * pAnalysis, RBParameters const * pParameters,
+    RBTexture2 * pFrame)
 {
     RBLightGeneratorOscilloscope * pOscilloscope =
         (RBLightGeneratorOscilloscope *)pData;
-    RBColor c = cscalef(pOscilloscope->color, 1.0f / RB_OSCILLOSCOPE_ANTIALIAS);
     size_t displayStart =
         RB_OSCILLOSCOPE_WINDOW - RB_OSCILLOSCOPE_DISPLAY_WINDOW;
     size_t newDataPoints = (RB_AUDIO_FRAMES_PER_VIDEO_FRAME -
             pOscilloscope->sampleSkipRemainder +
         (RB_OSCILLOSCOPE_SAMPLE_SKIP - 1)) / RB_OSCILLOSCOPE_SAMPLE_SKIP;
+    RBTexture1 * pPalette = pOscilloscope->pPalette;
+    size_t fWidth = t2getw(pFrame);
+    size_t fHeight = t2geth(pFrame);
+    float accumBuf[fHeight][fWidth];
+    
+    UNUSED(pParameters);
+    
+    rbZero(accumBuf, sizeof accumBuf);
     
     if(newDataPoints < RB_OSCILLOSCOPE_WINDOW) {
         size_t inSample = pOscilloscope->sampleSkipRemainder;
@@ -109,8 +118,8 @@ void rbLightGenerationOscilloscopeGenerate(void * pData,
         }
     }
     
-    rbTexture2Clear(pFrame, colori(0, 0, 0, 0));
     {
+        float invAA = 1.0f / RB_OSCILLOSCOPE_ANTIALIAS;
         size_t i = displayStart;
         size_t width = t2getw(pFrame);
         int32_t x = 0;
@@ -158,9 +167,16 @@ void rbLightGenerationOscilloscopeGenerate(void * pData,
                 yMin = height - (int32_t)roundf(dMax * (height - 1)) - 1;
                 yMax = height - (int32_t)roundf(dMin * (height - 1));
                 for(int32_t y = yMin; y < yMax; ++y) {
-                    t2sett(pFrame, x, y, cadd(t2gett(pFrame, x, y), c));
+                    accumBuf[y][x] += invAA;
                 }
             }
+        }
+    }
+    
+    for(size_t j = 0; j < fHeight; ++j) {
+        for(size_t i = 0; i < fWidth; ++i) {
+            float a = accumBuf[j][i];
+            t2sett(pFrame, i, j, colorct(t1samplc(pPalette, a)));
         }
     }
 }

@@ -9,7 +9,7 @@
 typedef struct
 {
     RBLightGenerator genDef;
-    RBColor color;
+    RBTexture1 * pPalette;
     float bassData[RB_LISSAJOUS_WINDOW];
     float trebleData[RB_LISSAJOUS_WINDOW];
 } RBLightGeneratorSignalLissajous;
@@ -17,10 +17,11 @@ typedef struct
 
 void rbLightGenerationSignalLissajousFree(void * pData);
 void rbLightGenerationSignalLissajousGenerate(void * pData,
-    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame);
+    RBAnalyzedAudio const * pAnalysis, RBParameters const * pParameters,
+    RBTexture2 * pFrame);
 
 
-RBLightGenerator * rbLightGenerationSignalLissajousAlloc(RBColor color)
+RBLightGenerator * rbLightGenerationSignalLissajousAlloc(RBTexture1 * pPalette)
 {
     RBLightGeneratorSignalLissajous * pSignalLissajous =
         (RBLightGeneratorSignalLissajous *)malloc(
@@ -29,7 +30,7 @@ RBLightGenerator * rbLightGenerationSignalLissajousAlloc(RBColor color)
     pSignalLissajous->genDef.pData = pSignalLissajous;
     pSignalLissajous->genDef.free = rbLightGenerationSignalLissajousFree;
     pSignalLissajous->genDef.generate = rbLightGenerationSignalLissajousGenerate;
-    pSignalLissajous->color = color;
+    pSignalLissajous->pPalette = pPalette;
     
     return &pSignalLissajous->genDef;
 }
@@ -45,18 +46,18 @@ void rbLightGenerationSignalLissajousFree(void * pData)
 
 
 void rbLightGenerationSignalLissajousGenerate(void * pData,
-    RBAnalyzedAudio const * pAnalysis, RBTexture2 * pFrame)
+    RBAnalyzedAudio const * pAnalysis, RBParameters const * pParameters,
+    RBTexture2 * pFrame)
 {
     RBLightGeneratorSignalLissajous * pSignalLissajous =
         (RBLightGeneratorSignalLissajous *)pData;
-    // scale adjusts brightness for the (guessed) pixel coverage, by pretending
-    // the Lissajous figure will describe a circle.. this is very approximate.
-    RBColor c = pSignalLissajous->color;
+    RBTexture1 * pPalette = pSignalLissajous->pPalette;
     int32_t width = t2getw(pFrame);
     int32_t height = t2geth(pFrame);
     float widthF = width;
     float heightF = height;
-    size_t lissaFrame[width * height];
+    
+    UNUSED(pParameters);
     
     if(RB_AUDIO_FRAMES_PER_VIDEO_FRAME < RB_LISSAJOUS_WINDOW) {
         memmove(pSignalLissajous->bassData,
@@ -90,15 +91,19 @@ void rbLightGenerationSignalLissajousGenerate(void * pData,
     }
     
     {
+        // scale adjusts brightness for the (guessed) pixel coverage, by
+        // pretending the Lissajous figure will describe a circle.. this is
+        // very approximate.
+        size_t accumBuf[height][width];
         float scale = 0.0f;
-        rbZero(lissaFrame, sizeof lissaFrame);
+        rbZero(accumBuf, sizeof accumBuf);
         for(size_t i = 0; i < RB_LISSAJOUS_WINDOW; ++i) {
             RBVector2 p = vector2(pSignalLissajous->bassData[i],
                     pSignalLissajous->trebleData[i]);
             int32_t x = (int32_t)roundf((p.x * 0.5f + 0.5f) * widthF);
             int32_t y = (int32_t)roundf((p.y * 0.5f + 0.5f) * heightF);
             if(x >= 0 && x < width && y >= 0 && y < height) {
-                ++lissaFrame[y * width + x];
+                ++accumBuf[y][x];
             }
             scale += v2len(p);
         }
@@ -106,8 +111,7 @@ void rbLightGenerationSignalLissajousGenerate(void * pData,
         for(int32_t j = 0; j < height; ++j) {
             for(int32_t i = 0; i < width; ++i) {
                 t2sett(pFrame, i, j,
-                    cscalef(c, rbClampF(lissaFrame[j * width + i] * scale,
-                        0.0f, 1.0f)));
+                    colorct(t1samplc(pPalette, accumBuf[j][i] * scale)));
             }
         }
     }

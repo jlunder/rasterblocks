@@ -45,7 +45,7 @@
 #define RB_NUM_CONTROLLERS 10
 #define RB_NUM_TRIGGERS 10
 #define RB_NUM_PARAMETERS 40
-#define RB_PARAMETER_NAME_MAX 32
+#define RB_PARAMETER_NONE 0x10000
 
 #define RB_MAX_LIGHTS 2048
 #define RB_MAX_LIGHT_STRINGS 8
@@ -79,6 +79,7 @@ typedef enum {
     RBS_CONTROL_INPUT,
     RBS_AUDIO_INPUT,
     RBS_AUDIO_ANALYSIS,
+    RBS_PARAMETER_GENERATION,
     RBS_LIGHT_GENERATION,
     RBS_LIGHT_OUTPUT,
     RBS_HOT_CONFIGURATION,
@@ -235,6 +236,7 @@ typedef struct {
 
 typedef struct {
     uint64_t frameNum;
+    RBTime time;
     
     RBControls controls;
     
@@ -522,6 +524,17 @@ static inline float rbRandomF(void)
 {
     static float const randMul = 1.0f / ((float)RAND_MAX + 1.0f);
     return rand() * randMul;
+}
+
+static inline float rbParameterGetF(RBParameters const * pParameters,
+    size_t index, float defaultValue)
+{
+    if(index <= RB_NUM_PARAMETERS - 1) {
+        return pParameters->parameters[index];
+    }
+    else {
+        return defaultValue;
+    }
 }
 
 
